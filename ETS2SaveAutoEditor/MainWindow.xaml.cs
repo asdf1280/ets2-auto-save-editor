@@ -147,7 +147,7 @@ namespace ETS2SaveAutoEditor
             }
 
             InitializeComponent();
-            Title += + " " + Version;
+            Title += " " + Version;
             {
                 var ms = new MemoryStream();
                 Properties.Resources.Icon.Save(ms, ImageFormat.Png);

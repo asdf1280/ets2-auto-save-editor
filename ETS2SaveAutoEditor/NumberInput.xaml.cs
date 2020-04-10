@@ -55,6 +55,7 @@ namespace ETS2SaveAutoEditor
             };
             blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
 
+            Title = title;
             TitleLabel.Content = title;
             Description.Text = description;
         }

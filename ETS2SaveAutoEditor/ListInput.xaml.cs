@@ -49,6 +49,7 @@ namespace ETS2SaveAutoEditor
             anim0.DecelerationRatio = 1;
             blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
 
+            Title = title;
             TitleLabel.Content = title;
             Description.Text = description;
             foreach(var item in items)

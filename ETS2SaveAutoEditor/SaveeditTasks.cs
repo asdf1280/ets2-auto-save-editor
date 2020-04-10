@@ -312,7 +312,7 @@ namespace ETS2SaveAutoEditor
             });
             return new SaveEditTask
             {
-                name = "경험치/레벨 지정",
+                name = "경험치 지정",
                 run = run,
                 description = "경험치를 지정합니다."
             };
@@ -426,8 +426,9 @@ namespace ETS2SaveAutoEditor
                     };
                     var enginePath = "";
                     {
-                        var res = ListInputBox.Show("엔진 선택하기", "현재 할당된 트럭에 적용할 엔진을 선택하세요.\n참고로 스카니아와 볼보는 구형의 엔진 성능이 신형보다 좋습니다.", engineNames);
-                        if(res == -1)
+                        var res = ListInputBox.Show("엔진 선택하기", "현재 할당된 트럭에 적용할 엔진을 선택하세요.\n참고로 스카니아와 볼보는 구형의 엔진 성능이 신형보다 좋습니다.\n"
+                            + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다.", engineNames);
+                        if (res == -1)
                         {
                             return;
                         }

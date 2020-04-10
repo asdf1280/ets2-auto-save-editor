@@ -37,16 +37,22 @@ namespace ETS2SaveAutoEditor
 
             Opacity = 0;
 
-            var anim = new DoubleAnimation(1, new Duration(TimeSpan.FromSeconds(0.2)));
-            anim.DecelerationRatio = 1;
+            var anim = new DoubleAnimation(1, new Duration(TimeSpan.FromSeconds(0.2)))
+            {
+                DecelerationRatio = 1
+            };
             BeginAnimation(Window.OpacityProperty, anim);
 
-            var blur = new BlurEffect();
-            blur.Radius = 10;
-            blur.RenderingBias = RenderingBias.Quality;
+            var blur = new BlurEffect
+            {
+                Radius = 10,
+                RenderingBias = RenderingBias.Quality
+            };
             Effect = blur;
-            var anim0 = new DoubleAnimation(1, new Duration(TimeSpan.FromSeconds(0.6)));
-            anim0.DecelerationRatio = 1;
+            var anim0 = new DoubleAnimation(1, new Duration(TimeSpan.FromSeconds(0.6)))
+            {
+                DecelerationRatio = 1
+            };
             blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
 
             TitleLabel.Content = title;

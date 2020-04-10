@@ -52,6 +52,7 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static string Version = "1.0 Alpha";
         public static byte[] StringToByteArray(String hex)
         {
             int NumberChars = hex.Length / 2;
@@ -146,6 +147,7 @@ namespace ETS2SaveAutoEditor
             }
 
             InitializeComponent();
+            Title += + " " + Version;
             {
                 var ms = new MemoryStream();
                 Properties.Resources.Icon.Save(ms, ImageFormat.Png);

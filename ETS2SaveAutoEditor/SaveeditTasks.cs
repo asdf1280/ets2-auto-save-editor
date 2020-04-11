@@ -297,7 +297,6 @@ namespace ETS2SaveAutoEditor
                         var index = matchIndex;
                         foreach (var str in substr.Split('\n'))
                         {
-                            Console.WriteLine(str);
                             if (Regex.IsMatch(str, pattern1))
                             {
                                 resultLine = Regex.Match(str, pattern1).Groups[1].Value;

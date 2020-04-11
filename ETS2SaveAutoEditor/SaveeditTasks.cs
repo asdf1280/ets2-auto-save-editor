@@ -379,43 +379,43 @@ namespace ETS2SaveAutoEditor
             {
                 try
                 {
-                    var cc = saveFile.content;
-                    var p00 = @"\beconomy : [\w\.]+ {";
-                    var p01 = @"\bplayer: ([\w\.]+)\b";
-                    var ms = Regex.Match(cc, p00).Index;
-                    var tmp = cc.Substring(ms);
-                    string pl = null;
-                    foreach (var str in tmp.Split('\n'))
+                    var content = saveFile.content;
+                    var pattern0 = @"\beconomy : [\w\.]+ {";
+                    var pattern1 = @"\bplayer: ([\w\.]+)\b";
+                    var matchIndex = Regex.Match(content, pattern0).Index;
+                    var substr = content.Substring(matchIndex);
+                    string resultLine = null;
+                    foreach (var str in substr.Split('\n'))
                     {
-                        if (Regex.IsMatch(str, p01))
+                        if (Regex.IsMatch(str, pattern1))
                         {
-                            pl = Regex.Match(str, p01).Groups[1].Value;
+                            resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                             break;
                         }
                         if (str.Trim() == "}") break;
                     }
 
-                    p00 = @"\bplayer : " + pl + " {";
-                    p01 = @"\bassigned_truck: ([\w\.]+)\b";
-                    ms = Regex.Match(cc, p00).Index;
-                    tmp = cc.Substring(ms);
-                    pl = null;
-                    foreach (var str in tmp.Split('\n'))
+                    pattern0 = @"\bplayer : " + resultLine + " {";
+                    pattern1 = @"\bassigned_truck: ([\w\.]+)\b";
+                    matchIndex = Regex.Match(content, pattern0).Index;
+                    substr = content.Substring(matchIndex);
+                    resultLine = null;
+                    foreach (var str in substr.Split('\n'))
                     {
-                        if (Regex.IsMatch(str, p01))
+                        if (Regex.IsMatch(str, pattern1))
                         {
-                            pl = Regex.Match(str, p01).Groups[1].Value;
+                            resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                             break;
                         }
-                        if (str.Trim() == "}") break;
+                        if (str.Trim() == "}") break; // End of the class
                     }
 
-                    if (pl == null)
+                    if (resultLine == null)
                     {
                         MessageBox.Show("손상된 세이브 파일입니다.", "오류");
                         return;
                     }
-                    else if (pl == "null")
+                    else if (resultLine == "null")
                     {
                         MessageBox.Show("할당된 트럭이 없습니다. 게임을 실행하여 트럭을 자신에게 할당하세요.", "오류");
                         return;
@@ -441,39 +441,38 @@ namespace ETS2SaveAutoEditor
                         enginePath = enginePaths[res];
                     }
 
-                    p00 = @"\bvehicle : " + pl + " {";
-                    p01 = @"\baccessories\[\d*\]: ([\w\.]+)\b";
-                    ms = Regex.Match(cc, p00).Index;
-                    tmp = cc.Substring(ms);
-                    pl = null;
-                    foreach (var str in tmp.Split('\n'))
+                    pattern0 = @"\bvehicle : " + resultLine + " {";
+                    pattern1 = @"\baccessories\[\d*\]: ([\w\.]+)\b";
+                    matchIndex = Regex.Match(content, pattern0).Index;
+                    substr = content.Substring(matchIndex);
+                    resultLine = null;
+                    foreach (var line in substr.Split('\n'))
                     {
-                        if (Regex.IsMatch(str, p01))
+                        if (Regex.IsMatch(line, pattern1))
                         {
-                            var id = Regex.Match(str, p01).Groups[1].Value;
-                            Console.WriteLine(str);
+                            var id = Regex.Match(line, pattern1).Groups[1].Value;
                             var p50 = @"\bvehicle_(addon_|sound_|wheel_|drv_plate_|paint_job_)?accessory : " + id + " {";
-                            var ms0 = Regex.Match(tmp, p50).Index + ms;
-                            var tmp0 = cc.Substring(ms0);
+                            var matchIndex0 = Regex.Match(substr, p50).Index + matchIndex;
+                            var substr0 = content.Substring(matchIndex0);
                             var index = 0;
-                            foreach (var str0 in tmp0.Split('\n'))
+                            foreach (var line0 in substr0.Split('\n'))
                             {
-                                if (Regex.IsMatch(str0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/engine\/"))
+                                if (Regex.IsMatch(line0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/engine\/"))
                                 {
-                                    Console.WriteLine(ms0 + index);
+                                    Console.WriteLine((int)(matchIndex0 + index));
                                     var sb = new StringBuilder();
-                                    sb.Append(cc.Substring(0, ms0 + index));
+                                    sb.Append(content.Substring(0, (int)(matchIndex0 + index)));
                                     sb.Append(" data_path: \"" + enginePath + "\"\n");
-                                    sb.Append(cc.Substring(ms0 + index + str0.Length + 1));
-                                    cc = sb.ToString();
+                                    sb.Append(content.Substring((int)(matchIndex0 + index + line0.Length + 1)));
+                                    content = sb.ToString();
                                 }
-                                if (str0.Trim() == "}") break;
-                                index += str0.Length + 1;
+                                if (line0.Trim() == "}") break;
+                                index += line0.Length + 1;
                             }
                         }
-                        if (str.Trim() == "}") break;
+                        if (line.Trim() == "}") break; // End of the class
                     }
-                    saveFile.Save(cc);
+                    saveFile.Save(content);
                     MessageBox.Show("엔진을 변경했습니다!", "완료");
                 }
                 catch (Exception e)

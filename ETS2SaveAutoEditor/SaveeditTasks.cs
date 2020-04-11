@@ -207,39 +207,39 @@ namespace ETS2SaveAutoEditor
                     }
                     if (notFound)
                     {
-                        MessageBox.Show("트럭/트레일러 소유 여부를 찾을 수 없습니다", "오류");
+                        MessageBox.Show("Could not figure out if you have trailer or not.", "Error");
                         return;
                     }
                     else
                     {
                         if (foundTruck)
                         {
-                            MessageBox.Show("할당된 트럭이 있습니다.", "테스트");
+                            MessageBox.Show("There is assigned truck.", "테스트");
                         }
                         else
                         {
-                            MessageBox.Show("할당된 트럭이 없습니다.", "테스트");
+                            MessageBox.Show("There isn't assigned truck.", "테스트");
                         }
                         if (foundTrailer)
                         {
-                            MessageBox.Show("할당된 트레일러가 있습니다.", "테스트");
+                            MessageBox.Show("There is assigned trailer.", "테스트");
                         }
                         else
                         {
-                            MessageBox.Show("할당된 트레일러가 없습니다.", "테스트");
+                            MessageBox.Show("There isn't assigned trailer.", "테스트");
                         }
                     }
                 }
                 else
                 {
-                    MessageBox.Show("플레이어 정보를 찾을 수 없습니다", "오류");
+                    MessageBox.Show("Could not find pleayer info", "Error");
                 }
             });
             return new SaveEditTask
             {
-                name = "테스트",
+                name = "Test",
                 run = run,
-                description = "할당된 트럭과 트레일러가 존재하는지 확인합니다."
+                description = "Checks if the savegame has assigned truck/trailer"
             };
         }
         public SaveEditTask MoneySet()
@@ -272,7 +272,7 @@ namespace ETS2SaveAutoEditor
 
                     if (resultLine == null)
                     {
-                        MessageBox.Show("손상된 세이브 파일입니다.", "오류");
+                        MessageBox.Show("Corrupted savegame.", "Error");
                         return;
                     }
 
@@ -297,7 +297,7 @@ namespace ETS2SaveAutoEditor
                         }
                     }
 
-                    var specifiedCash = NumberInputBox.Show("돈 지정하기", "자본을 몇으로 설정할까요?\n현재 자본: " + resultLine + "\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
+                    var specifiedCash = NumberInputBox.Show("Specify cash", "Please specify the new cash.\nCurrent cash: " + resultLine + "\nCaution: Too high value may crash the game. Please be careful.");
 
                     if (specifiedCash == -1)
                     {
@@ -320,9 +320,9 @@ namespace ETS2SaveAutoEditor
             });
             return new SaveEditTask
             {
-                name = "돈 지정",
+                name = "Specify cash",
                 run = run,
-                description = "소유하고 있는 돈을 원하는 숫자로 설정합니다. 너무 크면 게임 로딩 시 오류가 발생하며 개발자는 책임지지 않습니다. 100억 이하로 적당히 이용하시기 바랍니다."
+                description = "Specify cash"
             };
         }
         public SaveEditTask ExpSet()
@@ -355,11 +355,11 @@ namespace ETS2SaveAutoEditor
 
                     if (resultLine == null)
                     {
-                        MessageBox.Show("손상된 세이브 파일입니다.", "오류");
+                        MessageBox.Show("Corrupted savegame.", "Error");
                         return;
                     }
 
-                    var specifiedExp = NumberInputBox.Show("경험치 지정하기", "경험치를 몇으로 설정할까요?\n경험치의 절대적인 수치를 입력하세요. 더하는 것이 아니라 완전히 해당 경험치로 설정됩니다.\n현재 소유한 경험치는 " + resultLine + "입니다.\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
+                    var specifiedExp = NumberInputBox.Show("Specify EXP", "Please specify the new exps.\nCurrent exps: " + resultLine + "\nCaution: Too high value may crash the game. Please be careful.");
 
                     if (specifiedExp == -1)
                     {
@@ -371,20 +371,20 @@ namespace ETS2SaveAutoEditor
                     sb.Append(specifiedExp.ToString());
                     sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
                     saveFile.Save(sb.ToString());
-                    MessageBox.Show("[69exp]\n충전이 완료되었습니다!", "69exp");
+                    MessageBox.Show("Finished!", "Done");
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    MessageBox.Show("An unexpected error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask
             {
-                name = "경험치 지정",
+                name = "Specify EXP",
                 run = run,
-                description = "경험치를 지정합니다."
+                description = "Specify EXP"
             };
         }
         public SaveEditTask UnlockScreens()
@@ -397,7 +397,7 @@ namespace ETS2SaveAutoEditor
                     var listCountStr = EditUtils.ObjectValueInClass(saveFile.content, "screen_access_list", "economy");
                     var listCountIndex = EditUtils.IndexInClass(saveFile.content, "screen_access_list", "economy");
 
-                    var msgBoxRes = MessageBox.Show("[69cheat]\n모든 메뉴를 해금합니다. 트레일러 조정 등 일부 메뉴는 원래 사용이 불가함에도 해금될 수 있으니 주의하세요!\n이 작업은 시간이 조금 걸릴 수 있습니다.", "69cheat", MessageBoxButton.OKCancel);
+                    var msgBoxRes = MessageBox.Show("Unlock GUIs such as skills. For new profiles.\nSome GUIs that's normally disabled can be enabled too.\nThis job may take a while.", "Unlock", MessageBoxButton.OKCancel);
                     if (msgBoxRes == MessageBoxResult.Cancel)
                     {
                         return;
@@ -421,20 +421,20 @@ namespace ETS2SaveAutoEditor
                     }
 
                     saveFile.Save(sb.ToString());
-                    MessageBox.Show("[69cheat]\n해금이 완료되었습니다!", "69cheat");
+                    MessageBox.Show("Successfully unlocked!", "Done");
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    MessageBox.Show("An unexpected error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask
             {
-                name = "기능 모두 해제",
+                name = "Unlock all UI",
                 run = run,
-                description = "새 프로필에서 스킬 등 메뉴를 모두 해금합니다.\n트레일러 조정 등 일부 메뉴는 원래 사용이 불가함에도 해금될 수 있으니 주의하세요!"
+                description = "Unlock GUIs such as skills. For new profiles.\nSome GUIs that's normally disabled can be enabled too."
             };
         }
         public SaveEditTask TruckEngineSet()
@@ -476,16 +476,16 @@ namespace ETS2SaveAutoEditor
 
                     if (resultLine == null)
                     {
-                        MessageBox.Show("손상된 세이브 파일입니다.", "오류");
+                        MessageBox.Show("Corrupted savegame.", "Error");
                         return;
                     }
                     else if (resultLine == "null")
                     {
-                        MessageBox.Show("할당된 트럭이 없습니다. 게임을 실행하여 트럭을 자신에게 할당하세요.", "오류");
+                        MessageBox.Show("No assigned truck found. Assign a truck in game.", "Error");
                         return;
                     }
 
-                    var engineNames = new string[] { "스카니아 신형 730", "스카니아 구형 730", "볼보 신형 750", "볼보 구형 750", "르노 프리미엄 380", "이베코 310(...)" };
+                    var engineNames = new string[] { "Scania new 730", "Scania old 730", "Volvo new 750", "Volvo old 750", "Renault Premium 380", "Iveco 310(...)" };
                     var enginePaths = new string[] {
                         "/def/vehicle/truck/scania.s_2016/engine/dc16_730.sii",
                         "/def/vehicle/truck/scania.streamline/engine/dc16_730_2.sii",
@@ -496,8 +496,8 @@ namespace ETS2SaveAutoEditor
                     };
                     var enginePath = "";
                     {
-                        var res = ListInputBox.Show("엔진 선택하기", "현재 할당된 트럭에 적용할 엔진을 선택하세요.\n참고로 스카니아와 볼보는 구형의 엔진 성능이 신형보다 좋습니다.\n"
-                            + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다.", engineNames);
+                        var res = ListInputBox.Show("Choose engine", "Choose a new engine for current assigned truck.\nIn face, old Scania/Volvo engines are better than new ones.\n"
+                            + "It may take a while to change your engine.", engineNames);
                         if (res == -1)
                         {
                             return;
@@ -537,20 +537,20 @@ namespace ETS2SaveAutoEditor
                         if (line.Trim() == "}") break; // End of the class
                     }
                     saveFile.Save(content);
-                    MessageBox.Show("엔진을 변경했습니다!", "완료");
+                    MessageBox.Show("Successfully changed!", "Done");
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    MessageBox.Show("An unexpected error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask
             {
-                name = "트럭 엔진 지정",
+                name = "Set truck engine",
                 run = run,
-                description = "트럭의 엔진을 설정 가능한 몇 가지 엔진으로 변경합니다."
+                description = "Change the truck's engine to a few engines available."
             };
         }
     }

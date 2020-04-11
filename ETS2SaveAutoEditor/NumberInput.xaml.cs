@@ -83,7 +83,7 @@ namespace ETS2SaveAutoEditor
             }
             catch (Exception)
             {
-                MessageBox.Show("올바른 숫자를 입력하세요.", "오류");
+                MessageBox.Show("Please enter a valid number.", "Error");
                 Input.Text = "";
             }
         }

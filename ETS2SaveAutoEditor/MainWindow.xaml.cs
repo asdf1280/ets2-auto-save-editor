@@ -68,10 +68,10 @@ namespace ETS2SaveAutoEditor
 
         private static string GetUnescapedSaveName(string originalString)
         {
-            originalString = originalString.Replace("@@noname_save_game@@", "빠른 저장");
+            originalString = originalString.Replace("@@noname_save_game@@", "Quick Save");
             if (originalString.Length == 0)
             {
-                originalString = "[자동저장]";
+                originalString = "[Autosave]";
             }
             var ml = Regex.Matches(originalString, "(?<=[^\\\\]|^)\\\\");
             var hexString = "";
@@ -135,11 +135,11 @@ namespace ETS2SaveAutoEditor
         {
             if (!File.Exists("SII_Decrypt.exe"))
             {
-                var res = MessageBox.Show("세이브 파일 복호화 프로그램을 찾을 수 없습니다. 설치하시겠습니까?\n처음 실행 시 설치하십시오.", "안내", MessageBoxButton.YesNo);
+                var res = MessageBox.Show("Could not find SII_Decrypt.exe. Do you want to install?\nIf this is your first time running this program, click Install.", "Info", MessageBoxButton.YesNo);
                 if(res == MessageBoxResult.Yes)
                 {
                     File.WriteAllBytes("SII_Decrypt.exe", Properties.Resources.SII_Decrypt);
-                    MessageBox.Show("설치했습니다!");
+                    MessageBox.Show("Successfully installed!");
                 } else
                 {
                     Application.Current.Shutdown(0);
@@ -181,21 +181,21 @@ namespace ETS2SaveAutoEditor
             }
             else
             {
-                MessageBox.Show("ETS2 세이브 폴더를 찾을 수 없습니다.", "오류", MessageBoxButton.OK);
+                MessageBox.Show("Could not find ETS2 save folder.", "Error", MessageBoxButton.OK);
                 Application.Current.Shutdown(0);
             }
         }
 
         private void LoadSaveFile(string path)
         {
-            AppStatus.Items[0] = "세이브 파일 해독 중...";
+            AppStatus.Items[0] = "Decrypting savegame...";
 
             var onEnd = new Action<string>((string str) =>
             {
                 tasks.saveFile = (ProfileSave)SaveList.SelectedItem;
                 tasks.saveFile.content = str;
 
-                AppStatus.Items[0] = "완료했습니다.";
+                AppStatus.Items[0] = "Finished";
                 ShowTasks(true);
             });
 
@@ -220,7 +220,7 @@ namespace ETS2SaveAutoEditor
 
                 if (!saveFile.StartsWith("SiiNunit"))
                 {
-                    MessageBox.Show("세이브 파일이 정상적인 형태가 아닙니다.", "로드 실패");
+                    MessageBox.Show("The savegame is corrupted.", "Load failure");
                     Dispatcher.Invoke(onEnd);
                 }
 
@@ -230,7 +230,7 @@ namespace ETS2SaveAutoEditor
 
         private void LoadSaves(string path)
         {
-            AppStatus.Items[0] = "세이브 목록 불러오는 중...";
+            AppStatus.Items[0] = "Loading savegames...";
             new Thread(() =>
             {
                 Thread.Sleep(250);
@@ -259,7 +259,7 @@ namespace ETS2SaveAutoEditor
 
                     if (content.StartsWith("ScsC")) // decrypt fail
                     {
-                        MessageBox.Show("암호화된 세이브 파일을 복호화하지 못했습니다. 스킵합니다.\n" + new DirectoryInfo(save).Name, "복호화 실패");
+                        MessageBox.Show("Could not decrypt a savegame. Removing from list.\n" + new DirectoryInfo(save).Name, "Decrypt failure");
                         continue;
                     }
                     if (!content.StartsWith("SiiNunit")) // corrupted file
@@ -322,7 +322,7 @@ namespace ETS2SaveAutoEditor
                         SaveList.Items.Add(item);
                     }
                     ShowSavegames(true);
-                    AppStatus.Items[0] = "완료했습니다.";
+                    AppStatus.Items[0] = "Finished";
                     EnableAll();
                 });
             }).Start();
@@ -352,9 +352,9 @@ namespace ETS2SaveAutoEditor
             var psave = SaveList.SelectedItem;
             if (psave is ProfileSave ps)
             {
-                SaveInfo_Name.Content = "이름: " + ps.savename;
-                SaveInfo_Dir.Content = "폴더: " + ps.directory;
-                SaveInfo_Date.Content = "날짜: " + ps.formattedtime;
+                SaveInfo_Name.Content = "Name: " + ps.savename;
+                SaveInfo_Dir.Content = "Dir: " + ps.directory;
+                SaveInfo_Date.Content = "Date: " + ps.formattedtime;
 
                 if (SaveInfo.Visibility != Visibility.Visible)
                 {
@@ -412,7 +412,7 @@ namespace ETS2SaveAutoEditor
             }
             else
             {
-                MessageBox.Show("작업이 잘못되었습니다!", "오류");
+                MessageBox.Show("Wrong job!", "Unexpected error");
             }
         }
 
@@ -432,9 +432,9 @@ namespace ETS2SaveAutoEditor
 
         private void StartTaskButton_Click(object sender, RoutedEventArgs e)
         {
-            AppStatus.Items[0] = "지정한 세이브 편집 작업 실행 중...";
+            AppStatus.Items[0] = "Processing specified job...";
             ((SaveEditTask)TaskList.SelectedItem).run();
-            AppStatus.Items[0] = "완료했습니다.";
+            AppStatus.Items[0] = "Finished";
         }
 
         private void ProfileChanged(bool animate)

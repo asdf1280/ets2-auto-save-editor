@@ -296,12 +296,6 @@ namespace ETS2SaveAutoEditor
                         return;
                     }
 
-                    if(true == bool.Parse("true"))
-                    {
-                        MessageBox.Show("긴급점검중입니다", "오류");
-                        return;
-                    }
-
                     var sb = new StringBuilder();
                     sb.Append(saveFile.content.Substring(0, expIndex));
                     sb.Append(specifiedExp.ToString());

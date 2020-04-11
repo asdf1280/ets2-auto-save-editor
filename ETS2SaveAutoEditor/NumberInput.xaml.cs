@@ -18,7 +18,7 @@ namespace ETS2SaveAutoEditor
 {
     public class NumberInputBox
     {
-        public static int Show(string title, string description)
+        public static long Show(string title, string description)
         {
             var inst = new NumberInput(title, description);
             inst.ShowDialog();
@@ -65,7 +65,7 @@ namespace ETS2SaveAutoEditor
             DragMove();
         }
 
-        public int number;
+        public long number;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
@@ -77,7 +77,7 @@ namespace ETS2SaveAutoEditor
         {
             try
             {
-                int result = int.Parse(Input.Text);
+                long result = long.Parse(Input.Text);
                 number = result;
                 Close();
             }

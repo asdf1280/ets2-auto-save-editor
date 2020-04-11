@@ -308,14 +308,11 @@ namespace ETS2SaveAutoEditor
                         }
                     }
 
-                    if(resultLine == null)
+                    if (resultLine == null)
                     {
                         MessageBox.Show("손상된 세이브 파일입니다.", "오류");
                         return;
                     }
-
-                    /*var exp = EditUtils.ObjectValueInClass(saveFile.content, "experience_points", "economy");
-                    var expIndex = EditUtils.IndexInClass(saveFile.content, "experience_points", "economy");*/
 
                     var specifiedExp = NumberInputBox.Show("경험치 지정하기", "경험치를 몇으로 설정할까요?\n경험치의 절대적인 수치를 입력하세요. 더하는 것이 아니라 완전히 해당 경험치로 설정됩니다.\n현재 소유한 경험치는 " + resultLine + "입니다.\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
 

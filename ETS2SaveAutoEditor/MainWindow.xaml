@@ -49,7 +49,7 @@
                                 <ColumnDefinition/>
                             </Grid.ColumnDefinitions>
                             <ListBox x:Name="TaskList" Margin="10,0,5,5" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" SelectionChanged="TaskList_SelectionChanged"/>
-                            <TextBlock x:Name="TaskDescription" Grid.Column="1" Margin="5,0,10,5" TextWrapping="Wrap" Foreground="White"></TextBlock>
+                            <TextBlock x:Name="TaskDescription" Grid.Column="1" Margin="5,0,10,5" TextWrapping="Wrap" Foreground="White"/>
                         </Grid>
                         <Grid Grid.Row="1" Background="Black">
                             <Button x:Name="StartTaskButton" Content="시작!" Margin="10,5,10,10" HorizontalAlignment="Center" Padding="30,1" Click="StartTaskButton_Click"></Button>

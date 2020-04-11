@@ -23,7 +23,7 @@
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="Description" TextWrapping="Wrap" Foreground="White" Padding="10"></TextBlock>
+                <TextBlock x:Name="Description" TextWrapping="Wrap" Foreground="White" Padding="10"/>
                 <ListBox x:Name="ItemList" Grid.Column="1" Background="{x:Null}" BorderBrush="White" Foreground="White" BorderThickness="3"></ListBox>
             </Grid>
         </DockPanel>

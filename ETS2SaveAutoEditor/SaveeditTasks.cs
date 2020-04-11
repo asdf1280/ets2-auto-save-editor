@@ -248,21 +248,66 @@ namespace ETS2SaveAutoEditor
             {
                 try
                 {
-                    var bank = EditUtils.ObjectValueInClass(saveFile.content, "bank", "economy");
-                    var cash = EditUtils.ObjectValueIn(saveFile.content, "money_account", bank);
+                    var content = saveFile.content;
+                    var pattern0 = @"\beconomy : [\w\.]+ {";
+                    var pattern1 = @"\bbank: ([\w\.]+)\b";
+                    var matchIndex = Regex.Match(content, pattern0).Index;
+                    var substr = content.Substring(matchIndex);
+                    string resultLine = null;
+                    int resultIndex = -1;
+                    {
+                        var index = matchIndex;
+                        foreach (var str in substr.Split('\n'))
+                        {
+                            if (Regex.IsMatch(str, pattern1))
+                            {
+                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
+                                break;
+                            }
+                            if (str.Trim() == "}") break;
+                            index += str.Length + 1;
+                        }
+                    }
 
-                    var specifiedCash = NumberInputBox.Show("돈 지정하기", "자본을 몇으로 설정할까요?\n현재 자본: " + cash + "\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
+                    if (resultLine == null)
+                    {
+                        MessageBox.Show("손상된 세이브 파일입니다.", "오류");
+                        return;
+                    }
+
+                    pattern0 = @"\bbank : " + resultLine + " {";
+                    pattern1 = @"\bmoney_account: ([\w\.]+)\b";
+                    matchIndex = Regex.Match(content, pattern0).Index;
+                    substr = content.Substring(matchIndex);
+                    resultLine = null;
+                    resultIndex = -1;
+                    {
+                        int index = matchIndex;
+                        foreach(var str in substr.Split('\n'))
+                        {
+                            if(Regex.IsMatch(str, pattern1))
+                            {
+                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
+                                break;
+                            }
+                            if (str.Trim() == "}") break;
+                            index += str.Length + 1;
+                        }
+                    }
+
+                    var specifiedCash = NumberInputBox.Show("돈 지정하기", "자본을 몇으로 설정할까요?\n현재 자본: " + resultLine + "\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
 
                     if (specifiedCash == -1)
                     {
                         return;
                     }
 
-                    var bankIndex = EditUtils.IndexIn(saveFile.content, "money_account", bank);
                     var sb = new StringBuilder();
-                    sb.Append(saveFile.content.Substring(0, bankIndex));
+                    sb.Append(saveFile.content.Substring(0, resultIndex));
                     sb.Append(specifiedCash.ToString());
-                    sb.Append(saveFile.content.Substring(bankIndex + cash.Length));
+                    sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("완료되었습니다!", "완료");
                 }
@@ -286,26 +331,45 @@ namespace ETS2SaveAutoEditor
             {
                 try
                 {
-                    var exp = EditUtils.ObjectValueInClass(saveFile.content, "experience_points", "economy");
-                    var expIndex = EditUtils.IndexInClass(saveFile.content, "experience_points", "economy");
+                    var content = saveFile.content;
+                    var pattern0 = @"\beconomy : [\w\.]+ {";
+                    var pattern1 = @"\bexperience_points: ([\w\.]+)\b";
+                    var matchIndex = Regex.Match(content, pattern0).Index;
+                    var substr = content.Substring(matchIndex);
+                    string resultLine = null;
+                    int resultIndex = 0;
+                    {
+                        var index = matchIndex;
+                        foreach (var str in substr.Split('\n'))
+                        {
+                            if (Regex.IsMatch(str, pattern1))
+                            {
+                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
+                                break;
+                            }
+                            if (str.Trim() == "}") break;
+                            index += str.Length + 1;
+                        }
+                    }
 
-                    var specifiedExp = NumberInputBox.Show("경험치 지정하기", "경험치를 몇으로 설정할까요?\n경험치의 절대적인 수치를 입력하세요. 더하는 것이 아니라 완전히 해당 경험치로 설정됩니다.\n현재 소유한 경험치는 " + exp + "입니다.\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
+                    if (resultLine == null)
+                    {
+                        MessageBox.Show("손상된 세이브 파일입니다.", "오류");
+                        return;
+                    }
+
+                    var specifiedExp = NumberInputBox.Show("경험치 지정하기", "경험치를 몇으로 설정할까요?\n경험치의 절대적인 수치를 입력하세요. 더하는 것이 아니라 완전히 해당 경험치로 설정됩니다.\n현재 소유한 경험치는 " + resultLine + "입니다.\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
 
                     if (specifiedExp == -1)
                     {
                         return;
                     }
 
-                    if(true == bool.Parse("true"))
-                    {
-                        MessageBox.Show("긴급점검중입니다", "오류");
-                        return;
-                    }
-
                     var sb = new StringBuilder();
-                    sb.Append(saveFile.content.Substring(0, expIndex));
+                    sb.Append(saveFile.content.Substring(0, resultIndex));
                     sb.Append(specifiedExp.ToString());
-                    sb.Append(saveFile.content.Substring(expIndex + exp.Length));
+                    sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("[69exp]\n충전이 완료되었습니다!", "69exp");
                 }

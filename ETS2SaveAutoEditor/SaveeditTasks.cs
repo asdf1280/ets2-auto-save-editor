@@ -514,20 +514,20 @@ namespace ETS2SaveAutoEditor
                         if (line.Trim() == "}") break; // End of the class
                     }
                     saveFile.Save(content);
-                    MessageBox.Show("소리를 변경했습니다!", "완료");
+                    MessageBox.Show("changed sound", "done");
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    MessageBox.Show("error", "error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask
             {
-                name = "트럭 소리 지정",
+                name = "Set truck sound",
                 run = run,
-                description = "트럭에서 발생하는 여러 소리를 다른 트럭의 소리로 변경합니다."
+                description = "Change truck sound"
             };
         }
         public SaveEditTask MapReset()
@@ -547,20 +547,20 @@ namespace ETS2SaveAutoEditor
                         sb.AppendLine(str);
                     }
                     saveFile.Save(sb.ToString());
-                    MessageBox.Show("지도를 초기화했습니다.", "완료");
+                    MessageBox.Show("done", "done");
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    MessageBox.Show("error", "error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask
             {
-                name = "맵 초기화",
+                name = "Reset map",
                 run = run,
-                description = "지도의 탐색한 도로를 초기화합니다."
+                description = "Reset explorered roads."
             };
         }
     }

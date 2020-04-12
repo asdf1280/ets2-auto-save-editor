@@ -451,12 +451,12 @@ namespace ETS2SaveAutoEditor
 
                 if (resultLine == null)
                 {
-                    MessageBox.Show("손상된 세이브 파일입니다.", "오류");
+                    MessageBox.Show("Corrupted savegame", "error");
                     return;
                 }
                 else if (resultLine == "null")
                 {
-                    MessageBox.Show("할당된 트럭이 없습니다. 게임을 실행하여 트럭을 자신에게 할당하세요.", "오류");
+                    MessageBox.Show("there's no assigned truck", "error");
                     return;
                 }
 
@@ -470,8 +470,8 @@ namespace ETS2SaveAutoEditor
                 var interiorPath = "";
                 var exteriorPath = "";
                 {
-                    var res = ListInputBox.Show("소리 선택하기", "현재 할당된 트럭에 적용할 소리를 선택하세요.\n"
-                        + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다. 아직 개발 중인 기능으로 소리를 선택할 수 없습니다.", soundNames);
+                    var res = ListInputBox.Show("choose sound", "choose sound for ur assigned truck\n"
+                        + "it may take a while. WIP", soundNames);
                     if (res == -1)
                     {
                         return;

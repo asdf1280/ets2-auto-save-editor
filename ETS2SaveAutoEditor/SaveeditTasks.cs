@@ -470,8 +470,8 @@ namespace ETS2SaveAutoEditor
                 var interiorPath = "";
                 var exteriorPath = "";
                 {
-                    var res = ListInputBox.Show("엔진 선택하기", "현재 할당된 트럭에 적용할 엔진을 선택하세요.\n참고로 스카니아와 볼보는 구형의 엔진 성능이 신형보다 좋습니다.\n"
-                        + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다.", soundNames);
+                    var res = ListInputBox.Show("소리 선택하기", "현재 할당된 트럭에 적용할 소리를 선택하세요.\n"
+                        + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다. 아직 개발 중인 기능으로 소리를 선택할 수 없습니다.", soundNames);
                     if (res == -1)
                     {
                         return;

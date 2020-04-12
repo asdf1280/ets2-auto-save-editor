@@ -544,7 +544,7 @@ namespace ETS2SaveAutoEditor
                         if (line.Contains("discovered_items:"))
                             str = " discovered_items: 0";
                         else if (line.Contains("discovered_items")) continue;
-                        sb.Append(str);
+                        sb.AppendLine(str);
                     }
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("지도를 초기화했습니다.", "완료");

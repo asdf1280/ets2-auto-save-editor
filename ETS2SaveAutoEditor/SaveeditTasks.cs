@@ -530,5 +530,38 @@ namespace ETS2SaveAutoEditor
                 description = "트럭에서 발생하는 여러 소리를 다른 트럭의 소리로 변경합니다."
             };
         }
+        public SaveEditTask MapReset()
+        {
+            var run = new Action(() =>
+            {
+                try
+                {
+                    var content = saveFile.content;
+                    var sb = new StringBuilder();
+                    foreach (var line in content.Split('\n'))
+                    {
+                        var str = line;
+                        if (line.Contains("discovered_items:"))
+                            str = " discovered_items: 0";
+                        else if (line.Contains("discovered_items")) continue;
+                        sb.Append(str);
+                    }
+                    saveFile.Save(sb.ToString());
+                    MessageBox.Show("지도를 초기화했습니다.", "완료");
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    Console.WriteLine(e);
+                    throw;
+                }
+            });
+            return new SaveEditTask
+            {
+                name = "맵 초기화",
+                run = run,
+                description = "지도의 탐색한 도로를 초기화합니다."
+            };
+        }
     }
 }

@@ -120,6 +120,7 @@ namespace ETS2SaveAutoEditor
             addAction(tasks.UnlockScreens());
             addAction(tasks.TruckEngineSet());
             addAction(tasks.TruckSoundSet());
+            addAction(tasks.MapReset());
         }
 
         public static DateTime FuckUnixTime(long unixtime)

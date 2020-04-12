@@ -412,5 +412,123 @@ namespace ETS2SaveAutoEditor
                 description = "트럭의 엔진을 설정 가능한 몇 가지 엔진으로 변경합니다."
             };
         }
+        public SaveEditTask TruckSoundSet()
+        {
+            var run = new Action(() =>
+            {
+            try
+            {
+                var content = saveFile.content;
+                var pattern0 = @"\beconomy : [\w\.]+ {";
+                var pattern1 = @"\bplayer: ([\w\.]+)\b";
+                var matchIndex = Regex.Match(content, pattern0).Index;
+                var substr = content.Substring(matchIndex);
+                string resultLine = null;
+                foreach (var str in substr.Split('\n'))
+                {
+                    if (Regex.IsMatch(str, pattern1))
+                    {
+                        resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                        break;
+                    }
+                    if (str.Trim() == "}") break;
+                }
+
+                pattern0 = @"\bplayer : " + resultLine + " {";
+                pattern1 = @"\bassigned_truck: ([\w\.]+)\b";
+                matchIndex = Regex.Match(content, pattern0).Index;
+                substr = content.Substring(matchIndex);
+                resultLine = null;
+                foreach (var str in substr.Split('\n'))
+                {
+                    if (Regex.IsMatch(str, pattern1))
+                    {
+                        resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                        break;
+                    }
+                    if (str.Trim() == "}") break; // End of the class
+                }
+
+                if (resultLine == null)
+                {
+                    MessageBox.Show("손상된 세이브 파일입니다.", "오류");
+                    return;
+                }
+                else if (resultLine == "null")
+                {
+                    MessageBox.Show("할당된 트럭이 없습니다. 게임을 실행하여 트럭을 자신에게 할당하세요.", "오류");
+                    return;
+                }
+
+                var soundNames = new string[] {  };
+                var interiorPaths = new string[] {
+                    ""
+                };
+                var exteriorPaths = new string[] {
+                    ""
+                };
+                var interiorPath = "";
+                var exteriorPath = "";
+                {
+                    var res = ListInputBox.Show("엔진 선택하기", "현재 할당된 트럭에 적용할 엔진을 선택하세요.\n참고로 스카니아와 볼보는 구형의 엔진 성능이 신형보다 좋습니다.\n"
+                        + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다.", soundNames);
+                    if (res == -1)
+                    {
+                        return;
+                    }
+                    interiorPath = interiorPaths[res];
+                    exteriorPath = exteriorPaths[res];
+                }
+
+                pattern0 = @"\bvehicle : " + resultLine + " {";
+                pattern1 = @"\baccessories\[\d*\]: ([\w\.]+)\b";
+                matchIndex = Regex.Match(content, pattern0).Index;
+                substr = content.Substring(matchIndex);
+                resultLine = null;
+                foreach (var line in substr.Split('\n'))
+                {
+                    if (Regex.IsMatch(line, pattern1))
+                    {
+                        var id = Regex.Match(line, pattern1).Groups[1].Value;
+                        var p50 = @"\bvehicle_sound_accessory : " + id + " {";
+                        var matchIndex0 = Regex.Match(substr, p50).Index + matchIndex;
+                        var substr0 = content.Substring(matchIndex0);
+                        var index = 0;
+                        foreach (var line0 in substr0.Split('\n'))
+                        {
+                            if (Regex.IsMatch(line0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/sound\/"))
+                            {
+                                var path = Regex.IsMatch(line0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/sound\/interior") ? interiorPath : exteriorPath;
+
+                                    Console.WriteLine((int)(matchIndex0 + index));
+                                    var sb = new StringBuilder();
+                                    sb.Append(content.Substring(0, (int)(matchIndex0 + index)));
+                                    sb.Append(" data_path: \"" + path + "\"\n");
+                                    sb.Append(content.Substring((int)(matchIndex0 + index + line0.Length + 1)));
+                                    content = sb.ToString();
+                                }
+                                if (line0.Trim() == "}") break;
+                                index += line0.Length + 1;
+                            }
+                        }
+                        if (line.Trim() == "}") break; // End of the class
+                    }
+                    saveFile.Save(content);
+                    MessageBox.Show("소리를 변경했습니다!", "완료");
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    Console.WriteLine(e);
+                    throw;
+                }
+            });
+            return new SaveEditTask
+            {
+                name = "트럭 소리 지정",
+                run = run,
+                description = "트럭에서 발생하는 여러 소리를 다른 트럭의 소리로 변경합니다."
+            };
+        }
     }
 }

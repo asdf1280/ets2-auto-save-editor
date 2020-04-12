@@ -233,9 +233,27 @@ namespace ETS2SaveAutoEditor
             {
                 try
                 {
-                    var listCount = int.Parse(EditUtils.ObjectValueInClass(saveFile.content, "screen_access_list", "economy"));
-                    var listCountStr = EditUtils.ObjectValueInClass(saveFile.content, "screen_access_list", "economy");
-                    var listCountIndex = EditUtils.IndexInClass(saveFile.content, "screen_access_list", "economy");
+                    var content = saveFile.content;
+                    var pattern0 = @"\beconomy : [\w\.]+ {";
+                    var pattern1 = @"\bscreen_access_list: ([\w\.]+)\b";
+                    var matchIndex = Regex.Match(content, pattern0).Index;
+                    var substr = content.Substring(matchIndex);
+                    string resultLine = null;
+                    int resultLineIndex = 0;
+                    {
+                        var index = matchIndex;
+                        foreach (var str in substr.Split('\n'))
+                        {
+                            if (Regex.IsMatch(str, pattern1))
+                            {
+                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                                resultLineIndex = index;
+                                break;
+                            }
+                            if (str.Trim() == "}") break;
+                            index += str.Length + 1;
+                        }
+                    }
 
                     var msgBoxRes = MessageBox.Show("[69cheat]\n모든 메뉴를 해금합니다. 트레일러 조정 등 일부 메뉴는 원래 사용이 불가함에도 해금될 수 있으니 주의하세요!\n이 작업은 시간이 조금 걸릴 수 있습니다.", "69cheat", MessageBoxButton.OKCancel);
                     if (msgBoxRes == MessageBoxResult.Cancel)
@@ -243,9 +261,10 @@ namespace ETS2SaveAutoEditor
                         return;
                     }
 
-                    var content = saveFile.content;
-
                     var sb = new StringBuilder();
+                    sb.Append(content.Substring(0, resultLineIndex));
+
+                    content = content.Substring(resultLineIndex);
                     foreach (var line in content.Split('\n'))
                     {
                         var str = line;
@@ -257,7 +276,7 @@ namespace ETS2SaveAutoEditor
                         {
                             continue;
                         }
-                        sb.Append(str.Substring(0, str.Length).Replace("\r", "") + "\n");
+                        sb.Append(str.Replace("\r", "") + "\n");
                     }
 
                     saveFile.Save(sb.ToString());

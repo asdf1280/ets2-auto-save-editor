@@ -8,166 +8,6 @@ using System.Windows;
 
 namespace ETS2SaveAutoEditor
 {
-    class EditUtils
-    {
-        public static bool HasClass(string content, string classname)
-        {
-            return Regex.IsMatch(content, @"\b" + classname + @"\b : ([\w\.]+) {");
-        }
-        public static string ObjectValue(string content, string elementName)
-        {
-            var sp = content.Split('\n');
-            foreach (var str in sp)
-            {
-                if (str.Trim() == "}")
-                {
-                    return null;
-                }
-                var pa = @"\b" + Regex.Escape(elementName) + @": ([\w\.]+)\b";
-                if (Regex.IsMatch(str, pa))
-                {
-                    return Regex.Match(str, pa).Groups[1].Value;
-                }
-            }
-            return null;
-        }
-        public static string ObjectValueIn(string content, string elementName, string parentId)
-        {
-            var startIndex = Regex.Match(content, @"\b\w+? : " + Regex.Escape(parentId) + " {").Index;
-            var sr = content.Substring(startIndex);
-            var sp = sr.Split('\n');
-            foreach (var str in sp)
-            {
-                if (str.Trim() == "}")
-                {
-                    return null;
-                }
-                var pa = @"\b" + Regex.Escape(elementName) + @": ([\w\.]+)\b";
-                if (Regex.IsMatch(str, pa))
-                {
-                    return Regex.Match(str, pa).Groups[1].Value;
-                }
-            }
-            return null;
-        }
-        public static int IndexIn(string content, string elementName, string parentId)
-        {
-            var startIndex = Regex.Match(content, @"\b\w+? : " + Regex.Escape(parentId) + " {").Index;
-            var cutData = content.Substring(startIndex);
-            var sp = cutData.Split('\n');
-            var index = 0;
-            foreach (var str in sp)
-            {
-                if (str.Trim() == "}")
-                {
-                    return -1;
-                }
-                var patternA = @"\b" + Regex.Escape(elementName) + @": ([\w\.]+)\b";
-                if (Regex.IsMatch(str, patternA))
-                {
-                    var matchResult = Regex.Match(str, patternA);
-                    return matchResult.Index + matchResult.Groups[1].Index + startIndex + index;
-                }
-                index += str.Length; // length + line break;
-            }
-            return -1;
-        }
-        public static int LineIndexIn(string content, string elementName, string parentId)
-        {
-            var startIndex = Regex.Match(content, @"\b\w+? : " + Regex.Escape(parentId) + " {").Index;
-            var cutData = content.Substring(startIndex);
-            var sp = cutData.Split('\n');
-            var index = 0;
-            foreach (var str in sp)
-            {
-                if (str.Trim() == "}")
-                {
-                    return -1;
-                }
-                var patternA = @"\b" + Regex.Escape(elementName) + @": [\w\.]+\b";
-                if (Regex.IsMatch(str, patternA))
-                {
-                    var matchResult = Regex.Match(str, patternA);
-                    return matchResult.Index + startIndex + index;
-                }
-                index += str.Length; // length + line break;
-            }
-            return -1;
-        }
-        public static string ObjectValueInClass(string content, string elementName, string parentClass)
-        {
-            var startIndex = Regex.Match(content, @"\b" + Regex.Escape(parentClass) + @" : [\d\.] {").Index;
-            var sr = content.Substring(startIndex);
-            var sp = sr.Split('\n');
-            foreach (var str in sp)
-            {
-                if (str.Trim() == "}")
-                {
-                    return null;
-                }
-                var pa = @"\b" + Regex.Escape(elementName) + @": ([\w\.]+)\b";
-                if (Regex.IsMatch(str, pa))
-                {
-                    return Regex.Match(str, pa).Groups[1].Value;
-                }
-            }
-            return null;
-        }
-        public static int IndexInClass(string content, string elementName, string parentClass)
-        {
-            var startIndex = Regex.Match(content, @"\b" + Regex.Escape(parentClass) + @" : [\d\.] {").Index;
-            var sr = content.Substring(startIndex);
-            var sp = sr.Split('\n');
-            var index = 0;
-            foreach (var str in sp)
-            {
-                if (str.Trim() == "}")
-                {
-                    return -1;
-                }
-                var pa = @"\b" + Regex.Escape(elementName) + @": ([\w\.]+)\b";
-                if (Regex.IsMatch(str, pa))
-                {
-                    return Regex.Match(str, pa).Groups[1].Index + startIndex + index;
-                }
-                index += str.Length; // length + line break;
-            }
-            return -1;
-        }
-        public static int LineIndexInClass(string content, string elementName, string parentClass)
-        {
-            var startIndex = Regex.Match(content, @"\b" + Regex.Escape(parentClass) + @" : [\d\.] {").Index;
-            var sr = content.Substring(startIndex);
-            var sp = sr.Split('\n');
-            var index = 0;
-            foreach (var str in sp)
-            {
-                if (str.Trim() == "}")
-                {
-                    return -1;
-                }
-                var pa = @"\b" + Regex.Escape(elementName) + @": [\w\.]+\b";
-                if (Regex.IsMatch(str, pa))
-                {
-                    return Regex.Match(str, pa).Index + startIndex + index;
-                }
-                index += str.Length; // length + line break;
-            }
-            return -1;
-        }
-        public static int IndexOfElementId(string content, string elementid)
-        {
-            try
-            {
-                var startIndex = Regex.Match(content, @"\b\w+? : " + Regex.Escape(elementid) + @" {").Index;
-                return startIndex;
-            }
-            catch
-            {
-                return -1;
-            }
-        }
-    }
     public class SaveeditTasks
     {
         public ProfileSave saveFile;
@@ -393,9 +233,27 @@ namespace ETS2SaveAutoEditor
             {
                 try
                 {
-                    var listCount = int.Parse(EditUtils.ObjectValueInClass(saveFile.content, "screen_access_list", "economy"));
-                    var listCountStr = EditUtils.ObjectValueInClass(saveFile.content, "screen_access_list", "economy");
-                    var listCountIndex = EditUtils.IndexInClass(saveFile.content, "screen_access_list", "economy");
+                    var content = saveFile.content;
+                    var pattern0 = @"\beconomy : [\w\.]+ {";
+                    var pattern1 = @"\bscreen_access_list: ([\w\.]+)\b";
+                    var matchIndex = Regex.Match(content, pattern0).Index;
+                    var substr = content.Substring(matchIndex);
+                    string resultLine = null;
+                    int resultLineIndex = 0;
+                    {
+                        var index = matchIndex;
+                        foreach (var str in substr.Split('\n'))
+                        {
+                            if (Regex.IsMatch(str, pattern1))
+                            {
+                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                                resultLineIndex = index;
+                                break;
+                            }
+                            if (str.Trim() == "}") break;
+                            index += str.Length + 1;
+                        }
+                    }
 
                     var msgBoxRes = MessageBox.Show("Unlock GUIs such as skills. For new profiles.\nSome GUIs that's normally disabled can be enabled too.\nThis job may take a while.", "Unlock", MessageBoxButton.OKCancel);
                     if (msgBoxRes == MessageBoxResult.Cancel)
@@ -403,9 +261,10 @@ namespace ETS2SaveAutoEditor
                         return;
                     }
 
-                    var content = saveFile.content;
-
                     var sb = new StringBuilder();
+                    sb.Append(content.Substring(0, resultLineIndex));
+
+                    content = content.Substring(resultLineIndex);
                     foreach (var line in content.Split('\n'))
                     {
                         var str = line;
@@ -417,7 +276,7 @@ namespace ETS2SaveAutoEditor
                         {
                             continue;
                         }
-                        sb.Append(str.Substring(0, str.Length).Replace("\r", "") + "\n");
+                        sb.Append(str.Replace("\r", "") + "\n");
                     }
 
                     saveFile.Save(sb.ToString());
@@ -551,6 +410,157 @@ namespace ETS2SaveAutoEditor
                 name = "Set truck engine",
                 run = run,
                 description = "Change the truck's engine to a few engines available."
+            };
+        }
+        public SaveEditTask TruckSoundSet()
+        {
+            var run = new Action(() =>
+            {
+            try
+            {
+                var content = saveFile.content;
+                var pattern0 = @"\beconomy : [\w\.]+ {";
+                var pattern1 = @"\bplayer: ([\w\.]+)\b";
+                var matchIndex = Regex.Match(content, pattern0).Index;
+                var substr = content.Substring(matchIndex);
+                string resultLine = null;
+                foreach (var str in substr.Split('\n'))
+                {
+                    if (Regex.IsMatch(str, pattern1))
+                    {
+                        resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                        break;
+                    }
+                    if (str.Trim() == "}") break;
+                }
+
+                pattern0 = @"\bplayer : " + resultLine + " {";
+                pattern1 = @"\bassigned_truck: ([\w\.]+)\b";
+                matchIndex = Regex.Match(content, pattern0).Index;
+                substr = content.Substring(matchIndex);
+                resultLine = null;
+                foreach (var str in substr.Split('\n'))
+                {
+                    if (Regex.IsMatch(str, pattern1))
+                    {
+                        resultLine = Regex.Match(str, pattern1).Groups[1].Value;
+                        break;
+                    }
+                    if (str.Trim() == "}") break; // End of the class
+                }
+
+                if (resultLine == null)
+                {
+                    MessageBox.Show("손상된 세이브 파일입니다.", "오류");
+                    return;
+                }
+                else if (resultLine == "null")
+                {
+                    MessageBox.Show("할당된 트럭이 없습니다. 게임을 실행하여 트럭을 자신에게 할당하세요.", "오류");
+                    return;
+                }
+
+                var soundNames = new string[] {  };
+                var interiorPaths = new string[] {
+                    ""
+                };
+                var exteriorPaths = new string[] {
+                    ""
+                };
+                var interiorPath = "";
+                var exteriorPath = "";
+                {
+                    var res = ListInputBox.Show("소리 선택하기", "현재 할당된 트럭에 적용할 소리를 선택하세요.\n"
+                        + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다. 아직 개발 중인 기능으로 소리를 선택할 수 없습니다.", soundNames);
+                    if (res == -1)
+                    {
+                        return;
+                    }
+                    interiorPath = interiorPaths[res];
+                    exteriorPath = exteriorPaths[res];
+                }
+
+                pattern0 = @"\bvehicle : " + resultLine + " {";
+                pattern1 = @"\baccessories\[\d*\]: ([\w\.]+)\b";
+                matchIndex = Regex.Match(content, pattern0).Index;
+                substr = content.Substring(matchIndex);
+                resultLine = null;
+                foreach (var line in substr.Split('\n'))
+                {
+                    if (Regex.IsMatch(line, pattern1))
+                    {
+                        var id = Regex.Match(line, pattern1).Groups[1].Value;
+                        var p50 = @"\bvehicle_sound_accessory : " + id + " {";
+                        var matchIndex0 = Regex.Match(substr, p50).Index + matchIndex;
+                        var substr0 = content.Substring(matchIndex0);
+                        var index = 0;
+                        foreach (var line0 in substr0.Split('\n'))
+                        {
+                            if (Regex.IsMatch(line0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/sound\/"))
+                            {
+                                var path = Regex.IsMatch(line0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/sound\/interior") ? interiorPath : exteriorPath;
+
+                                    Console.WriteLine((int)(matchIndex0 + index));
+                                    var sb = new StringBuilder();
+                                    sb.Append(content.Substring(0, (int)(matchIndex0 + index)));
+                                    sb.Append(" data_path: \"" + path + "\"\n");
+                                    sb.Append(content.Substring((int)(matchIndex0 + index + line0.Length + 1)));
+                                    content = sb.ToString();
+                                }
+                                if (line0.Trim() == "}") break;
+                                index += line0.Length + 1;
+                            }
+                        }
+                        if (line.Trim() == "}") break; // End of the class
+                    }
+                    saveFile.Save(content);
+                    MessageBox.Show("소리를 변경했습니다!", "완료");
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    Console.WriteLine(e);
+                    throw;
+                }
+            });
+            return new SaveEditTask
+            {
+                name = "트럭 소리 지정",
+                run = run,
+                description = "트럭에서 발생하는 여러 소리를 다른 트럭의 소리로 변경합니다."
+            };
+        }
+        public SaveEditTask MapReset()
+        {
+            var run = new Action(() =>
+            {
+                try
+                {
+                    var content = saveFile.content;
+                    var sb = new StringBuilder();
+                    foreach (var line in content.Split('\n'))
+                    {
+                        var str = line;
+                        if (line.Contains("discovered_items:"))
+                            str = " discovered_items: 0";
+                        else if (line.Contains("discovered_items")) continue;
+                        sb.AppendLine(str);
+                    }
+                    saveFile.Save(sb.ToString());
+                    MessageBox.Show("지도를 초기화했습니다.", "완료");
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    Console.WriteLine(e);
+                    throw;
+                }
+            });
+            return new SaveEditTask
+            {
+                name = "맵 초기화",
+                run = run,
+                description = "지도의 탐색한 도로를 초기화합니다."
             };
         }
     }

@@ -52,7 +52,7 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string Version = "1.02 Alpha";
+        public static string Version = "1.03 Alpha";
         public static byte[] StringToByteArray(String hex)
         {
             int NumberChars = hex.Length / 2;
@@ -119,6 +119,8 @@ namespace ETS2SaveAutoEditor
             addAction(tasks.ExpSet());
             addAction(tasks.UnlockScreens());
             addAction(tasks.TruckEngineSet());
+            addAction(tasks.TruckSoundSet());
+            addAction(tasks.MapReset());
         }
 
         public static DateTime FuckUnixTime(long unixtime)

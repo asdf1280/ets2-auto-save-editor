@@ -52,7 +52,7 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string Version = "1.03 AlphaEN Preview";
+        public static string Version = "1.03 Alpha EN";
         public static byte[] StringToByteArray(String hex)
         {
             int NumberChars = hex.Length / 2;

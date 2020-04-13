@@ -451,12 +451,12 @@ namespace ETS2SaveAutoEditor
 
                 if (resultLine == null)
                 {
-                    MessageBox.Show("Corrupted savegame", "error");
+                    MessageBox.Show("Corrupted savegame", "Error");
                     return;
                 }
                 else if (resultLine == "null")
                 {
-                    MessageBox.Show("there's no assigned truck", "error");
+                    MessageBox.Show("There's no assigned truck.", "Error");
                     return;
                 }
 
@@ -470,8 +470,8 @@ namespace ETS2SaveAutoEditor
                 var interiorPath = "";
                 var exteriorPath = "";
                 {
-                    var res = ListInputBox.Show("choose sound", "choose sound for ur assigned truck\n"
-                        + "it may take a while. WIP", soundNames);
+                    var res = ListInputBox.Show("Choose sound", "Choose sound for your current assigned truck.\n"
+                        + "It may take a while. WIP", soundNames);
                     if (res == -1)
                     {
                         return;
@@ -514,11 +514,11 @@ namespace ETS2SaveAutoEditor
                         if (line.Trim() == "}") break; // End of the class
                     }
                     saveFile.Save(content);
-                    MessageBox.Show("changed sound", "done");
+                    MessageBox.Show("Done!", "Done");
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("error", "error");
+                    MessageBox.Show("An error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
@@ -547,11 +547,11 @@ namespace ETS2SaveAutoEditor
                         sb.AppendLine(str);
                     }
                     saveFile.Save(sb.ToString());
-                    MessageBox.Show("done", "done");
+                    MessageBox.Show("Done!", "Done");
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("error", "error");
+                    MessageBox.Show("An error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }

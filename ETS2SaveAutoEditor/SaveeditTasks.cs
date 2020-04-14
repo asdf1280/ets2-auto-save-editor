@@ -460,18 +460,40 @@ namespace ETS2SaveAutoEditor
                     return;
                 }
 
-                var soundNames = new string[] {  };
+                var soundNames = new string[] { "Scania S 2016 V8", "Scania S 2016", "Scania R 2016 V8", "Scania R 2016", "Scania R 2009 V8", "Scania R 2009", "Scania Streamline V8", "Scania Streamline", "Volvo FH16 2012", "Volvo FH 2012", "Volvo FH16 2009"};
                 var interiorPaths = new string[] {
-                    ""
+                    "/def/vehicle/truck/scania.s_2016/sound/interior_v8.sii",
+                    "/def/vehicle/truck/scania.s_2016/sound/interior.sii",
+                    "/def/vehicle/truck/scania.r_2016/sound/interior_v8.sii",
+                    "/def/vehicle/truck/scania.r_2016/sound/interior.sii",
+                    "/def/vehicle/truck/scania.r/sound/interior_v8.sii",
+                    "/def/vehicle/truck/scania.r/sound/interior.sii",
+                    "/def/vehicle/truck/scania.streamline/sound/interior_v8.sii",
+                    "/def/vehicle/truck/scania.streamline/sound/interior.sii",
+                    "/def/vehicle/truck/scania.streamline/sound/interior_v8.sii",
+                    "/def/vehicle/truck/scania.streamline/sound/interior.sii",
+                    "/def/vehicle/truck/volvo.fh16_2012/sound/interior_16.sii",
+                    "/def/vehicle/truck/volvo.fh16_2012/sound/interior.sii",
+                    "/def/vehicle/truck/volvo.fh16/sound/interior.sii",
                 };
                 var exteriorPaths = new string[] {
-                    ""
+                    "/def/vehicle/truck/scania.s_2016/sound/exterior_v8.sii",
+                    "/def/vehicle/truck/scania.s_2016/sound/exterior.sii",
+                    "/def/vehicle/truck/scania.r_2016/sound/exterior_v8.sii",
+                    "/def/vehicle/truck/scania.r_2016/sound/exterior.sii",
+                    "/def/vehicle/truck/scania.r/sound/exterior_v8.sii",
+                    "/def/vehicle/truck/scania.r/sound/exterior.sii",
+                    "/def/vehicle/truck/scania.streamline/sound/exterior_v8.sii",
+                    "/def/vehicle/truck/scania.streamline/sound/exterior.sii",
+                    "/def/vehicle/truck/volvo.fh16_2012/sound/exterior_16.sii",
+                    "/def/vehicle/truck/volvo.fh16_2012/sound/exterior.sii",
+                    "/def/vehicle/truck/volvo.fh16/sound/exterior.sii",
                 };
                 var interiorPath = "";
                 var exteriorPath = "";
                 {
                     var res = ListInputBox.Show("소리 선택하기", "현재 할당된 트럭에 적용할 소리를 선택하세요.\n"
-                        + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다. 아직 개발 중인 기능으로 소리를 선택할 수 없습니다.", soundNames);
+                        + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다.\n스카니아 S/R과 R 2009/Streamline 모델은 소리가 같습니다.", soundNames);
                     if (res == -1)
                     {
                         return;
@@ -561,6 +583,87 @@ namespace ETS2SaveAutoEditor
                 name = "맵 초기화",
                 run = run,
                 description = "지도의 탐색한 도로를 초기화합니다."
+            };
+        }
+        public SaveEditTask Refuel()
+        {
+            var run = new Action(() =>
+            {
+                try
+                {
+                    var content = saveFile.content;
+                    var sb = new StringBuilder();
+
+                    var fuelPresetNames = new string[] { "연료통의 1000배", "연료통의 100배", "연료통의 10배", "연료통의 5배", "100%", "50%", "10%", "5%", "0%(...)" };
+                    var fullPresetValues = new string[] {
+                        "1000", "100", "10", "5", "1", "0.5", "0.1", "0.05", "0"
+                    };
+                    var fuelId = "";
+                    {
+                        var res = ListInputBox.Show("엔진 선택하기", "현재 할당된 트럭에 적용할 엔진을 선택하세요.\n참고로 스카니아와 볼보는 구형의 엔진 성능이 신형보다 좋습니다.\n"
+                            + "확인 버튼 클릭 후 편집 작업 완료까지 어느 정도 시간이 걸리니 참고하시기 바랍니다.", fuelPresetNames);
+                        if (res == -1)
+                        {
+                            return;
+                        }
+                        fuelId = fullPresetValues[res];
+                    }
+
+                    foreach (var line in content.Split('\n'))
+                    {
+                        var str = line;
+                        if (line.Contains("fuel_relative:"))
+                            str = " fuel_relative: " + fuelId;
+                        sb.AppendLine(str);
+                    }
+                    saveFile.Save(sb.ToString());
+                    MessageBox.Show("모든 트럭의 연료를 지정한 값으로 변경했습니다.", "완료");
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    Console.WriteLine(e);
+                    throw;
+                }
+            });
+            return new SaveEditTask
+            {
+                name = "연료 채우기",
+                run = run,
+                description = "세이브 내의 모든 트럭의 연료를 설정합니다."
+            };
+        }
+        public SaveEditTask FixEverything()
+        {
+            var run = new Action(() =>
+            {
+                try
+                {
+                    var content = saveFile.content;
+                    var sb = new StringBuilder();
+
+                    foreach (var line in content.Split('\n'))
+                    {
+                        var str = line;
+                        if (line.Contains(" wear:"))
+                            str = " wear: 0";
+                        sb.AppendLine(str);
+                    }
+                    saveFile.Save(sb.ToString());
+                    MessageBox.Show("모든 트럭/트레일러를 수리했습니다.", "완료");
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    Console.WriteLine(e);
+                    throw;
+                }
+            });
+            return new SaveEditTask
+            {
+                name = "모든 트럭/트레일러 수리",
+                run = run,
+                description = "세이브 내의 모든 트럭/트레일러를 수리합니다."
             };
         }
     }

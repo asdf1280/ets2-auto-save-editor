@@ -161,11 +161,11 @@ namespace ETS2SaveAutoEditor
                     sb.Append(specifiedCash.ToString());
                     sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
                     saveFile.Save(sb.ToString());
-                    MessageBox.Show("완료되었습니다!", "완료");
+                    MessageBox.Show("Done!", "Done");
                 }
                 catch (Exception e)
                 {
-                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    MessageBox.Show("An error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
@@ -611,8 +611,7 @@ namespace ETS2SaveAutoEditor
                     };
                     var fuelId = "";
                     {
-                        var res = ListInputBox.Show("Choose fuel level", "Choose engine for your assigned truck.\nIn fact, old engines are better than new engines.\n"
-                            + "The task may take a while.", fuelPresetNames);
+                        var res = ListInputBox.Show("Choose fuel level", "Choose fuel level for your assigned truck.", fuelPresetNames);
                         if (res == -1)
                         {
                             return;

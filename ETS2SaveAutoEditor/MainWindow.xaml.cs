@@ -29,7 +29,7 @@ namespace ETS2SaveAutoEditor
         }
         public string Load()
         {
-            return File.ReadAllText(fullPath + @"\game.sii", Encoding.UTF8);
+            return File.ReadAllText(fullPath + @"\game.sii", Encoding.UTF8).Replace("\r", "");
         }
         public void Save(string newcontent)
         {
@@ -52,7 +52,7 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string Version = "1.03 Alpha EN";
+        public static string Version = "1.04 Alpha EN"; 
         public static byte[] StringToByteArray(String hex)
         {
             int NumberChars = hex.Length / 2;
@@ -121,6 +121,9 @@ namespace ETS2SaveAutoEditor
             addAction(tasks.TruckEngineSet());
             addAction(tasks.TruckSoundSet());
             addAction(tasks.MapReset());
+            addAction(tasks.Refuel());
+            addAction(tasks.FixEverything());
+            addAction(tasks.SharePaint());
         }
 
         public static DateTime FuckUnixTime(long unixtime)
@@ -218,7 +221,7 @@ namespace ETS2SaveAutoEditor
                 proc.Start();
                 proc.WaitForExit();
 
-                var saveFile = File.ReadAllText(gameSiiPath, Encoding.UTF8);
+                var saveFile = File.ReadAllText(gameSiiPath, Encoding.UTF8).Replace("\r", "");
 
                 if (!saveFile.StartsWith("SiiNunit"))
                 {

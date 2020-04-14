@@ -8,14 +8,14 @@
         Title="NumberInput" Height="370" Width="600" ResizeMode="CanResizeWithGrip" AllowsTransparency="True" WindowStyle="None">
     <Grid>
         <DockPanel Background="#FF272727">
-            <Label x:Name="TitleLabel" DockPanel.Dock="Top" Background="Black" Foreground="White" Content="타이틀" FontSize="20" Padding="10" Cursor="Hand" MouseDown="Title_MouseDown"></Label>
+            <Label x:Name="TitleLabel" DockPanel.Dock="Top" Background="Black" Foreground="White" Content="Title" FontSize="20" Padding="10" Cursor="Hand" MouseDown="Title_MouseDown"></Label>
             <StatusBar DockPanel.Dock="Bottom" Background="#FF005104">
-                <StatusBarItem Content="원하는 항목을 선택한 뒤 확인을 눌러주세요." Foreground="White"/>
+                <StatusBarItem Content="Choose any item and press OK" Foreground="White"/>
             </StatusBar>
             <StackPanel DockPanel.Dock="Bottom" Background="#FF1D1D1D">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Button Content="확인" Padding="15,5" Margin="5" Background="Black" Foreground="White" BorderBrush="White" Click="Button_Click_1"/>
-                    <Button Content="취소" Padding="15,5" Margin="0,5,5,5" Foreground="White" Background="Black" BorderBrush="White" Click="Button_Click"/>
+                    <Button Content="OK" Padding="15,5" Margin="5" Background="Black" Foreground="White" BorderBrush="White" Click="Button_Click_1"/>
+                    <Button Content="Cancel" Padding="15,5" Margin="0,5,5,5" Foreground="White" Background="Black" BorderBrush="White" Click="Button_Click"/>
                 </StackPanel>
             </StackPanel>
             <Grid>

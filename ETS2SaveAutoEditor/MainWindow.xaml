@@ -19,20 +19,20 @@
             </Grid.ColumnDefinitions>
             <DockPanel LastChildFill="True" Grid.Column="0" Background="#FF005104">
                 <Label x:Name="SelectProfile" Content="1 프로필 선택" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Margin="10,0,0,0"/>
-                <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0"></Button>
+                <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,10,5"></Button>
                 <ListBox x:Name="ProfileList" Margin="10,0" SelectionChanged="ProfileList_SelectionChanged" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0"/>
             </DockPanel>
             <Grid Background="#FF7C7C7C" Grid.Column="1">
                 <DockPanel x:Name="SaveListPanel" Grid.Column="1" LastChildFill="True">
                     <Label Content="2 세이브 선택" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Margin="10,0,0,0"/>
                     <DockPanel Margin="10,0">
-                        <StackPanel x:Name="SaveInfo" DockPanel.Dock="Bottom" Margin="0,0,0,10" Background="#FF5D5D5D">
+                        <StackPanel x:Name="SaveInfo" DockPanel.Dock="Bottom" Margin="0,5,0,0" Background="#FF5D5D5D">
                             <Label x:Name="SaveInfo_Name" Content="이름" Foreground="White"/>
                             <Label x:Name="SaveInfo_Dir" Content="폴더" Foreground="White"/>
                             <Label x:Name="SaveInfo_Date" Content="날짜" Foreground="White"/>
                             <Button x:Name="LoadSaveFileButton" Content="불러오기" Click="LoadSaveFileButton_Click"></Button>
                         </StackPanel>
-                        <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed"></Button>
+                        <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5"></Button>
                         <ListBox x:Name="SaveList" SelectionChanged="SaveList_SelectionChanged" Foreground="Black" Background="#FFF0F0F0" BorderThickness="0" />
                     </DockPanel>
                 </DockPanel>

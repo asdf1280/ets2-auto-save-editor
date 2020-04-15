@@ -214,6 +214,7 @@ namespace ETS2SaveAutoEditor
 
                 AppStatus.Items[0] = "완료했습니다.";
                 ShowTasks(true);
+                EnableAll();
             });
 
             new Thread(() =>
@@ -250,7 +251,6 @@ namespace ETS2SaveAutoEditor
             AppStatus.Items[0] = "세이브 목록 불러오는 중...";
             new Thread(() =>
             {
-                Thread.Sleep(250);
                 Dispatcher.Invoke(() =>
                 {
                     SaveList.Items.Clear();
@@ -453,11 +453,9 @@ namespace ETS2SaveAutoEditor
         private void LoadSaveFileButton_Click(object sender, RoutedEventArgs e)
         {
             SavegameChanged(true);
-            Dispatcher.Invoke(() =>
-            {
-                var ps = (ProfileSave)SaveList.SelectedItem;
-                LoadSaveFile(ets2Path + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
-            });
+            DisableAll();
+            var ps = (ProfileSave)SaveList.SelectedItem;
+            LoadSaveFile(ets2Path + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
         }
 
         private void StartTaskButton_Click(object sender, RoutedEventArgs e)
@@ -599,12 +597,14 @@ namespace ETS2SaveAutoEditor
             ProfileList.IsEnabled = false;
             SaveList.IsEnabled = false;
             TaskList.IsEnabled = false;
+            LoadSaveFileButton.IsEnabled = false;
         }
         private void EnableAll()
         {
             ProfileList.IsEnabled = true;
             SaveList.IsEnabled = true;
             TaskList.IsEnabled = true;
+            LoadSaveFileButton.IsEnabled = true;
         }
     }
 }

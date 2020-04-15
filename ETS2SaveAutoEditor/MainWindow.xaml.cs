@@ -338,7 +338,7 @@ namespace ETS2SaveAutoEditor
                     {
                         SaveList.Items.Add(item);
                     }
-                    ShowSavegames(animate);
+                    ShowSavegames(true);
                     AppStatus.Items[0] = "완료했습니다.";
                     EnableAll();
                 });
@@ -356,7 +356,7 @@ namespace ETS2SaveAutoEditor
                 {
                     if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString()))
                     {
-                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save", true);
+                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save");
                     }
                     return;
                 }
@@ -391,7 +391,7 @@ namespace ETS2SaveAutoEditor
 
                 if (SaveInfo.Visibility != Visibility.Visible)
                 {
-                    var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.4)))
+                    var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.2)))
                     {
                         DecelerationRatio = 1
                     };
@@ -423,13 +423,13 @@ namespace ETS2SaveAutoEditor
                 {
                     TaskDescription.Text = task.description;
 
-                    var anim0 = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.25)))
+                    var anim0 = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.15)))
                     {
                         DecelerationRatio = 1
                     };
                     TaskDescription.BeginAnimation(TextBlock.OpacityProperty, anim0);
                 });
-                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.25)))
+                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.15)))
                 {
                     AccelerationRatio = 0.5,
                     DecelerationRatio = 0.5
@@ -472,7 +472,7 @@ namespace ETS2SaveAutoEditor
             if (animate)
             {
                 SaveListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.2)))
+                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     AccelerationRatio = 1
                 };
@@ -496,7 +496,7 @@ namespace ETS2SaveAutoEditor
             if (animate && TaskListPanel.Visibility == Visibility.Visible)
             {
                 TaskListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.2)))
+                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     AccelerationRatio = 1
                 };
@@ -522,7 +522,7 @@ namespace ETS2SaveAutoEditor
             if (animate)
             {
                 SaveListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 2, new Duration(new TimeSpan(200 * 10000)))
+                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     DecelerationRatio = 1
                 };
@@ -536,7 +536,7 @@ namespace ETS2SaveAutoEditor
 
                 SaveListPanel.Effect = blur;
 
-                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(1)))
+                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5)))
                 {
                     DecelerationRatio = 1
                 };
@@ -554,7 +554,7 @@ namespace ETS2SaveAutoEditor
             if (animate && TaskListPanel.Visibility == Visibility.Hidden)
             {
                 TaskListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 2, new Duration(new TimeSpan(200 * 10000)))
+                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     DecelerationRatio = 1
                 };
@@ -568,7 +568,7 @@ namespace ETS2SaveAutoEditor
 
                 TaskListPanel.Effect = blur;
 
-                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(1)))
+                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5)))
                 {
                     DecelerationRatio = 1
                 };
@@ -586,7 +586,7 @@ namespace ETS2SaveAutoEditor
             if (animate && StartTaskButton.Visibility != Visibility.Visible)
             {
                 StartTaskButton.BeginAnimation(Button.OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.3)))
+                var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     DecelerationRatio = 1
                 };

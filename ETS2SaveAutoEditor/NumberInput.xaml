@@ -5,10 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ETS2SaveAutoEditor"
         mc:Ignorable="d"
-        Title="NumberInput" Height="370" Width="600" WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResizeWithGrip">
+        Title="Title" Height="370" Width="600">
     <Grid>
         <DockPanel Background="#FF272727">
-            <Label x:Name="TitleLabel" DockPanel.Dock="Top" Background="Black" Foreground="White" Content="타이틀" FontSize="20" Padding="10" Cursor="Hand" MouseDown="Title_MouseDown"></Label>
             <StatusBar DockPanel.Dock="Bottom" Background="#FF005104">
                 <StatusBarItem Content="숫자를 입력한 뒤 확인을 눌러주세요." Foreground="White"/>
             </StatusBar>

@@ -56,7 +56,6 @@ namespace ETS2SaveAutoEditor
             blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
 
             Title = title;
-            TitleLabel.Content = title;
             Description.Text = description;
         }
 
@@ -65,7 +64,7 @@ namespace ETS2SaveAutoEditor
             DragMove();
         }
 
-        public long number;
+        public long number = -1;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {

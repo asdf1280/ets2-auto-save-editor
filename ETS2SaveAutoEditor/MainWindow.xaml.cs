@@ -52,7 +52,7 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string Version = "1.04 Alpha"; 
+        public static string Version = "1.05 Alpha";
         public static byte[] StringToByteArray(String hex)
         {
             int NumberChars = hex.Length / 2;
@@ -140,12 +140,13 @@ namespace ETS2SaveAutoEditor
         {
             if (!File.Exists("SII_Decrypt.exe"))
             {
-                var res = MessageBox.Show("Could not find SII_Decrypt.exe. Do you want to install?\nIf this is your first time running this program, click Install.", "Info", MessageBoxButton.YesNo);
-                if(res == MessageBoxResult.Yes)
+                var res = MessageBox.Show("Could not find SII_Decrypt.exe. Do you want to install?\nIf this is your first time running this program, click Install.", "Information", MessageBoxButton.YesNo);
+                if (res == MessageBoxResult.Yes)
                 {
                     File.WriteAllBytes("SII_Decrypt.exe", Properties.Resources.SII_Decrypt);
                     MessageBox.Show("Successfully installed!");
-                } else
+                }
+                else
                 {
                     Application.Current.Shutdown(0);
                 }
@@ -163,32 +164,43 @@ namespace ETS2SaveAutoEditor
                 img.EndInit();
                 Icon = img;
             }
-            ProfileChanged(false);
-            LoadTasks();
 
             var path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             path += "\\Euro Truck Simulator 2\\profiles";
             ets2Path = path;
-            if (Directory.Exists(path))
-            {
-                var dinfo = new DirectoryInfo(path);
-                var dlist = dinfo.GetDirectories();
-                var pattern = @"^([ABCDEF\d]{2,2})+$";
-                foreach (var delem in dlist)
-                {
-                    var ename = delem.Name;
-                    if (!Regex.IsMatch(ename, pattern)) continue;
-                    byte[] dBytes = StringToByteArray(ename);
-                    string utf8result = System.Text.Encoding.UTF8.GetString(dBytes);
-                    ProfileList.Items.Add(utf8result);
-                    pNameAndPaths.Add(utf8result, ename);
-                }
-            }
-            else
+            if (!Directory.Exists(ets2Path))
             {
                 MessageBox.Show("Could not find ETS2 save folder.", "Error", MessageBoxButton.OK);
                 Application.Current.Shutdown(0);
+                return;
             }
+
+            ProfileChanged(false);
+            LoadTasks();
+            LoadProfiles();
+        }
+
+        private void LoadProfiles()
+        {
+            pNameAndPaths.Clear();
+            ProfileList.Items.Clear();
+            var dinfo = new DirectoryInfo(ets2Path);
+            var dlist = dinfo.GetDirectories();
+            var pattern = @"^([ABCDEF\d]{2,2})+$";
+            foreach (var delem in dlist)
+            {
+                var ename = delem.Name;
+                if (!Regex.IsMatch(ename, pattern)) continue;
+                byte[] dBytes = StringToByteArray(ename);
+                string utf8result = System.Text.Encoding.UTF8.GetString(dBytes);
+                ProfileList.Items.Add(utf8result);
+                pNameAndPaths.Add(utf8result, ename);
+            }
+        }
+
+        private void RefreshProfilesButtonPressed(object sender, RoutedEventArgs e)
+        {
+            LoadProfiles();
         }
 
         private void LoadSaveFile(string path)
@@ -346,7 +358,23 @@ namespace ETS2SaveAutoEditor
                     {
                         LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save");
                     }
-                    //EnableAll();
+                    return;
+                }
+            }
+        }
+
+        private void RefreshSavegamesButtonPressed(object sender, RoutedEventArgs e)
+        {
+            ProfileChanged(true);
+            var newItem = ProfileList.SelectedItem.ToString();
+            if (pNameAndPaths.ContainsKey(newItem))
+            {
+                if (Directory.Exists(ets2Path + @"\" + pNameAndPaths[newItem]))
+                {
+                    if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString()))
+                    {
+                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save");
+                    }
                     return;
                 }
             }
@@ -363,7 +391,7 @@ namespace ETS2SaveAutoEditor
 
                 if (SaveInfo.Visibility != Visibility.Visible)
                 {
-                    var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.4)))
+                    var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.2)))
                     {
                         DecelerationRatio = 1
                     };
@@ -378,7 +406,7 @@ namespace ETS2SaveAutoEditor
                 }
 
                 SaveInfo.Visibility = Visibility.Visible;
-                if(TaskListPanel.Visibility == Visibility.Visible)
+                if (TaskListPanel.Visibility == Visibility.Visible)
                 {
                     SavegameChanged(true);
                 }
@@ -395,22 +423,23 @@ namespace ETS2SaveAutoEditor
                 {
                     TaskDescription.Text = task.description;
 
-                    var anim0 = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.25)))
+                    var anim0 = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.15)))
                     {
                         DecelerationRatio = 1
                     };
                     TaskDescription.BeginAnimation(TextBlock.OpacityProperty, anim0);
                 });
-                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.25)))
+                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.15)))
                 {
                     AccelerationRatio = 0.5,
                     DecelerationRatio = 0.5
                 };
                 anim.Completed += (object s, EventArgs a) => displayAnim();
-                if(TaskDescription.Text == "")
+                if (TaskDescription.Text == "")
                 {
                     displayAnim();
-                } else
+                }
+                else
                 {
                     TaskDescription.BeginAnimation(TextBlock.OpacityProperty, anim);
                 }
@@ -424,15 +453,11 @@ namespace ETS2SaveAutoEditor
         private void LoadSaveFileButton_Click(object sender, RoutedEventArgs e)
         {
             SavegameChanged(true);
-            new Thread(() =>
+            Dispatcher.Invoke(() =>
             {
-                Thread.Sleep(300);
-                Dispatcher.Invoke(() =>
-                {
-                    var ps = (ProfileSave)SaveList.SelectedItem;
-                    LoadSaveFile(ets2Path + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
-                });
-            }).Start();
+                var ps = (ProfileSave)SaveList.SelectedItem;
+                LoadSaveFile(ets2Path + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
+            });
         }
 
         private void StartTaskButton_Click(object sender, RoutedEventArgs e)
@@ -447,7 +472,7 @@ namespace ETS2SaveAutoEditor
             if (animate)
             {
                 SaveListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.2)))
+                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     AccelerationRatio = 1
                 };
@@ -471,7 +496,7 @@ namespace ETS2SaveAutoEditor
             if (animate && TaskListPanel.Visibility == Visibility.Visible)
             {
                 TaskListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.2)))
+                var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     AccelerationRatio = 1
                 };
@@ -497,7 +522,7 @@ namespace ETS2SaveAutoEditor
             if (animate)
             {
                 SaveListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 2, new Duration(new TimeSpan(200 * 10000)))
+                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     DecelerationRatio = 1
                 };
@@ -511,7 +536,7 @@ namespace ETS2SaveAutoEditor
 
                 SaveListPanel.Effect = blur;
 
-                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(1)))
+                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5)))
                 {
                     DecelerationRatio = 1
                 };
@@ -529,7 +554,7 @@ namespace ETS2SaveAutoEditor
             if (animate && TaskListPanel.Visibility == Visibility.Hidden)
             {
                 TaskListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 2, new Duration(new TimeSpan(200 * 10000)))
+                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     DecelerationRatio = 1
                 };
@@ -543,7 +568,7 @@ namespace ETS2SaveAutoEditor
 
                 TaskListPanel.Effect = blur;
 
-                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(1)))
+                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5)))
                 {
                     DecelerationRatio = 1
                 };
@@ -561,7 +586,7 @@ namespace ETS2SaveAutoEditor
             if (animate && StartTaskButton.Visibility != Visibility.Visible)
             {
                 StartTaskButton.BeginAnimation(Button.OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.3)))
+                var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.1)))
                 {
                     DecelerationRatio = 1
                 };

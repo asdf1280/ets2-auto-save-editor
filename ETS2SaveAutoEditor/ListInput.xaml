@@ -5,10 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ETS2SaveAutoEditor"
         mc:Ignorable="d"
-        Title="NumberInput" Height="370" Width="600" ResizeMode="CanResizeWithGrip" AllowsTransparency="True" WindowStyle="None">
+        Title="Title" Height="370" Width="600" ResizeMode="CanResizeWithGrip" WindowStyle="ThreeDBorderWindow" WindowStartupLocation="CenterScreen">
     <Grid>
         <DockPanel Background="#FF272727">
-            <Label x:Name="TitleLabel" DockPanel.Dock="Top" Background="Black" Foreground="White" Content="Title" FontSize="20" Padding="10" Cursor="Hand" MouseDown="Title_MouseDown"></Label>
             <StatusBar DockPanel.Dock="Bottom" Background="#FF005104">
                 <StatusBarItem Content="Choose any item and press OK" Foreground="White"/>
             </StatusBar>
@@ -24,7 +23,7 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <TextBlock x:Name="Description" TextWrapping="Wrap" Foreground="White" Padding="10"/>
-                <ListBox x:Name="ItemList" Grid.Column="1" Background="{x:Null}" BorderBrush="White" Foreground="White" BorderThickness="3"></ListBox>
+                <ListBox x:Name="ItemList" Grid.Column="1" Background="{x:Null}" BorderBrush="#FFB4B4B4" Foreground="White" BorderThickness="3"></ListBox>
             </Grid>
         </DockPanel>
     </Grid>

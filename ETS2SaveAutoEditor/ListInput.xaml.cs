@@ -37,20 +37,25 @@ namespace ETS2SaveAutoEditor
             InitializeComponent();
             Opacity = 0;
 
-            var anim = new DoubleAnimation(1, new Duration(TimeSpan.FromSeconds(0.2)));
-            anim.DecelerationRatio = 1;
+            var anim = new DoubleAnimation(1, new Duration(TimeSpan.FromSeconds(0.1)))
+            {
+                DecelerationRatio = 1
+            };
             BeginAnimation(Window.OpacityProperty, anim);
 
-            var blur = new BlurEffect();
-            blur.Radius = 10;
-            blur.RenderingBias = RenderingBias.Quality;
+            var blur = new BlurEffect
+            {
+                Radius = 10,
+                RenderingBias = RenderingBias.Quality
+            };
             Effect = blur;
-            var anim0 = new DoubleAnimation(1, new Duration(TimeSpan.FromSeconds(0.6)));
-            anim0.DecelerationRatio = 1;
+            var anim0 = new DoubleAnimation(1, new Duration(TimeSpan.FromSeconds(0.4)))
+            {
+                DecelerationRatio = 1
+            };
             blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
 
             Title = title;
-            TitleLabel.Content = title;
             Description.Text = description;
             foreach(var item in items)
                 ItemList.Items.Add(item);
@@ -61,7 +66,7 @@ namespace ETS2SaveAutoEditor
             DragMove();
         }
 
-        public int number;
+        public int number = -1;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {

@@ -5,10 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ETS2SaveAutoEditor"
         mc:Ignorable="d"
-        Title="NumberInput" Height="370" Width="600" WindowStyle="None" AllowsTransparency="True" ResizeMode="CanResizeWithGrip">
+        Title="Title" Height="370" Width="600" WindowStartupLocation="CenterScreen">
     <Grid>
         <DockPanel Background="#FF272727">
-            <Label x:Name="TitleLabel" DockPanel.Dock="Top" Background="Black" Foreground="White" Content="Title" FontSize="20" Padding="10" Cursor="Hand" MouseDown="Title_MouseDown"></Label>
             <StatusBar DockPanel.Dock="Bottom" Background="#FF005104">
                 <StatusBarItem Content="Please enter a number and press OK." Foreground="White"/>
             </StatusBar>

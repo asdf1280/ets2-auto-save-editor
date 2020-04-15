@@ -255,6 +255,7 @@ namespace ETS2SaveAutoEditor
                 {
                     SaveList.Items.Clear();
                 });
+                Thread.Sleep(250);
                 foreach (var save in Directory.GetDirectories(path))
                 {
                     var fpath = save + @"\info.sii";

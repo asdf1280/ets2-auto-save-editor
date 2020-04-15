@@ -352,6 +352,24 @@ namespace ETS2SaveAutoEditor
             }
         }
 
+        private void RefreshSavegamesButtonPressed(object sender, RoutedEventArgs e)
+        {
+            ProfileChanged(true);
+            var newItem = ProfileList.SelectedItem.ToString();
+            if (pNameAndPaths.ContainsKey(newItem))
+            {
+                if (Directory.Exists(ets2Path + @"\" + pNameAndPaths[newItem]))
+                {
+                    if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString()))
+                    {
+                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save");
+                    }
+                    //EnableAll();
+                    return;
+                }
+            }
+        }
+
         private void SaveList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var psave = SaveList.SelectedItem;
@@ -424,15 +442,11 @@ namespace ETS2SaveAutoEditor
         private void LoadSaveFileButton_Click(object sender, RoutedEventArgs e)
         {
             SavegameChanged(true);
-            new Thread(() =>
+            Dispatcher.Invoke(() =>
             {
-                Thread.Sleep(300);
-                Dispatcher.Invoke(() =>
-                {
-                    var ps = (ProfileSave)SaveList.SelectedItem;
-                    LoadSaveFile(ets2Path + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
-                });
-            }).Start();
+                var ps = (ProfileSave)SaveList.SelectedItem;
+                LoadSaveFile(ets2Path + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
+            });
         }
 
         private void StartTaskButton_Click(object sender, RoutedEventArgs e)

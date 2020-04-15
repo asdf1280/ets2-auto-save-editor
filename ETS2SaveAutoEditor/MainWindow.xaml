@@ -31,6 +31,7 @@
                             <Label x:Name="SaveInfo_Date" Content="날짜" Foreground="White"/>
                             <Button x:Name="LoadSaveFileButton" Content="불러오기" Click="LoadSaveFileButton_Click"></Button>
                         </StackPanel>
+                        <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed"></Button>
                         <ListBox x:Name="SaveList" SelectionChanged="SaveList_SelectionChanged" Foreground="Black" Background="#FFF0F0F0" BorderThickness="0" />
                     </DockPanel>
                 </DockPanel>

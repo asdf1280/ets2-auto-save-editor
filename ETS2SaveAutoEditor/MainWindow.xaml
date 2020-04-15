@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ETS2SaveAutoEditor"
         xmlns:System="clr-namespace:System;assembly=mscorlib" x:Class="ETS2SaveAutoEditor.MainWindow"
         mc:Ignorable="d"
-        Title="ETS2 Auto Save Editor" Height="450" Width="800">
+        Title="ETS2 Auto Save Editor" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     <DockPanel>
         <StatusBar x:Name="AppStatus" DockPanel.Dock="Bottom" Background="#FF005104" Foreground="White" Padding="5,0,0,0">
             <System:String>안녕하세요</System:String>

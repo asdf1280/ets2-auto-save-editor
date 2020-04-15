@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ETS2SaveAutoEditor"
         mc:Ignorable="d"
-        Title="Title" Height="370" Width="600">
+        Title="Title" Height="370" Width="600" WindowStartupLocation="CenterScreen">
     <Grid>
         <DockPanel Background="#FF272727">
             <StatusBar DockPanel.Dock="Bottom" Background="#FF005104">

@@ -141,11 +141,12 @@ namespace ETS2SaveAutoEditor
             if (!File.Exists("SII_Decrypt.exe"))
             {
                 var res = MessageBox.Show("세이브 파일 복호화 프로그램을 찾을 수 없습니다. 설치하시겠습니까?\n처음 실행 시 설치하십시오.", "안내", MessageBoxButton.YesNo);
-                if(res == MessageBoxResult.Yes)
+                if (res == MessageBoxResult.Yes)
                 {
                     File.WriteAllBytes("SII_Decrypt.exe", Properties.Resources.SII_Decrypt);
                     MessageBox.Show("설치했습니다!");
-                } else
+                }
+                else
                 {
                     Application.Current.Shutdown(0);
                 }
@@ -244,7 +245,7 @@ namespace ETS2SaveAutoEditor
             }).Start();
         }
 
-        private void LoadSaves(string path, bool animate)
+        private void LoadSaves(string path)
         {
             AppStatus.Items[0] = "세이브 목록 불러오는 중...";
             new Thread(() =>
@@ -364,6 +365,7 @@ namespace ETS2SaveAutoEditor
 
         private void RefreshSavegamesButtonPressed(object sender, RoutedEventArgs e)
         {
+            ProfileChanged(true);
             var newItem = ProfileList.SelectedItem.ToString();
             if (pNameAndPaths.ContainsKey(newItem))
             {
@@ -371,7 +373,7 @@ namespace ETS2SaveAutoEditor
                 {
                     if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString()))
                     {
-                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save", false);
+                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save");
                     }
                     return;
                 }
@@ -404,7 +406,7 @@ namespace ETS2SaveAutoEditor
                 }
 
                 SaveInfo.Visibility = Visibility.Visible;
-                if(TaskListPanel.Visibility == Visibility.Visible)
+                if (TaskListPanel.Visibility == Visibility.Visible)
                 {
                     SavegameChanged(true);
                 }
@@ -433,10 +435,11 @@ namespace ETS2SaveAutoEditor
                     DecelerationRatio = 0.5
                 };
                 anim.Completed += (object s, EventArgs a) => displayAnim();
-                if(TaskDescription.Text == "")
+                if (TaskDescription.Text == "")
                 {
                     displayAnim();
-                } else
+                }
+                else
                 {
                     TaskDescription.BeginAnimation(TextBlock.OpacityProperty, anim);
                 }

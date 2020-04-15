@@ -163,32 +163,43 @@ namespace ETS2SaveAutoEditor
                 img.EndInit();
                 Icon = img;
             }
-            ProfileChanged(false);
-            LoadTasks();
 
             var path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             path += "\\Euro Truck Simulator 2\\profiles";
             ets2Path = path;
-            if (Directory.Exists(path))
-            {
-                var dinfo = new DirectoryInfo(path);
-                var dlist = dinfo.GetDirectories();
-                var pattern = @"^([ABCDEF\d]{2,2})+$";
-                foreach (var delem in dlist)
-                {
-                    var ename = delem.Name;
-                    if (!Regex.IsMatch(ename, pattern)) continue;
-                    byte[] dBytes = StringToByteArray(ename);
-                    string utf8result = System.Text.Encoding.UTF8.GetString(dBytes);
-                    ProfileList.Items.Add(utf8result);
-                    pNameAndPaths.Add(utf8result, ename);
-                }
-            }
-            else
+            if (!Directory.Exists(ets2Path))
             {
                 MessageBox.Show("ETS2 세이브 폴더를 찾을 수 없습니다.", "오류", MessageBoxButton.OK);
                 Application.Current.Shutdown(0);
+                return;
             }
+
+            ProfileChanged(false);
+            LoadTasks();
+            LoadProfiles();
+        }
+
+        private void LoadProfiles()
+        {
+            pNameAndPaths.Clear();
+            ProfileList.Items.Clear();
+            var dinfo = new DirectoryInfo(ets2Path);
+            var dlist = dinfo.GetDirectories();
+            var pattern = @"^([ABCDEF\d]{2,2})+$";
+            foreach (var delem in dlist)
+            {
+                var ename = delem.Name;
+                if (!Regex.IsMatch(ename, pattern)) continue;
+                byte[] dBytes = StringToByteArray(ename);
+                string utf8result = System.Text.Encoding.UTF8.GetString(dBytes);
+                ProfileList.Items.Add(utf8result);
+                pNameAndPaths.Add(utf8result, ename);
+            }
+        }
+
+        private void RefreshProfilesButtonPressed(object sender, RoutedEventArgs e)
+        {
+            LoadProfiles();
         }
 
         private void LoadSaveFile(string path)

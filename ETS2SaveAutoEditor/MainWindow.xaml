@@ -19,6 +19,7 @@
             </Grid.ColumnDefinitions>
             <DockPanel LastChildFill="True" Grid.Column="0" Background="#FF005104">
                 <Label x:Name="SelectProfile" Content="1 프로필 선택" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Margin="10,0,0,0"/>
+                <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0"></Button>
                 <ListBox x:Name="ProfileList" Margin="10,0" SelectionChanged="ProfileList_SelectionChanged" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0"/>
             </DockPanel>
             <Grid Background="#FF7C7C7C" Grid.Column="1">

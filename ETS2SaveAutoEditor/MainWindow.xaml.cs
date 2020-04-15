@@ -244,7 +244,7 @@ namespace ETS2SaveAutoEditor
             }).Start();
         }
 
-        private void LoadSaves(string path)
+        private void LoadSaves(string path, bool animate)
         {
             AppStatus.Items[0] = "세이브 목록 불러오는 중...";
             new Thread(() =>
@@ -337,7 +337,7 @@ namespace ETS2SaveAutoEditor
                     {
                         SaveList.Items.Add(item);
                     }
-                    ShowSavegames(true);
+                    ShowSavegames(animate);
                     AppStatus.Items[0] = "완료했습니다.";
                     EnableAll();
                 });
@@ -355,9 +355,8 @@ namespace ETS2SaveAutoEditor
                 {
                     if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString()))
                     {
-                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save");
+                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save", true);
                     }
-                    //EnableAll();
                     return;
                 }
             }
@@ -365,7 +364,6 @@ namespace ETS2SaveAutoEditor
 
         private void RefreshSavegamesButtonPressed(object sender, RoutedEventArgs e)
         {
-            ProfileChanged(true);
             var newItem = ProfileList.SelectedItem.ToString();
             if (pNameAndPaths.ContainsKey(newItem))
             {
@@ -373,9 +371,8 @@ namespace ETS2SaveAutoEditor
                 {
                     if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString()))
                     {
-                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save");
+                        LoadSaves(ets2Path + @"\" + pNameAndPaths[newItem] + @"\save", false);
                     }
-                    //EnableAll();
                     return;
                 }
             }

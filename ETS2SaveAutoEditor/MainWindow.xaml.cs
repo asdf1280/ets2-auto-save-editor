@@ -119,7 +119,6 @@ namespace ETS2SaveAutoEditor
             addAction(tasks.ExpSet());
             addAction(tasks.UnlockScreens());
             addAction(tasks.TruckEngineSet());
-            addAction(tasks.TruckSoundSet());
             addAction(tasks.MapReset());
             addAction(tasks.Refuel());
             addAction(tasks.FixEverything());

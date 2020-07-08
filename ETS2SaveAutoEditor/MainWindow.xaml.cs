@@ -240,6 +240,7 @@ namespace ETS2SaveAutoEditor
                 {
                     MessageBox.Show("세이브 파일이 정상적인 형태가 아닙니다.", "로드 실패");
                     Dispatcher.Invoke(onEnd);
+                    return;
                 }
 
                 Dispatcher.Invoke(onEnd, saveFile);

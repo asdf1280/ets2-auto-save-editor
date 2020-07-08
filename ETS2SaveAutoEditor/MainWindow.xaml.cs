@@ -52,7 +52,7 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string Version = "1.05 Alpha";
+        public static string Version = "1.07 Alpha";
         public static byte[] StringToByteArray(String hex)
         {
             int NumberChars = hex.Length / 2;
@@ -214,6 +214,7 @@ namespace ETS2SaveAutoEditor
 
                 AppStatus.Items[0] = "Finished";
                 ShowTasks(true);
+                EnableAll();
             });
 
             new Thread(() =>
@@ -239,6 +240,7 @@ namespace ETS2SaveAutoEditor
                 {
                     MessageBox.Show("The savegame is corrupted.", "Load failure");
                     Dispatcher.Invoke(onEnd);
+                    return;
                 }
 
                 Dispatcher.Invoke(onEnd, saveFile);
@@ -250,11 +252,11 @@ namespace ETS2SaveAutoEditor
             AppStatus.Items[0] = "Loading savegames...";
             new Thread(() =>
             {
-                Thread.Sleep(250);
                 Dispatcher.Invoke(() =>
                 {
                     SaveList.Items.Clear();
                 });
+                Thread.Sleep(250);
                 foreach (var save in Directory.GetDirectories(path))
                 {
                     var fpath = save + @"\info.sii";
@@ -453,11 +455,9 @@ namespace ETS2SaveAutoEditor
         private void LoadSaveFileButton_Click(object sender, RoutedEventArgs e)
         {
             SavegameChanged(true);
-            Dispatcher.Invoke(() =>
-            {
-                var ps = (ProfileSave)SaveList.SelectedItem;
-                LoadSaveFile(ets2Path + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
-            });
+            DisableAll();
+            var ps = (ProfileSave)SaveList.SelectedItem;
+            LoadSaveFile(ets2Path + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
         }
 
         private void StartTaskButton_Click(object sender, RoutedEventArgs e)
@@ -599,12 +599,14 @@ namespace ETS2SaveAutoEditor
             ProfileList.IsEnabled = false;
             SaveList.IsEnabled = false;
             TaskList.IsEnabled = false;
+            LoadSaveFileButton.IsEnabled = false;
         }
         private void EnableAll()
         {
             ProfileList.IsEnabled = true;
             SaveList.IsEnabled = true;
             TaskList.IsEnabled = true;
+            LoadSaveFileButton.IsEnabled = true;
         }
     }
 }

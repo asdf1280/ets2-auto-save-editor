@@ -66,19 +66,19 @@ namespace ETS2SaveAutoEditor
                     {
                         if (foundTruck)
                         {
-                            MessageBox.Show("There is assigned truck.", "테스트");
+                            MessageBox.Show("There is assigned truck.", "Test");
                         }
                         else
                         {
-                            MessageBox.Show("There isn't assigned truck.", "테스트");
+                            MessageBox.Show("There isn't assigned truck.", "Test");
                         }
                         if (foundTrailer)
                         {
-                            MessageBox.Show("There is assigned trailer.", "테스트");
+                            MessageBox.Show("There is assigned trailer.", "Test");
                         }
                         else
                         {
-                            MessageBox.Show("There isn't assigned trailer.", "테스트");
+                            MessageBox.Show("There isn't assigned trailer.", "Test");
                         }
                     }
                 }

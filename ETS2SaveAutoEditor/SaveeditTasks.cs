@@ -960,26 +960,26 @@ namespace ETS2SaveAutoEditor
 
                     string encodedData = EncodePositionData(dictionary);
                     Clipboard.SetText(encodedData);
-                    MessageBox.Show("세이브 차량의 위치를 공유할 수 있도록 클립보드에 복사했습니다.", "완료");
+                    MessageBox.Show("The location of your truck, trailer was copied to the clipboard. Share it to others.", "Done");
                 }
                 catch (Exception e)
                 {
                     if (e.Message == "incompatible version")
                     {
-                        MessageBox.Show("다른 버전의 툴로 만들어진 데이터입니다.", "오류");
+                        MessageBox.Show("Data version doesn't match the current version.", "Error");
                     }
                     else
                     {
-                        MessageBox.Show("오류가 발생했습니다.", "오류");
+                        MessageBox.Show("An error occured.", "Error");
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask
             {
-                name = "플레이어 위치 내보내기",
+                name = "Share Player Position",
                 run = run,
-                description = "플레이어의 트럭과, 연결된 모든 트레일러의 위치를 공유 가능하게 텍스트로 복사합니다."
+                description = "Copies the position of player's truck and trailer, which you can share to others, to clipboard."
             };
         }
         public SaveEditTask InjectLocation()
@@ -1037,26 +1037,26 @@ namespace ETS2SaveAutoEditor
                             _ = sb.Append(str + "\n");
                     }
                     saveFile.Save(sb.ToString());
-                    MessageBox.Show("세이브 속 차량의 위치를 입력한 데이터로 변경했습니다.", "완료");
+                    MessageBox.Show("Successfully injected the position of player vehicles.", "Done");
                 }
                 catch (Exception e)
                 {
                     if (e.Message == "incompatible version")
                     {
-                        MessageBox.Show("다른 버전의 툴로 만들어진 데이터입니다.", "오류");
+                        MessageBox.Show("Data version doesn't match the current version.", "Error");
                     }
                     else
                     {
-                        MessageBox.Show("오류가 발생했습니다.", "오류");
+                        MessageBox.Show("An error occured.", "Error");
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask
             {
-                name = "플레이어 위치 적용하기",
+                name = "Inject Player Position",
                 run = run,
-                description = "공유된 플레이어의 위치를 클립보드에서 가져와 세이브 파일에 주입합니다."
+                description = "Imports the shared player position data to inject into this savegame."
             };
         }
     }

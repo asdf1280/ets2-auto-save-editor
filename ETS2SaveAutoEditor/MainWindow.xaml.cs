@@ -11,6 +11,7 @@ using System.Drawing.Imaging;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Linq;
 
 namespace ETS2SaveAutoEditor
 {
@@ -52,7 +53,7 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string Version = "1.07.1 Alpha";
+        public static string Version = "1.1 Alpha";
         public static byte[] StringToByteArray(String hex)
         {
             int NumberChars = hex.Length / 2;
@@ -123,6 +124,8 @@ namespace ETS2SaveAutoEditor
             addAction(tasks.Refuel());
             addAction(tasks.FixEverything());
             addAction(tasks.SharePaint());
+            addAction(tasks.ShareLocation());
+            addAction(tasks.InjectLocation());
         }
 
         public static DateTime FuckUnixTime(long unixtime)
@@ -260,20 +263,28 @@ namespace ETS2SaveAutoEditor
                 {
                     var fpath = save + @"\info.sii";
                     Console.WriteLine(fpath);
-                    if (!File.Exists(fpath)) continue; // Not a save file.
-                    var psi = new ProcessStartInfo("SII_Decrypt.exe")
+                    if (File.ReadLines(fpath).First().StartsWith("SiiNunit"))
                     {
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        Arguments = "\"" + fpath + "\""
-                    };
-                    var proc = new Process
+                        Console.WriteLine("Skipping decryption");
+                    } else
                     {
-                        StartInfo = psi
-                    };
-                    proc.Start();
-                    proc.WaitForExit();
+                        Console.WriteLine("Decrypting");
+                        if (!File.Exists(fpath)) continue; // Not a save file.
+                        var psi = new ProcessStartInfo("SII_Decrypt.exe")
+                        {
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                            Arguments = "\"" + fpath + "\""
+                        };
+                        var proc = new Process
+                        {
+                            StartInfo = psi
+                        };
+                        proc.Start();
+                        proc.WaitForExit();
+                    }
                     var content = File.ReadAllText(fpath);
+                    var directoryName = new DirectoryInfo(save).Name;
 
                     if (content.StartsWith("ScsC")) // decrypt fail
                     {
@@ -312,7 +323,7 @@ namespace ETS2SaveAutoEditor
                         ProfileSave psave = new ProfileSave
                         {
                             savename = nameResult,
-                            directory = new DirectoryInfo(save).Name,
+                            directory = directoryName,
                             time = dateResult,
                             formattedtime = dateFormatResult,
                             fullPath = save

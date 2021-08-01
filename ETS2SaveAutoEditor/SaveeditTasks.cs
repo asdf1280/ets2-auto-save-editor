@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -781,6 +782,281 @@ namespace ETS2SaveAutoEditor
                 name = "페인트 내보내기/불러오기",
                 run = run,
                 description = "트럭/트레일러의 페인트를 내보내거나 불러옵니다."
+            };
+        }
+
+        private enum PositionDataHeader : byte
+        {
+            KEY,
+            END,
+            SINGLE,
+            MULTI
+        }
+        private readonly int positionDataVersion = 1;
+        private string SimpleCompress(string data)
+        {
+            return data.Replace("truck_placement", "TRPL").Replace("trailer_placement", "TAPL");
+        }
+        private string SimpleDecompress(string data)
+        {
+            return data.Replace("TRPL", "truck_placement").Replace("TAPL", "trailer_placement");
+        }
+        private string EncodePositionData(Dictionary<string, string> data)
+        {
+            Encoding encoding = Encoding.UTF8;
+            MemoryStream memoryStream = new MemoryStream();
+            GZipStream compressionStream = new GZipStream(memoryStream, CompressionLevel.Optimal);
+            BinaryWriter binaryWriter = new BinaryWriter(compressionStream, Encoding.ASCII);
+            void sendString(string text)
+            {
+                byte[] bytes = encoding.GetBytes(text);
+                binaryWriter.Write(bytes.Length);
+                binaryWriter.Write(bytes);
+            }
+            void sendHeader(PositionDataHeader header)
+            {
+                binaryWriter.Write((byte)header);
+            }
+            binaryWriter.Write(positionDataVersion);
+            foreach (string key in data.Keys)
+            {
+                string value = data[key];
+
+                sendHeader(PositionDataHeader.KEY);
+                sendString(SimpleCompress(key));
+
+                if (value.StartsWith("m"))
+                {
+                    sendHeader(PositionDataHeader.MULTI);
+                }
+                else
+                {
+                    sendHeader(PositionDataHeader.SINGLE);
+                }
+                value = value.Substring(1);
+                sendString(SimpleCompress(value));
+            }
+            sendHeader(PositionDataHeader.END);
+            binaryWriter.Flush();
+            binaryWriter.Close();
+            string encoded = Convert.ToBase64String(memoryStream.GetBuffer());
+            int Eqs = 0;
+            int As = 0;
+            int i;
+            for (i = encoded.Length - 1; i >= 0; i--)
+            {
+                if (encoded[i] != '=' && encoded[i] != 'A')
+                {
+                    break;
+                }
+                if (encoded[i] == '=')
+                {
+                    if (As != 0)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        Eqs++;
+                    }
+                }
+                else if (encoded[i] == 'A')
+                {
+                    As++;
+                }
+            }
+            return encoded.Substring(0, i + 1) + "A_" + As + "=_" + Eqs;
+        }
+        private Dictionary<string, string> DecodePositionData(string encoded)
+        {
+            Encoding encoding = Encoding.UTF8;
+            {
+                Match matchCompression = Regex.Match(encoded, "A_(\\d+)\\=_(\\d+)");
+                int As = int.Parse(matchCompression.Groups[1].Value);
+                int Eqs = int.Parse(matchCompression.Groups[2].Value);
+                int segmentLength = matchCompression.Groups[0].Value.Length;
+                encoded = encoded.Substring(0, encoded.Length - segmentLength);
+                for (int i = 0; i < As; i++)
+                {
+                    encoded += 'A';
+                }
+                for (int i = 0; i < Eqs; i++)
+                {
+                    encoded += '=';
+                }
+            }
+            byte[] data = Convert.FromBase64String(encoded);
+            Dictionary<string, string> dictionary = new Dictionary<string, string>();
+
+            MemoryStream memoryStream = new MemoryStream(data);
+            GZipStream compressionStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+            BinaryReader binaryReader = new BinaryReader(compressionStream, Encoding.UTF8);
+            string receiveString()
+            {
+                int length = binaryReader.ReadInt32();
+                byte[] bytes = new byte[length];
+                _ = binaryReader.Read(bytes, 0, length);
+                return encoding.GetString(bytes);
+            }
+            PositionDataHeader receiveHeader()
+            {
+                return (PositionDataHeader)binaryReader.ReadByte();
+            }
+            int version = binaryReader.ReadInt32();
+            if (version != positionDataVersion) throw new IOException("incompatible version");
+            while (receiveHeader() == PositionDataHeader.KEY)
+            {
+                string key = SimpleDecompress(receiveString());
+                PositionDataHeader type = receiveHeader();
+                string value = "";
+                if (type == PositionDataHeader.MULTI)
+                {
+                    value = "m";
+                }
+                else
+                {
+                    value = "s";
+                }
+                value += SimpleDecompress(receiveString());
+                dictionary.Add(key, value);
+            }
+            return dictionary;
+        }
+
+        public SaveEditTask ShareLocation()
+        {
+            var run = new Action(() =>
+            {
+                try
+                {
+                    string content = saveFile.content;
+                    string[] lines = content.Split('\n');
+
+                    UnitSearchResult playerUnit = UnitTools.FindUnitWithType(lines, "player");
+                    UnitChildren[] positions = {
+                        UnitTools.SearchChildrenWithId(lines, "my_truck_placement", playerUnit),
+                        UnitTools.SearchChildrenWithId(lines, "my_trailer_placement", playerUnit),
+                        UnitTools.SearchChildrenWithId(lines, "truck_placement", playerUnit),
+                        UnitTools.SearchChildrenWithId(lines, "trailer_placement", playerUnit),
+                        UnitTools.SearchChildrenWithId(lines, "slave_trailer_placements", playerUnit),
+                    };
+                    Dictionary<string, string> dictionary = new Dictionary<string, string>();
+                    foreach (UnitChildren children in positions)
+                    {
+                        if (children.array != null)
+                        {
+                            string str = "m";
+                            foreach (string childLine in children.array)
+                            {
+                                str += childLine + "\n";
+                            }
+                            dictionary[children.name] = str.Trim();
+                        }
+                        else
+                        {
+                            dictionary[children.name] = "s" + children.header;
+                        }
+                    }
+
+                    string encodedData = EncodePositionData(dictionary);
+                    Clipboard.SetText(encodedData);
+                    MessageBox.Show("세이브 차량의 위치를 공유할 수 있도록 클립보드에 복사했습니다.", "완료");
+                }
+                catch (Exception e)
+                {
+                    if (e.Message == "incompatible version")
+                    {
+                        MessageBox.Show("다른 버전의 툴로 만들어진 데이터입니다.", "오류");
+                    }
+                    else
+                    {
+                        MessageBox.Show("오류가 발생했습니다.", "오류");
+                    }
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask
+            {
+                name = "플레이어 위치 내보내기",
+                run = run,
+                description = "플레이어의 트럭과, 연결된 모든 트레일러의 위치를 공유 가능하게 텍스트로 복사합니다."
+            };
+        }
+        public SaveEditTask InjectLocation()
+        {
+            var run = new Action(() =>
+            {
+                try
+                {
+                    var content = saveFile.content;
+                    var lines = content.Split('\n');
+                    var sb = new StringBuilder();
+
+                    var decoded = DecodePositionData(Clipboard.GetText());
+                    string my_truck_placement = decoded["my_truck_placement"].Substring(1);
+                    string truck_placement = decoded["truck_placement"].Substring(1);
+                    string my_trailer_placement = decoded["my_trailer_placement"].Substring(1);
+                    string trailer_placement = decoded["trailer_placement"].Substring(1);
+                    string slave_trailer_placements = decoded["slave_trailer_placements"];
+
+                    foreach (string line in lines)
+                    {
+                        string str = line;
+                        if (line.StartsWith(" my_truck_placement:"))
+                        {
+                            str = " my_truck_placement: " + my_truck_placement;
+                        }
+                        if (line.StartsWith(" my_trailer_placement:"))
+                        {
+                            str = " my_trailer_placement: " + my_trailer_placement;
+                        }
+                        if (line.StartsWith(" truck_placement:"))
+                        {
+                            str = " truck_placement: " + truck_placement;
+                        }
+                        if (line.StartsWith(" trailer_placement:"))
+                        {
+                            str = " trailer_placement: " + trailer_placement;
+                        }
+                        if (line.StartsWith(" slave_trailer_placements:"))
+                        {
+                            if (slave_trailer_placements.StartsWith("m"))
+                            {
+                                str = string.Join("\n", from a in slave_trailer_placements.Substring(1).Split('\n') select " slave_trailer_placements[]: " + a);
+                            }
+                            else
+                            {
+                                str = " slave_trailer_placements: " + slave_trailer_placements.Substring(1);
+                            }
+                        }
+                        else if (line.StartsWith(" slave_trailer_placements"))
+                        {
+                            str = null;
+                        }
+                        if (str != null)
+                            _ = sb.Append(str + "\n");
+                    }
+                    saveFile.Save(sb.ToString());
+                    MessageBox.Show("세이브 속 차량의 위치를 입력한 데이터로 변경했습니다.", "완료");
+                }
+                catch (Exception e)
+                {
+                    if (e.Message == "incompatible version")
+                    {
+                        MessageBox.Show("다른 버전의 툴로 만들어진 데이터입니다.", "오류");
+                    }
+                    else
+                    {
+                        MessageBox.Show("오류가 발생했습니다.", "오류");
+                    }
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask
+            {
+                name = "플레이어 위치 적용하기",
+                run = run,
+                description = "공유된 플레이어의 위치를 클립보드에서 가져와 세이브 파일에 주입합니다."
             };
         }
     }

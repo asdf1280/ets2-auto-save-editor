@@ -39,7 +39,7 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>9FB26E6226C815C962A717AF848BCAAFB62C21E6</ManifestCertificateThumbprint>
@@ -73,10 +73,14 @@
     <Compile Include="ListInput.xaml.cs">
       <DependentUpon>ListInput.xaml</DependentUpon>
     </Compile>
+    <Compile Include="StringInput.xaml.cs">
+      <DependentUpon>StringInput.xaml</DependentUpon>
+    </Compile>
     <Compile Include="NumberInput.xaml.cs">
       <DependentUpon>NumberInput.xaml</DependentUpon>
     </Compile>
     <Compile Include="SaveeditTasks.cs" />
+    <Compile Include="UnitTools.cs" />
     <Page Include="ListInput.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -93,6 +97,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="StringInput.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="NumberInput.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

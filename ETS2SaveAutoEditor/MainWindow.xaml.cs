@@ -185,6 +185,7 @@ namespace ETS2SaveAutoEditor
         private void LoadProfiles()
         {
             pNameAndPaths.Clear();
+            ProfileList.SelectedIndex = -1;
             ProfileList.Items.Clear();
             var dinfo = new DirectoryInfo(ets2Path);
             var dlist = dinfo.GetDirectories();
@@ -359,6 +360,8 @@ namespace ETS2SaveAutoEditor
 
         private void ProfileList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (e.AddedItems.Count == 0) return;
+
             DisableAll();
             ProfileChanged(true);
             var newItem = e.AddedItems[0].ToString();

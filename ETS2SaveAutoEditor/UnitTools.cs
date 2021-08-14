@@ -168,4 +168,79 @@ namespace ETS2SaveAutoEditor
         public string header;
         public string[] array;
     }
+
+    public interface ISiiElement
+    {
+        
+    }
+
+    public abstract class SiiContainer: ISiiElement
+    {
+        private string RawData;
+
+        public SiiContainer(string savegame)
+        {
+            savegame = savegame.Replace("\r", "");
+            if(savegame.StartsWith("SiiNunit\n"))
+            {
+                savegame = savegame.Substring(9);
+            } else
+            {
+                throw new ArgumentException("Corrupted save data");
+            }
+            RawData = savegame;
+        }
+
+        public abstract SiiUnit FindUnitOfId(string id);
+
+        public abstract SiiUnit FindUnitOfType(string id);
+    }
+
+    public abstract class SiiUnit: ISiiElement
+    {
+        private string RawData;
+        private SiiContainer _parent;
+
+        protected SiiUnit()
+        {
+
+        }
+
+        public abstract SiiChildren FindChildrenOfId(string id);
+    }
+
+    public abstract class SiiChildren: ISiiElement
+    {
+        private string _rawData;
+        private SiiUnit _parent;
+
+        protected SiiChildren(SiiUnit parent)
+        {
+            _parent = parent;
+        }
+
+        public string Key
+        {
+            get
+            {
+                return "";
+            }
+        }
+
+        public string RawValue
+        {
+            get
+            {
+                return "";
+            }
+        }
+
+        public string RawData
+        {
+            get
+            {
+                return _rawData;
+            }
+        }
+    }
 }

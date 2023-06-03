@@ -9,10 +9,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace ETS2SaveAutoEditor
-{
-    struct Paintjob
-    {
+namespace ETS2SaveAutoEditor {
+    struct Paintjob {
         public string mask_r_color;
         public string mask_g_color;
         public string mask_b_color;
@@ -21,86 +19,63 @@ namespace ETS2SaveAutoEditor
         public string base_color;
         public string data_path;
     }
-    public class SaveeditTasks
-    {
+    public class SaveeditTasks {
         public ProfileSave saveFile;
-        public SaveEditTask OwnTest()
-        {
-            var run = new Action(() =>
-            {
+        public SaveEditTask OwnTest() {
+            var run = new Action(() => {
                 var pattern = @"\bplayer : [\w\.]+ {";
-                if (Regex.IsMatch(saveFile.content, pattern))
-                {
+                if (Regex.IsMatch(saveFile.content, pattern)) {
                     var mr = Regex.Match(saveFile.content, pattern);
                     var sr = saveFile.content.Substring(mr.Index);
                     var sp = sr.Split('\n');
                     var notFound = false;
                     var foundTruck = false;
                     var foundTrailer = false;
-                    foreach (var str in sp)
-                    {
-                        if (str.Trim() == "}")
-                        {
+                    foreach (var str in sp) {
+                        if (str.Trim() == "}") {
                             if (!foundTrailer && !foundTruck)
                                 notFound = true;
                             break;
                         }
                         var pa = @"\bassigned_truck: ([\w\.]+)\b";
                         var pb = @"\bassigned_trailer: ([\w\.]+)\b";
-                        if (Regex.IsMatch(str, pa))
-                        {
+                        if (Regex.IsMatch(str, pa)) {
                             if (Regex.Match(str, pa).Groups[1].Value.ToLower() != "null")
                                 foundTruck = true;
                         }
-                        if (Regex.IsMatch(str, pb))
-                        {
+                        if (Regex.IsMatch(str, pb)) {
                             if (Regex.Match(str, pb).Groups[1].Value.ToLower() != "null")
                                 foundTrailer = true;
                         }
                     }
-                    if (notFound)
-                    {
+                    if (notFound) {
                         MessageBox.Show("Could not figure out if you have trailer or not.", "Error");
                         return;
-                    }
-                    else
-                    {
-                        if (foundTruck)
-                        {
+                    } else {
+                        if (foundTruck) {
                             MessageBox.Show("There is assigned truck.", "Test");
-                        }
-                        else
-                        {
+                        } else {
                             MessageBox.Show("There isn't assigned truck.", "Test");
                         }
-                        if (foundTrailer)
-                        {
+                        if (foundTrailer) {
                             MessageBox.Show("There is assigned trailer.", "Test");
-                        }
-                        else
-                        {
+                        } else {
                             MessageBox.Show("There isn't assigned trailer.", "Test");
                         }
                     }
-                }
-                else
-                {
+                } else {
                     MessageBox.Show("Could not find pleayer info", "Error");
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Test",
                 run = run,
                 description = "Checks if the savegame has assigned truck/trailer"
             };
         }
-        public SaveEditTask MoneySet()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask MoneySet() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var pattern0 = @"\beconomy : [\w\.]+ {";
                     var pattern1 = @"\bbank: ([\w\.]+)\b";
@@ -110,10 +85,8 @@ namespace ETS2SaveAutoEditor
                     int resultIndex = -1;
                     {
                         var index = matchIndex;
-                        foreach (var str in substr.Split('\n'))
-                        {
-                            if (Regex.IsMatch(str, pattern1))
-                            {
+                        foreach (var str in substr.Split('\n')) {
+                            if (Regex.IsMatch(str, pattern1)) {
                                 resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                                 resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
                                 break;
@@ -123,8 +96,7 @@ namespace ETS2SaveAutoEditor
                         }
                     }
 
-                    if (resultLine == null)
-                    {
+                    if (resultLine == null) {
                         MessageBox.Show("Corrupted savegame.", "Error");
                         return;
                     }
@@ -137,10 +109,8 @@ namespace ETS2SaveAutoEditor
                     resultIndex = -1;
                     {
                         int index = matchIndex;
-                        foreach (var str in substr.Split('\n'))
-                        {
-                            if (Regex.IsMatch(str, pattern1))
-                            {
+                        foreach (var str in substr.Split('\n')) {
+                            if (Regex.IsMatch(str, pattern1)) {
                                 resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                                 resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
                                 break;
@@ -152,8 +122,7 @@ namespace ETS2SaveAutoEditor
 
                     var specifiedCash = NumberInputBox.Show("Specify cash", "Please specify the new cash.\nCurrent cash: " + resultLine + "\nCaution: Too high value may crash the game. Please be careful.");
 
-                    if (specifiedCash == -1)
-                    {
+                    if (specifiedCash == -1) {
                         return;
                     }
 
@@ -163,27 +132,21 @@ namespace ETS2SaveAutoEditor
                     sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("Done!", "Done");
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     MessageBox.Show("An error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Specify cash",
                 run = run,
                 description = "Specify cash"
             };
         }
-        public SaveEditTask ExpSet()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask ExpSet() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var pattern0 = @"\beconomy : [\w\.]+ {";
                     var pattern1 = @"\bexperience_points: ([\w\.]+)\b";
@@ -193,10 +156,8 @@ namespace ETS2SaveAutoEditor
                     int resultIndex = 0;
                     {
                         var index = matchIndex;
-                        foreach (var str in substr.Split('\n'))
-                        {
-                            if (Regex.IsMatch(str, pattern1))
-                            {
+                        foreach (var str in substr.Split('\n')) {
+                            if (Regex.IsMatch(str, pattern1)) {
                                 resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                                 resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
                                 break;
@@ -206,16 +167,14 @@ namespace ETS2SaveAutoEditor
                         }
                     }
 
-                    if (resultLine == null)
-                    {
+                    if (resultLine == null) {
                         MessageBox.Show("Corrupted savegame.", "Error");
                         return;
                     }
 
                     var specifiedExp = NumberInputBox.Show("Specify EXP", "Please specify the new exps.\nCurrent exps: " + resultLine + "\nCaution: Too high value may crash the game. Please be careful.");
 
-                    if (specifiedExp == -1)
-                    {
+                    if (specifiedExp == -1) {
                         return;
                     }
 
@@ -225,27 +184,21 @@ namespace ETS2SaveAutoEditor
                     sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("Finished!", "Done");
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Specify EXP",
                 run = run,
                 description = "Specify EXP"
             };
         }
-        public SaveEditTask UnlockScreens()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask UnlockScreens() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var pattern0 = @"\beconomy : [\w\.]+ {";
                     var pattern1 = @"\bscreen_access_list: ([\w\.]+)\b";
@@ -255,10 +208,8 @@ namespace ETS2SaveAutoEditor
                     int resultLineIndex = 0;
                     {
                         var index = matchIndex;
-                        foreach (var str in substr.Split('\n'))
-                        {
-                            if (Regex.IsMatch(str, pattern1))
-                            {
+                        foreach (var str in substr.Split('\n')) {
+                            if (Regex.IsMatch(str, pattern1)) {
                                 resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                                 resultLineIndex = index;
                                 break;
@@ -269,8 +220,7 @@ namespace ETS2SaveAutoEditor
                     }
 
                     var msgBoxRes = MessageBox.Show("Unlock GUIs such as skills. For new profiles.\nSome GUIs that's normally disabled can be enabled too.\nThis job may take a while.", "Unlock", MessageBoxButton.OKCancel);
-                    if (msgBoxRes == MessageBoxResult.Cancel)
-                    {
+                    if (msgBoxRes == MessageBoxResult.Cancel) {
                         return;
                     }
 
@@ -278,15 +228,11 @@ namespace ETS2SaveAutoEditor
                     sb.Append(content.Substring(0, resultLineIndex));
 
                     content = content.Substring(resultLineIndex);
-                    foreach (var line in content.Split('\n'))
-                    {
+                    foreach (var line in content.Split('\n')) {
                         var str = line;
-                        if (str.Contains("screen_access_list:"))
-                        {
+                        if (str.Contains("screen_access_list:")) {
                             str = " screen_access_list: 0";
-                        }
-                        else if (str.Contains("screen_access_list["))
-                        {
+                        } else if (str.Contains("screen_access_list[")) {
                             continue;
                         }
                         sb.Append(str.Replace("\r", "") + "\n");
@@ -294,37 +240,29 @@ namespace ETS2SaveAutoEditor
 
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("Successfully unlocked!", "Done");
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Unlock all UI",
                 run = run,
                 description = "Unlock GUIs such as skills. For new profiles.\nSome GUIs that's normally disabled can be enabled too."
             };
         }
-        public SaveEditTask TruckEngineSet()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask TruckEngineSet() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var pattern0 = @"\beconomy : [\w\.]+ {";
                     var pattern1 = @"\bplayer: ([\w\.]+)\b";
                     var matchIndex = Regex.Match(content, pattern0).Index;
                     var substr = content.Substring(matchIndex);
                     string resultLine = null;
-                    foreach (var str in substr.Split('\n'))
-                    {
-                        if (Regex.IsMatch(str, pattern1))
-                        {
+                    foreach (var str in substr.Split('\n')) {
+                        if (Regex.IsMatch(str, pattern1)) {
                             resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                             break;
                         }
@@ -336,23 +274,18 @@ namespace ETS2SaveAutoEditor
                     matchIndex = Regex.Match(content, pattern0).Index;
                     substr = content.Substring(matchIndex);
                     resultLine = null;
-                    foreach (var str in substr.Split('\n'))
-                    {
-                        if (Regex.IsMatch(str, pattern1))
-                        {
+                    foreach (var str in substr.Split('\n')) {
+                        if (Regex.IsMatch(str, pattern1)) {
                             resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                             break;
                         }
                         if (str.Trim() == "}") break; // End of the class
                     }
 
-                    if (resultLine == null)
-                    {
+                    if (resultLine == null) {
                         MessageBox.Show("Corrupted savegame.", "Error");
                         return;
-                    }
-                    else if (resultLine == "null")
-                    {
+                    } else if (resultLine == "null") {
                         MessageBox.Show("No assigned truck found. Assign a truck in game.", "Error");
                         return;
                     }
@@ -370,8 +303,7 @@ namespace ETS2SaveAutoEditor
                     {
                         var res = ListInputBox.Show("Choose engine", "Choose a new engine for current assigned truck.\nIn fact, old Scania/Volvo engines are better than new ones.\n"
                             + "It may take a while to change your engine.", engineNames);
-                        if (res == -1)
-                        {
+                        if (res == -1) {
                             return;
                         }
                         enginePath = enginePaths[res];
@@ -382,19 +314,15 @@ namespace ETS2SaveAutoEditor
                     matchIndex = Regex.Match(content, pattern0).Index;
                     substr = content.Substring(matchIndex);
                     resultLine = null;
-                    foreach (var line in substr.Split('\n'))
-                    {
-                        if (Regex.IsMatch(line, pattern1))
-                        {
+                    foreach (var line in substr.Split('\n')) {
+                        if (Regex.IsMatch(line, pattern1)) {
                             var id = Regex.Match(line, pattern1).Groups[1].Value;
                             var p50 = @"\bvehicle_(addon_|sound_|wheel_|drv_plate_|paint_job_)?accessory : " + id + " {";
                             var matchIndex0 = Regex.Match(substr, p50).Index + matchIndex;
                             var substr0 = content.Substring(matchIndex0);
                             var index = 0;
-                            foreach (var line0 in substr0.Split('\n'))
-                            {
-                                if (Regex.IsMatch(line0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/engine\/"))
-                                {
+                            foreach (var line0 in substr0.Split('\n')) {
+                                if (Regex.IsMatch(line0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/engine\/")) {
                                     var sb = new StringBuilder();
                                     sb.Append(content.Substring(0, (int)(matchIndex0 + index)));
                                     sb.Append(" data_path: \"" + enginePath + "\"\n");
@@ -409,31 +337,24 @@ namespace ETS2SaveAutoEditor
                     }
                     saveFile.Save(content);
                     MessageBox.Show("Successfully changed!", "Done");
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Set truck engine",
                 run = run,
                 description = "Change the truck's engine to a few engines available."
             };
         }
-        public SaveEditTask MapReset()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask MapReset() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var sb = new StringBuilder();
-                    foreach (var line in content.Split('\n'))
-                    {
+                    foreach (var line in content.Split('\n')) {
                         var str = line;
                         if (line.Contains("discovered_items:"))
                             str = " discovered_items: 0";
@@ -442,27 +363,21 @@ namespace ETS2SaveAutoEditor
                     }
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("Done!", "Done");
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     MessageBox.Show("An error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Reset map",
                 run = run,
                 description = "Reset explorered roads."
             };
         }
-        public SaveEditTask Refuel()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask Refuel() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var sb = new StringBuilder();
 
@@ -473,15 +388,13 @@ namespace ETS2SaveAutoEditor
                     var fuelId = "";
                     {
                         var res = ListInputBox.Show("Choose fuel level", "Choose fuel level for your assigned truck.", fuelPresetNames);
-                        if (res == -1)
-                        {
+                        if (res == -1) {
                             return;
                         }
                         fuelId = fullPresetValues[res];
                     }
 
-                    foreach (var line in content.Split('\n'))
-                    {
+                    foreach (var line in content.Split('\n')) {
                         var str = line;
                         if (line.Contains("fuel_relative:"))
                             str = " fuel_relative: " + fuelId;
@@ -489,32 +402,25 @@ namespace ETS2SaveAutoEditor
                     }
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("Modifyed fuel level of all trucks!", "Done");
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     MessageBox.Show("An unknown error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Fill fuel tank",
                 run = run,
                 description = "Set the fuel level of all trucks in chosen savegame."
             };
         }
-        public SaveEditTask FixEverything()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask FixEverything() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var sb = new StringBuilder();
 
-                    foreach (var line in content.Split('\n'))
-                    {
+                    foreach (var line in content.Split('\n')) {
                         var str = line;
                         if (line.Contains(" wear:"))
                             str = " wear: 0";
@@ -522,45 +428,36 @@ namespace ETS2SaveAutoEditor
                     }
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("Repaired all truck/trailers.", "Done");
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     MessageBox.Show("An unknown error occured.", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Repair All",
                 run = run,
                 description = "Repair all truck/trailers in current savegame."
             };
         }
-        public SaveEditTask SharePaint()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask SharePaint() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var pattern0 = @"\beconomy : [\w\.]+ {";
                     var pattern1 = @"\bplayer: ([\w\.]+)\b";
                     var matchIndex = Regex.Match(content, pattern0).Index;
                     var substr = content.Substring(matchIndex);
                     string resultLine = null;
-                    foreach (var str in substr.Split('\n'))
-                    {
-                        if (Regex.IsMatch(str, pattern1))
-                        {
+                    foreach (var str in substr.Split('\n')) {
+                        if (Regex.IsMatch(str, pattern1)) {
                             resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                             break;
                         }
                         if (str.Trim() == "}") break;
                     }
 
-                    if (resultLine == null)
-                    {
+                    if (resultLine == null) {
                         MessageBox.Show("Corrupted save file", "Error");
                         return;
                     }
@@ -570,8 +467,7 @@ namespace ETS2SaveAutoEditor
                     var import = false;
                     {
                         var res = ListInputBox.Show("Choose job", "Which one do you want? Please choose what to import/export paintjob from.", operationNames);
-                        if (res == -1)
-                        {
+                        if (res == -1) {
                             return;
                         }
                         truck = res < 2;
@@ -583,17 +479,14 @@ namespace ETS2SaveAutoEditor
                     matchIndex = Regex.Match(content, pattern0).Index;
                     substr = content.Substring(matchIndex);
                     resultLine = null;
-                    foreach (var str in substr.Split('\n'))
-                    {
-                        if (Regex.IsMatch(str, pattern1))
-                        {
+                    foreach (var str in substr.Split('\n')) {
+                        if (Regex.IsMatch(str, pattern1)) {
                             resultLine = Regex.Match(str, pattern1).Groups[1].Value;
                             break;
                         }
                         if (str.Trim() == "}") break; // End of the class
                     }
-                    if (resultLine == "null")
-                    {
+                    if (resultLine == "null") {
                         if (truck)
                             MessageBox.Show("There's no assigned truck.", "Error");
                         else
@@ -604,20 +497,16 @@ namespace ETS2SaveAutoEditor
                     string path;
 
                     var filter = (truck ? "Truck paintjob (*.paint0)|*.paint0|All files (*.*)|*.*" : "Trailer paintjob (*.paint1)|*.paint1|All files (*.*)|*.*");
-                    if (import)
-                    { // Import
-                        OpenFileDialog dialog = new OpenFileDialog
-                        {
+                    if (import) { // Import
+                        OpenFileDialog dialog = new OpenFileDialog {
                             Title = "Choose paintjob file",
                             Filter = filter
                         };
                         if (dialog.ShowDialog() != true) return;
                         path = dialog.FileName;
-                    }
-                    else // Export
-                    {
-                        SaveFileDialog dialog = new SaveFileDialog
-                        {
+                    } else // Export
+                      {
+                        SaveFileDialog dialog = new SaveFileDialog {
                             Title = "Export paintjob",
                             Filter = filter
                         };
@@ -631,17 +520,14 @@ namespace ETS2SaveAutoEditor
                     substr = content.Substring(matchIndex);
                     resultLine = null;
 
-                    if (import)
-                    {
+                    if (import) {
                         var str = File.ReadAllText(path, Encoding.UTF8);
                         var strs = str.Split(';');
-                        if (strs.Length != 8)
-                        {
+                        if (strs.Length != 8) {
                             MessageBox.Show("Corrupted paintjob file", "Error");
                             return;
                         }
-                        var paintjob = new Paintjob
-                        {
+                        var paintjob = new Paintjob {
                             mask_r_color = strs[0],
                             mask_g_color = strs[1],
                             mask_b_color = strs[2],
@@ -651,10 +537,8 @@ namespace ETS2SaveAutoEditor
                             data_path = strs[6]
                         };
 
-                        foreach (var line in substr.Split('\n'))
-                        {
-                            if (Regex.IsMatch(line, pattern1))
-                            {
+                        foreach (var line in substr.Split('\n')) {
+                            if (Regex.IsMatch(line, pattern1)) {
                                 var id = Regex.Match(line, pattern1).Groups[1].Value;
                                 var p50 = @"\bvehicle_paint_job_accessory : " + id + " {";
                                 if (!Regex.IsMatch(substr, p50)) continue;
@@ -663,35 +547,27 @@ namespace ETS2SaveAutoEditor
                                 var index = 0;
                                 var sb = new StringBuilder();
                                 sb.Append(content.Substring(0, matchIndex0));
-                                foreach (var line0 in substr0.Split('\n'))
-                                {
+                                foreach (var line0 in substr0.Split('\n')) {
                                     var str0 = line0;
-                                    if (Regex.IsMatch(line0, @"\bdata_path:\s"".*?"""))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bdata_path:\s"".*?""")) {
                                         str0 = " data_path: " + paintjob.data_path + "";
                                     }
-                                    if (Regex.IsMatch(line0, @"\bmask_r_color: \(.*?\)"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bmask_r_color: \(.*?\)")) {
                                         str0 = " mask_r_color: " + paintjob.mask_r_color + "";
                                     }
-                                    if (Regex.IsMatch(line0, @"\bmask_g_color: \(.*?\)"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bmask_g_color: \(.*?\)")) {
                                         str0 = " mask_g_color: " + paintjob.mask_g_color + "";
                                     }
-                                    if (Regex.IsMatch(line0, @"\bmask_b_color: \(.*?\)"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bmask_b_color: \(.*?\)")) {
                                         str0 = " mask_b_color: " + paintjob.mask_b_color + "";
                                     }
-                                    if (Regex.IsMatch(line0, @"\bflake_color: \(.*?\)"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bflake_color: \(.*?\)")) {
                                         str0 = " flake_color: " + paintjob.flake_color + "";
                                     }
-                                    if (Regex.IsMatch(line0, @"\bflip_color: \(.*?\)"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bflip_color: \(.*?\)")) {
                                         str0 = " flip_color: " + paintjob.flip_color + "";
                                     }
-                                    if (Regex.IsMatch(line0, @"\bbase_color: \(.*?\)"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bbase_color: \(.*?\)")) {
                                         str0 = " base_color: " + paintjob.base_color + "";
                                     }
                                     Console.WriteLine("'" + Regex.Escape(str0) + "'");
@@ -706,49 +582,37 @@ namespace ETS2SaveAutoEditor
                         }
                         saveFile.Save(content);
                         MessageBox.Show("Imported paintjob!", "Done");
-                    }
-                    else
-                    {
+                    } else {
                         var paintjob = new Paintjob();
 
-                        foreach (var line in substr.Split('\n'))
-                        {
-                            if (Regex.IsMatch(line, pattern1))
-                            {
+                        foreach (var line in substr.Split('\n')) {
+                            if (Regex.IsMatch(line, pattern1)) {
                                 var id = Regex.Match(line, pattern1).Groups[1].Value;
                                 var p50 = @"\bvehicle_paint_job_accessory : " + id + " {";
                                 if (!Regex.IsMatch(substr, p50)) continue;
                                 var matchIndex0 = Regex.Match(substr, p50).Index + matchIndex; // TODO you must escape p50 id can contain .
                                 var substr0 = content.Substring(matchIndex0);
                                 var index = 0;
-                                foreach (var line0 in substr0.Split('\n'))
-                                {
-                                    if (Regex.IsMatch(line0, @"\bdata_path:\s("".*?"")"))
-                                    {
+                                foreach (var line0 in substr0.Split('\n')) {
+                                    if (Regex.IsMatch(line0, @"\bdata_path:\s("".*?"")")) {
                                         paintjob.data_path = Regex.Match(line0, @"\bdata_path:\s("".*?"")").Groups[1].Value;
                                     }
-                                    if (Regex.IsMatch(line0, @"\bmask_r_color: (\(.*?\))"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bmask_r_color: (\(.*?\))")) {
                                         paintjob.mask_r_color = Regex.Match(line0, @"\bmask_r_color: (\(.*?\))").Groups[1].Value;
                                     }
-                                    if (Regex.IsMatch(line0, @"\bmask_g_color: (\(.*?\))"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bmask_g_color: (\(.*?\))")) {
                                         paintjob.mask_g_color = Regex.Match(line0, @"\bmask_g_color: (\(.*?\))").Groups[1].Value;
                                     }
-                                    if (Regex.IsMatch(line0, @"\bmask_b_color: (\(.*?\))"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bmask_b_color: (\(.*?\))")) {
                                         paintjob.mask_b_color = Regex.Match(line0, @"\bmask_b_color: (\(.*?\))").Groups[1].Value;
                                     }
-                                    if (Regex.IsMatch(line0, @"\bflake_color: (\(.*?\))"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bflake_color: (\(.*?\))")) {
                                         paintjob.flake_color = Regex.Match(line0, @"\bflake_color: (\(.*?\))").Groups[1].Value;
                                     }
-                                    if (Regex.IsMatch(line0, @"\bflip_color: (\(.*?\))"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bflip_color: (\(.*?\))")) {
                                         paintjob.flip_color = Regex.Match(line0, @"\bflip_color: (\(.*?\))").Groups[1].Value;
                                     }
-                                    if (Regex.IsMatch(line0, @"\bbase_color: (\(.*?\))"))
-                                    {
+                                    if (Regex.IsMatch(line0, @"\bbase_color: (\(.*?\))")) {
                                         paintjob.base_color = Regex.Match(line0, @"\bbase_color: (\(.*?\))").Groups[1].Value;
                                     }
                                     if (line0.Trim() == "}") break;
@@ -757,80 +621,64 @@ namespace ETS2SaveAutoEditor
                             }
                             if (line.Trim() == "}") break; // End of the class
                         }
-                        try
-                        {
+                        try {
                             var data = paintjob.mask_r_color + ";" + paintjob.mask_g_color + ";" + paintjob.mask_b_color + ";" + paintjob.flake_color + ";" + paintjob.flip_color + ";" + paintjob.base_color + ";" + paintjob.data_path + ";";
                             File.WriteAllText(path, data, Encoding.UTF8);
-                        }
-                        catch (Exception)
-                        {
+                        } catch (Exception) {
                             MessageBox.Show("Could not export", "Error");
                             throw;
                         }
                         MessageBox.Show("Exported paintjob!", "Done");
                     }
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     MessageBox.Show("An unknown error occured", "Error");
                     Console.WriteLine(e);
                     throw;
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Export/import paintjob",
                 run = run,
                 description = "Import/export paintjob of assigned truck/trailer."
             };
         }
 
-        private enum PositionDataHeader : byte
-        {
+        private enum PositionDataHeader : byte {
             KEY,
             END,
             SINGLE,
             MULTI
         }
         private readonly int positionDataVersion = 1;
-        private string SimpleCompress(string data)
-        {
+        private string SimpleCompress(string data) {
             return data.Replace("truck_placement", "TRPL").Replace("trailer_placement", "TAPL");
         }
-        private string SimpleDecompress(string data)
-        {
+        private string SimpleDecompress(string data) {
             return data.Replace("TRPL", "truck_placement").Replace("TAPL", "trailer_placement");
         }
-        private string EncodePositionData(Dictionary<string, string> data)
-        {
+        private string EncodePositionData(Dictionary<string, string> data) {
             Encoding encoding = Encoding.UTF8;
             MemoryStream memoryStream = new MemoryStream();
             GZipStream compressionStream = new GZipStream(memoryStream, CompressionLevel.Optimal);
             BinaryWriter binaryWriter = new BinaryWriter(compressionStream, Encoding.ASCII);
-            void sendString(string text)
-            {
+            void sendString(string text) {
                 byte[] bytes = encoding.GetBytes(text);
                 binaryWriter.Write(bytes.Length);
                 binaryWriter.Write(bytes);
             }
-            void sendHeader(PositionDataHeader header)
-            {
+            void sendHeader(PositionDataHeader header) {
                 binaryWriter.Write((byte)header);
             }
             binaryWriter.Write(positionDataVersion);
-            foreach (string key in data.Keys)
-            {
+            foreach (string key in data.Keys) {
                 string value = data[key];
 
                 sendHeader(PositionDataHeader.KEY);
                 sendString(SimpleCompress(key));
 
-                if (value.StartsWith("m"))
-                {
+                if (value.StartsWith("m")) {
                     sendHeader(PositionDataHeader.MULTI);
-                }
-                else
-                {
+                } else {
                     sendHeader(PositionDataHeader.SINGLE);
                 }
                 value = value.Substring(1);
@@ -843,32 +691,23 @@ namespace ETS2SaveAutoEditor
             int Eqs = 0;
             int As = 0;
             int i;
-            for (i = encoded.Length - 1; i >= 0; i--)
-            {
-                if (encoded[i] != '=' && encoded[i] != 'A')
-                {
+            for (i = encoded.Length - 1; i >= 0; i--) {
+                if (encoded[i] != '=' && encoded[i] != 'A') {
                     break;
                 }
-                if (encoded[i] == '=')
-                {
-                    if (As != 0)
-                    {
+                if (encoded[i] == '=') {
+                    if (As != 0) {
                         break;
-                    }
-                    else
-                    {
+                    } else {
                         Eqs++;
                     }
-                }
-                else if (encoded[i] == 'A')
-                {
+                } else if (encoded[i] == 'A') {
                     As++;
                 }
             }
             return encoded.Substring(0, i + 1) + "A_" + As + "=_" + Eqs;
         }
-        private Dictionary<string, string> DecodePositionData(string encoded)
-        {
+        private Dictionary<string, string> DecodePositionData(string encoded) {
             Encoding encoding = Encoding.UTF8;
             {
                 Match matchCompression = Regex.Match(encoded, "A_(\\d+)\\=_(\\d+)");
@@ -876,12 +715,10 @@ namespace ETS2SaveAutoEditor
                 int Eqs = int.Parse(matchCompression.Groups[2].Value);
                 int segmentLength = matchCompression.Groups[0].Value.Length;
                 encoded = encoded.Substring(0, encoded.Length - segmentLength);
-                for (int i = 0; i < As; i++)
-                {
+                for (int i = 0; i < As; i++) {
                     encoded += 'A';
                 }
-                for (int i = 0; i < Eqs; i++)
-                {
+                for (int i = 0; i < Eqs; i++) {
                     encoded += '=';
                 }
             }
@@ -891,30 +728,24 @@ namespace ETS2SaveAutoEditor
             MemoryStream memoryStream = new MemoryStream(data);
             GZipStream compressionStream = new GZipStream(memoryStream, CompressionMode.Decompress);
             BinaryReader binaryReader = new BinaryReader(compressionStream, Encoding.UTF8);
-            string receiveString()
-            {
+            string receiveString() {
                 int length = binaryReader.ReadInt32();
                 byte[] bytes = new byte[length];
                 _ = binaryReader.Read(bytes, 0, length);
                 return encoding.GetString(bytes);
             }
-            PositionDataHeader receiveHeader()
-            {
+            PositionDataHeader receiveHeader() {
                 return (PositionDataHeader)binaryReader.ReadByte();
             }
             int version = binaryReader.ReadInt32();
             if (version != positionDataVersion) throw new IOException("incompatible version");
-            while (receiveHeader() == PositionDataHeader.KEY)
-            {
+            while (receiveHeader() == PositionDataHeader.KEY) {
                 string key = SimpleDecompress(receiveString());
                 PositionDataHeader type = receiveHeader();
                 string value = "";
-                if (type == PositionDataHeader.MULTI)
-                {
+                if (type == PositionDataHeader.MULTI) {
                     value = "m";
-                }
-                else
-                {
+                } else {
                     value = "s";
                 }
                 value += SimpleDecompress(receiveString());
@@ -923,14 +754,11 @@ namespace ETS2SaveAutoEditor
             return dictionary;
         }
 
-        public SaveEditTask ShareLocation()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask ShareLocation() {
+            var run = new Action(() => {
+                try {
                     string content = saveFile.content;
-                    string[] lines = content.Split('\n');
+                    List<string> lines = content.Split('\n').ToList();
 
                     UnitSearchResult playerUnit = UnitTools.FindUnitWithType(lines, "player");
                     UnitChildren[] positions = {
@@ -941,19 +769,14 @@ namespace ETS2SaveAutoEditor
                         UnitTools.SearchChildrenWithId(lines, "slave_trailer_placements", playerUnit),
                     };
                     Dictionary<string, string> dictionary = new Dictionary<string, string>();
-                    foreach (UnitChildren children in positions)
-                    {
-                        if (children.array != null)
-                        {
+                    foreach (UnitChildren children in positions) {
+                        if (children.array != null) {
                             string str = "m";
-                            foreach (string childLine in children.array)
-                            {
+                            foreach (string childLine in children.array) {
                                 str += childLine + "\n";
                             }
                             dictionary[children.name] = str.Trim();
-                        }
-                        else
-                        {
+                        } else {
                             dictionary[children.name] = "s" + children.header;
                         }
                     }
@@ -961,33 +784,24 @@ namespace ETS2SaveAutoEditor
                     string encodedData = EncodePositionData(dictionary);
                     Clipboard.SetText(encodedData);
                     MessageBox.Show("The location of your truck, trailer was copied to the clipboard. Share it to others.", "Done");
-                }
-                catch (Exception e)
-                {
-                    if (e.Message == "incompatible version")
-                    {
+                } catch (Exception e) {
+                    if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
-                    }
-                    else
-                    {
+                    } else {
                         MessageBox.Show("An error occured.", "Error");
                     }
                     Console.WriteLine(e);
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Share Player Position",
                 run = run,
                 description = "Copies the position of player's truck and trailer, which you can share to others, to clipboard."
             };
         }
-        public SaveEditTask InjectLocation()
-        {
-            var run = new Action(() =>
-            {
-                try
-                {
+        public SaveEditTask InjectLocation() {
+            var run = new Action(() => {
+                try {
                     var content = saveFile.content;
                     var lines = content.Split('\n');
                     var sb = new StringBuilder();
@@ -999,38 +813,27 @@ namespace ETS2SaveAutoEditor
                     string trailer_placement = decoded["trailer_placement"].Substring(1);
                     string slave_trailer_placements = decoded["slave_trailer_placements"];
 
-                    foreach (string line in lines)
-                    {
+                    foreach (string line in lines) {
                         string str = line;
-                        if (line.StartsWith(" my_truck_placement:"))
-                        {
+                        if (line.StartsWith(" my_truck_placement:")) {
                             str = " my_truck_placement: " + my_truck_placement;
                         }
-                        if (line.StartsWith(" my_trailer_placement:"))
-                        {
+                        if (line.StartsWith(" my_trailer_placement:")) {
                             str = " my_trailer_placement: " + my_trailer_placement;
                         }
-                        if (line.StartsWith(" truck_placement:"))
-                        {
+                        if (line.StartsWith(" truck_placement:")) {
                             str = " truck_placement: " + truck_placement;
                         }
-                        if (line.StartsWith(" trailer_placement:"))
-                        {
+                        if (line.StartsWith(" trailer_placement:")) {
                             str = " trailer_placement: " + trailer_placement;
                         }
-                        if (line.StartsWith(" slave_trailer_placements:"))
-                        {
-                            if (slave_trailer_placements.StartsWith("m"))
-                            {
+                        if (line.StartsWith(" slave_trailer_placements:")) {
+                            if (slave_trailer_placements.StartsWith("m")) {
                                 str = string.Join("\n", from a in slave_trailer_placements.Substring(1).Split('\n') select " slave_trailer_placements[]: " + a);
-                            }
-                            else
-                            {
+                            } else {
                                 str = " slave_trailer_placements: " + slave_trailer_placements.Substring(1);
                             }
-                        }
-                        else if (line.StartsWith(" slave_trailer_placements"))
-                        {
+                        } else if (line.StartsWith(" slave_trailer_placements")) {
                             str = null;
                         }
                         if (str != null)
@@ -1038,25 +841,119 @@ namespace ETS2SaveAutoEditor
                     }
                     saveFile.Save(sb.ToString());
                     MessageBox.Show("Successfully injected the position of player vehicles.", "Done");
-                }
-                catch (Exception e)
-                {
-                    if (e.Message == "incompatible version")
-                    {
+                } catch (Exception e) {
+                    if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
-                    }
-                    else
-                    {
+                    } else {
                         MessageBox.Show("An error occured.", "Error");
                     }
                     Console.WriteLine(e);
                 }
             });
-            return new SaveEditTask
-            {
+            return new SaveEditTask {
                 name = "Inject Player Position",
                 run = run,
                 description = "Imports the shared player position data to inject into this savegame."
+            };
+        }
+
+        public SaveEditTask StealCompanyTrailer() {
+            var run = new Action(() => {
+                try {
+                    var content = saveFile.content;
+                    var lines = content.Split('\n').ToList();
+                    UnitTools.NormalizeArrayNotation(lines);
+                    var sb = new StringBuilder();
+
+                    var unitEconomy = UnitTools.FindUnitWithType(lines, "economy");
+                    var unitPlayer = UnitTools.FindUnitWithType(lines, "player");
+
+                    var currentTrailerId = "";
+                    var currentJobId = "";
+                    { // 현재 작업이나 트레일러가 없으면 오류 발생
+                        currentTrailerId = UnitTools.SearchChildrenWithId(lines, "assigned_trailer", unitPlayer).header;
+                        if (currentTrailerId == "null") {
+                            MessageBox.Show("You don't have an assigned trailer.", "Error");
+                            return;
+                        }
+
+                        currentJobId = UnitTools.SearchChildrenWithId(lines, "current_job", unitPlayer).header;
+                        if (currentJobId == null) {
+                            MessageBox.Show("You don't have any job now.", "Error");
+                            return;
+                        }
+                    }
+
+                    // Set current_job to null
+                    UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "current_job", header = "null", array = { } }, unitPlayer);
+                    unitPlayer = UnitTools.FindUnitWithType(lines, "player");
+
+                    // Delete current job instance
+                    UnitTools.DeleteUnit(lines, UnitTools.FindUnitWithId(lines, currentJobId));
+
+                    // Get trailers I own now
+                    var trailers = UnitTools.SearchChildrenWithId(lines, "trailers", unitPlayer).array;
+                    if (trailers.Contains(currentTrailerId)) { // Owned trailer - cancel job and return
+                        saveFile.Save(String.Join("\n", lines));
+                        MessageBox.Show("You already own the trailer used for the job. The job was canceled with the cargo accessory remaining.", "Done!");
+                        return;
+                    }
+
+                    // Not owned trailers - Add to owned trailers and selected garage
+                    var garageId = "";
+                    {
+                        var garageNamesFound = (from item in UnitTools.SearchChildrenWithId(lines, "garages", unitEconomy).array select item.Split(new string[] { "garage." }, StringSplitOptions.None)[1]).ToList();
+                        garageNamesFound.Sort();
+
+                        if (garageNamesFound.Count == 0) {
+                            MessageBox.Show("You need to have at least one garage to store the stolen trailer.", "Error");
+                            return;
+                        }
+
+                        var res = ListInputBox.Show("Choose your garage", "Where would you like to store the stolen trailer? Make sure only to choose the garage that you own in game.", garageNamesFound.ToArray());
+                        if (res == -1) {
+                            return;
+                        }
+                        garageId = "garage." + garageNamesFound.ToArray()[res];
+                    }
+
+                    // Add trailer to player trailer list
+                    {
+                        var t = trailers.ToList();
+                        t.Add(currentTrailerId);
+                        UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "trailers", header = "", array = t.ToArray() }, unitPlayer);
+                    }
+
+                    // Add trailer to garage trailer list
+                    {
+                        var unitGarage = UnitTools.FindUnitWithId(lines, garageId);
+
+                        var tValues = UnitTools.SearchChildrenWithId(lines, "trailers", unitGarage);
+                        var ts = new string[] { };
+                        if (tValues.array != null) {
+                            ts = tValues.array;
+                        }
+                        var t = ts.ToList();
+                        t.Add(currentTrailerId);
+                        UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "trailers", header = "", array = t.ToArray() }, unitGarage);
+                    }
+
+                    saveFile.Save(String.Join("\n", lines));
+                    MessageBox.Show("The trailer is yours now.", "Done!");
+                    return;
+                } catch (Exception e) {
+                    if (e.Message == "incompatible version") {
+                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                    } else {
+                        MessageBox.Show("An error occured.", "Error");
+                    }
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask {
+                name = "Job trailer stealer",
+                run = run,
+                description = "Steals the trailer you are currently using for the job."
             };
         }
     }

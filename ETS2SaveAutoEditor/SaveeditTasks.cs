@@ -878,7 +878,7 @@ namespace ETS2SaveAutoEditor {
                         }
 
                         currentJobId = UnitTools.SearchChildrenWithId(lines, "current_job", unitPlayer).header;
-                        if (currentJobId == null) {
+                        if (currentJobId == "null") {
                             MessageBox.Show("활성화된 작업이 없습니다.", "오류");
                             return;
                         }

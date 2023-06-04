@@ -760,8 +760,8 @@ namespace ETS2SaveAutoEditor {
                     string content = saveFile.content;
                     List<string> lines = content.Split('\n').ToList();
 
-                    UnitSearchResult playerUnit = UnitTools.FindUnitWithType(lines, "player");
-                    UnitChildren[] positions = {
+                    UnitRange playerUnit = UnitTools.FindUnitWithType(lines, "player");
+                    UnitItem[] positions = {
                         UnitTools.SearchChildrenWithId(lines, "my_truck_placement", playerUnit),
                         UnitTools.SearchChildrenWithId(lines, "my_trailer_placement", playerUnit),
                         UnitTools.SearchChildrenWithId(lines, "truck_placement", playerUnit),
@@ -769,7 +769,7 @@ namespace ETS2SaveAutoEditor {
                         UnitTools.SearchChildrenWithId(lines, "slave_trailer_placements", playerUnit),
                     };
                     Dictionary<string, string> dictionary = new Dictionary<string, string>();
-                    foreach (UnitChildren children in positions) {
+                    foreach (UnitItem children in positions) {
                         if (children.array != null) {
                             string str = "m";
                             foreach (string childLine in children.array) {
@@ -777,7 +777,7 @@ namespace ETS2SaveAutoEditor {
                             }
                             dictionary[children.name] = str.Trim();
                         } else {
-                            dictionary[children.name] = "s" + children.header;
+                            dictionary[children.name] = "s" + children.value;
                         }
                     }
 
@@ -871,13 +871,13 @@ namespace ETS2SaveAutoEditor {
                     var currentTrailerId = "";
                     var currentJobId = "";
                     { // 현재 작업이나 트레일러가 없으면 오류 발생
-                        currentTrailerId = UnitTools.SearchChildrenWithId(lines, "assigned_trailer", unitPlayer).header;
+                        currentTrailerId = UnitTools.SearchChildrenWithId(lines, "assigned_trailer", unitPlayer).value;
                         if (currentTrailerId == "null") {
                             MessageBox.Show("활성화된 트레일러가 없습니다.", "오류");
                             return;
                         }
 
-                        currentJobId = UnitTools.SearchChildrenWithId(lines, "current_job", unitPlayer).header;
+                        currentJobId = UnitTools.SearchChildrenWithId(lines, "current_job", unitPlayer).value;
                         if (currentJobId == "null") {
                             MessageBox.Show("활성화된 작업이 없습니다.", "오류");
                             return;
@@ -885,7 +885,7 @@ namespace ETS2SaveAutoEditor {
                     }
 
                     // Set current_job to null
-                    UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "current_job", header = "null", array = { } }, unitPlayer);
+                    UnitTools.InsertOrReplaceChildren(lines, new UnitItem { name = "current_job", value = "null", array = { } }, unitPlayer);
                     unitPlayer = UnitTools.FindUnitWithType(lines, "player");
 
                     // Delete current job instance
@@ -921,7 +921,7 @@ namespace ETS2SaveAutoEditor {
                     {
                         var t = trailers.ToList();
                         t.Add(currentTrailerId);
-                        UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "trailers", header = "", array = t.ToArray() }, unitPlayer);
+                        UnitTools.InsertOrReplaceChildren(lines, new UnitItem { name = "trailers", value = "", array = t.ToArray() }, unitPlayer);
                     }
 
                     // Add trailer to garage trailer list
@@ -935,7 +935,7 @@ namespace ETS2SaveAutoEditor {
                         }
                         var t = ts.ToList();
                         t.Add(currentTrailerId);
-                        UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "trailers", header = "", array = t.ToArray() }, unitGarage);
+                        UnitTools.InsertOrReplaceChildren(lines, new UnitItem { name = "trailers", value = "", array = t.ToArray() }, unitGarage);
                     }
 
                     saveFile.Save(String.Join("\n", lines));

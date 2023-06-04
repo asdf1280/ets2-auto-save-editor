@@ -274,8 +274,10 @@ namespace ETS2SaveAutoEditor {
 
                     foreach (var line in content.Split('\n')) {
                         var str = line;
-                        if (line.Contains(" wear:"))
-                            str = " wear: 0";
+                        if (Regex.IsMatch(str, @"([a-z_]*_wear(?:\[\d*\])?:) (.*)\b")) {
+                            str = Regex.Replace(str, @"([a-z_]*_wear(?:\[\d*\])?:) (.*)\b", "$1 0");
+                        }
+
                         sb.Append(str + "\n");
                     }
                     saveFile.Save(sb.ToString());

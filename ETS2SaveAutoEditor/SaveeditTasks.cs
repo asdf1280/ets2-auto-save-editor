@@ -787,11 +787,7 @@ namespace ETS2SaveAutoEditor {
                     MessageBox.Show("The trailer is yours now.", "Done!");
                     return;
                 } catch (Exception e) {
-                    if (e.Message == "incompatible version") {
-                        MessageBox.Show("Data version doesn't match the current version.", "Error");
-                    } else {
-                        MessageBox.Show("An error occured.", "Error");
-                    }
+                    MessageBox.Show("An error occured.", "Error");
                     Console.WriteLine(e);
                 }
             });
@@ -799,6 +795,42 @@ namespace ETS2SaveAutoEditor {
                 name = "Job trailer stealer",
                 run = run,
                 description = "Steals the trailer you are currently using for the job."
+            };
+        }
+
+        public SaveEditTask ChangeCargoMass() {
+            var run = new Action(() => {
+                try {
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var player = UnitTypeSelector.Of("player");
+
+                    var assignedTrailerId = saveGame.GetUnitItem(player, "assigned_trailer").value;
+                    if(assignedTrailerId == "null") {
+                        MessageBox.Show("You don't have an assigned trailer.", "Error");
+                        return;
+                    }
+
+                    var specifiedMass = NumberInputBox.Show("Set mass", "How heavy would you like your trailer cargo to be in kilograms? Too high values will result in physics glitch. Set this to 0 if you want to remove the cargo.");
+
+                    if (specifiedMass == -1) {
+                        return;
+                    }
+
+                    var trailer = UnitIdSelector.Of(assignedTrailerId);
+                    saveGame.SetUnitItem(trailer, new UnitItem { name = "cargo_mass", value = $"{specifiedMass}" });
+
+                    saveFile.Save(saveGame.ToString());
+                    MessageBox.Show("Changed the trailer cargo mass!", "Done");
+                    return;
+                } catch (Exception e) {
+                    MessageBox.Show("An error occured.", "Error");
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask {
+                name = "Set trailer cargo mass",
+                run = run,
+                description = "Change the cargo mass of the assigned trailer as you want."
             };
         }
     }

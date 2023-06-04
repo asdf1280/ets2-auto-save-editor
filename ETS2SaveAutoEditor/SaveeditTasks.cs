@@ -21,116 +21,21 @@ namespace ETS2SaveAutoEditor {
     }
     public class SaveeditTasks {
         public ProfileSave saveFile;
-        public SaveEditTask OwnTest() {
-            var run = new Action(() => {
-                var pattern = @"\bplayer : [\w\.]+ {";
-                if (Regex.IsMatch(saveFile.content, pattern)) {
-                    var mr = Regex.Match(saveFile.content, pattern);
-                    var sr = saveFile.content.Substring(mr.Index);
-                    var sp = sr.Split('\n');
-                    var notFound = false;
-                    var foundTruck = false;
-                    var foundTrailer = false;
-                    foreach (var str in sp) {
-                        if (str.Trim() == "}") {
-                            if (!foundTrailer && !foundTruck)
-                                notFound = true;
-                            break;
-                        }
-                        var pa = @"\bassigned_truck: ([\w\.]+)\b";
-                        var pb = @"\bassigned_trailer: ([\w\.]+)\b";
-                        if (Regex.IsMatch(str, pa)) {
-                            if (Regex.Match(str, pa).Groups[1].Value.ToLower() != "null")
-                                foundTruck = true;
-                        }
-                        if (Regex.IsMatch(str, pb)) {
-                            if (Regex.Match(str, pb).Groups[1].Value.ToLower() != "null")
-                                foundTrailer = true;
-                        }
-                    }
-                    if (notFound) {
-                        MessageBox.Show("Could not figure out if you have trailer or not.", "Error");
-                        return;
-                    } else {
-                        if (foundTruck) {
-                            MessageBox.Show("There is assigned truck.", "Test");
-                        } else {
-                            MessageBox.Show("There isn't assigned truck.", "Test");
-                        }
-                        if (foundTrailer) {
-                            MessageBox.Show("There is assigned trailer.", "Test");
-                        } else {
-                            MessageBox.Show("There isn't assigned trailer.", "Test");
-                        }
-                    }
-                } else {
-                    MessageBox.Show("Could not find pleayer info", "Error");
-                }
-            });
-            return new SaveEditTask {
-                name = "Test",
-                run = run,
-                description = "Checks if the savegame has assigned truck/trailer"
-            };
-        }
         public SaveEditTask MoneySet() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var pattern0 = @"\beconomy : [\w\.]+ {";
-                    var pattern1 = @"\bbank: ([\w\.]+)\b";
-                    var matchIndex = Regex.Match(content, pattern0).Index;
-                    var substr = content.Substring(matchIndex);
-                    string resultLine = null;
-                    int resultIndex = -1;
-                    {
-                        var index = matchIndex;
-                        foreach (var str in substr.Split('\n')) {
-                            if (Regex.IsMatch(str, pattern1)) {
-                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
-                                break;
-                            }
-                            if (str.Trim() == "}") break;
-                            index += str.Length + 1;
-                        }
-                    }
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var bank = saveGame.FindUnitWithType("bank");
+                    var currentBank = saveGame.GetUnitItem(bank, "money_account").value;
 
-                    if (resultLine == null) {
-                        MessageBox.Show("Corrupted savegame.", "Error");
-                        return;
-                    }
-
-                    pattern0 = @"\bbank : " + resultLine + " {";
-                    pattern1 = @"\bmoney_account: ([\w\.]+)\b";
-                    matchIndex = Regex.Match(content, pattern0).Index;
-                    substr = content.Substring(matchIndex);
-                    resultLine = null;
-                    resultIndex = -1;
-                    {
-                        int index = matchIndex;
-                        foreach (var str in substr.Split('\n')) {
-                            if (Regex.IsMatch(str, pattern1)) {
-                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
-                                break;
-                            }
-                            if (str.Trim() == "}") break;
-                            index += str.Length + 1;
-                        }
-                    }
-
-                    var specifiedCash = NumberInputBox.Show("Specify cash", "Please specify the new cash.\nCurrent cash: " + resultLine + "\nCaution: Too high value may crash the game. Please be careful.");
+                    var specifiedCash = NumberInputBox.Show("Specify cash", "Please specify the new cash.\nCurrent cash: " + currentBank + "\nCaution: Too high value may crash the game. Please be careful.");
 
                     if (specifiedCash == -1) {
                         return;
                     }
 
-                    var sb = new StringBuilder();
-                    sb.Append(saveFile.content.Substring(0, resultIndex));
-                    sb.Append(specifiedCash.ToString());
-                    sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
-                    saveFile.Save(sb.ToString());
+                    saveGame.SetUnitItem(bank, new UnitItem { name = "money_account", value = specifiedCash.ToString() });
+                    saveFile.Save(saveGame.MergeResult());
                     MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An error occured.", "Error");
@@ -147,43 +52,19 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ExpSet() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var pattern0 = @"\beconomy : [\w\.]+ {";
-                    var pattern1 = @"\bexperience_points: ([\w\.]+)\b";
-                    var matchIndex = Regex.Match(content, pattern0).Index;
-                    var substr = content.Substring(matchIndex);
-                    string resultLine = null;
-                    int resultIndex = 0;
-                    {
-                        var index = matchIndex;
-                        foreach (var str in substr.Split('\n')) {
-                            if (Regex.IsMatch(str, pattern1)) {
-                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
-                                break;
-                            }
-                            if (str.Trim() == "}") break;
-                            index += str.Length + 1;
-                        }
-                    }
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var economy = saveGame.FindUnitWithType("economy");
+                    var currentExp = saveGame.GetUnitItem(economy, "experience_points").value;
 
-                    if (resultLine == null) {
-                        MessageBox.Show("Corrupted savegame.", "Error");
-                        return;
-                    }
-
-                    var specifiedExp = NumberInputBox.Show("Specify EXP", "Please specify the new exps.\nCurrent exps: " + resultLine + "\nCaution: Too high value may crash the game. Please be careful.");
+                    var specifiedExp = NumberInputBox.Show("Specify EXP", "Please specify the new exps.\nCurrent exps: " + currentExp + "\nCaution: Too high value may crash the game. Please be careful.");
 
                     if (specifiedExp == -1) {
                         return;
                     }
 
-                    var sb = new StringBuilder();
-                    sb.Append(saveFile.content.Substring(0, resultIndex));
-                    sb.Append(specifiedExp.ToString());
-                    sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
-                    saveFile.Save(sb.ToString());
-                    MessageBox.Show("Finished!", "Done");
+                    saveGame.SetUnitItem(economy, new UnitItem { name = "experience_points", value = specifiedExp.ToString() });
+                    saveFile.Save(saveGame.MergeResult());
+                    MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
                     Console.WriteLine(e);
@@ -199,47 +80,17 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask UnlockScreens() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var pattern0 = @"\beconomy : [\w\.]+ {";
-                    var pattern1 = @"\bscreen_access_list: ([\w\.]+)\b";
-                    var matchIndex = Regex.Match(content, pattern0).Index;
-                    var substr = content.Substring(matchIndex);
-                    string resultLine = null;
-                    int resultLineIndex = 0;
-                    {
-                        var index = matchIndex;
-                        foreach (var str in substr.Split('\n')) {
-                            if (Regex.IsMatch(str, pattern1)) {
-                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                                resultLineIndex = index;
-                                break;
-                            }
-                            if (str.Trim() == "}") break;
-                            index += str.Length + 1;
-                        }
-                    }
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var economy = saveGame.FindUnitWithType("economy");
 
-                    var msgBoxRes = MessageBox.Show("Unlock GUIs such as skills. For new profiles.\nSome GUIs that's normally disabled can be enabled too.\nThis job may take a while.", "Unlock", MessageBoxButton.OKCancel);
+                    var msgBoxRes = MessageBox.Show("Unlock GUIs such as skills. This can even unlock some items which is supposed to be disabled. Would you like to proceed?", "Unlock", MessageBoxButton.OKCancel);
                     if (msgBoxRes == MessageBoxResult.Cancel) {
                         return;
                     }
 
-                    var sb = new StringBuilder();
-                    sb.Append(content.Substring(0, resultLineIndex));
-
-                    content = content.Substring(resultLineIndex);
-                    foreach (var line in content.Split('\n')) {
-                        var str = line;
-                        if (str.Contains("screen_access_list:")) {
-                            str = " screen_access_list: 0";
-                        } else if (str.Contains("screen_access_list[")) {
-                            continue;
-                        }
-                        sb.Append(str.Replace("\r", "") + "\n");
-                    }
-
-                    saveFile.Save(sb.ToString());
-                    MessageBox.Show("Successfully unlocked!", "Done");
+                    saveGame.SetUnitItem(economy, new UnitItem { name = "screen_access_list", value = "0" });
+                    saveFile.Save(saveGame.ToString());
+                    MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
                     Console.WriteLine(e);
@@ -757,19 +608,18 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ShareLocation() {
             var run = new Action(() => {
                 try {
-                    string content = saveFile.content;
-                    List<string> lines = content.Split('\n').ToList();
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var player = saveGame.FindUnitWithType("player");
 
-                    UnitSearchResult playerUnit = UnitTools.FindUnitWithType(lines, "player");
-                    UnitChildren[] positions = {
-                        UnitTools.SearchChildrenWithId(lines, "my_truck_placement", playerUnit),
-                        UnitTools.SearchChildrenWithId(lines, "my_trailer_placement", playerUnit),
-                        UnitTools.SearchChildrenWithId(lines, "truck_placement", playerUnit),
-                        UnitTools.SearchChildrenWithId(lines, "trailer_placement", playerUnit),
-                        UnitTools.SearchChildrenWithId(lines, "slave_trailer_placements", playerUnit),
+                    UnitItem[] positions = {
+                        saveGame.GetUnitItem(player, "my_truck_placement"),
+                        saveGame.GetUnitItem(player, "my_trailer_placement"),
+                        saveGame.GetUnitItem(player, "truck_placement"),
+                        saveGame.GetUnitItem(player, "trailer_placement"),
+                        saveGame.GetUnitItem(player, "slave_trailer_placements"),
                     };
                     Dictionary<string, string> dictionary = new Dictionary<string, string>();
-                    foreach (UnitChildren children in positions) {
+                    foreach (UnitItem children in positions) {
                         if (children.array != null) {
                             string str = "m";
                             foreach (string childLine in children.array) {
@@ -777,7 +627,7 @@ namespace ETS2SaveAutoEditor {
                             }
                             dictionary[children.name] = str.Trim();
                         } else {
-                            dictionary[children.name] = "s" + children.header;
+                            dictionary[children.name] = "s" + children.value;
                         }
                     }
 
@@ -860,41 +710,36 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask StealCompanyTrailer() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var lines = content.Split('\n').ToList();
-                    UnitTools.NormalizeArrayNotation(lines);
-                    var sb = new StringBuilder();
-
-                    var unitEconomy = UnitTools.FindUnitWithType(lines, "economy");
-                    var unitPlayer = UnitTools.FindUnitWithType(lines, "player");
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var economy = UnitTypeSelector.Of("economy");
+                    var player = UnitTypeSelector.Of("player");
 
                     var currentTrailerId = "";
                     var currentJobId = "";
                     { // 현재 작업이나 트레일러가 없으면 오류 발생
-                        currentTrailerId = UnitTools.SearchChildrenWithId(lines, "assigned_trailer", unitPlayer).header;
+                        currentTrailerId = saveGame.GetUnitItem(player, "assigned_trailer").value;
                         if (currentTrailerId == "null") {
                             MessageBox.Show("You don't have an assigned trailer.", "Error");
                             return;
                         }
 
-                        currentJobId = UnitTools.SearchChildrenWithId(lines, "current_job", unitPlayer).header;
-                        if (currentJobId == null) {
+                        currentJobId = saveGame.GetUnitItem(player, "current_job").value;
+                        if (currentJobId == "null") {
                             MessageBox.Show("You don't have any job now.", "Error");
                             return;
                         }
                     }
 
                     // Set current_job to null
-                    UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "current_job", header = "null", array = { } }, unitPlayer);
-                    unitPlayer = UnitTools.FindUnitWithType(lines, "player");
+                    saveGame.SetUnitItem(player, new UnitItem { name = "current_job", value = "null" });
 
                     // Delete current job instance
-                    UnitTools.DeleteUnit(lines, UnitTools.FindUnitWithId(lines, currentJobId));
+                    saveGame.DeleteUnit(UnitIdSelector.Of(currentJobId));
 
                     // Get trailers I own now
-                    var trailers = UnitTools.SearchChildrenWithId(lines, "trailers", unitPlayer).array;
+                    var trailers = saveGame.GetUnitItem(player, "trailers").array;
                     if (trailers.Contains(currentTrailerId)) { // Owned trailer - cancel job and return
-                        saveFile.Save(String.Join("\n", lines));
+                        saveFile.Save(saveGame.ToString());
                         MessageBox.Show("You already own the trailer used for the job. The job was canceled with the cargo accessory remaining.", "Done!");
                         return;
                     }
@@ -902,7 +747,7 @@ namespace ETS2SaveAutoEditor {
                     // Not owned trailers - Add to owned trailers and selected garage
                     var garageId = "";
                     {
-                        var garageNamesFound = (from item in UnitTools.SearchChildrenWithId(lines, "garages", unitEconomy).array select item.Split(new string[] { "garage." }, StringSplitOptions.None)[1]).ToList();
+                        var garageNamesFound = (from item in saveGame.GetUnitItem(economy, "garages").array select item.Split(new string[] { "garage." }, StringSplitOptions.None)[1]).ToList();
                         garageNamesFound.Sort();
 
                         if (garageNamesFound.Count == 0) {
@@ -921,24 +766,24 @@ namespace ETS2SaveAutoEditor {
                     {
                         var t = trailers.ToList();
                         t.Add(currentTrailerId);
-                        UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "trailers", header = "", array = t.ToArray() }, unitPlayer);
+                        saveGame.SetUnitItem(player, new UnitItem { name = "trailers", array = t.ToArray() });
                     }
 
                     // Add trailer to garage trailer list
                     {
-                        var unitGarage = UnitTools.FindUnitWithId(lines, garageId);
+                        var garage = UnitIdSelector.Of(garageId);
 
-                        var tValues = UnitTools.SearchChildrenWithId(lines, "trailers", unitGarage);
+                        var tValues = saveGame.GetUnitItem(garage, "trailers");
                         var ts = new string[] { };
                         if (tValues.array != null) {
                             ts = tValues.array;
                         }
                         var t = ts.ToList();
                         t.Add(currentTrailerId);
-                        UnitTools.InsertOrReplaceChildren(lines, new UnitChildren { name = "trailers", header = "", array = t.ToArray() }, unitGarage);
+                        saveGame.SetUnitItem(garage, new UnitItem { name = "trailers", array = t.ToArray() });
                     }
 
-                    saveFile.Save(String.Join("\n", lines));
+                    saveFile.Save(saveGame.ToString());
                     MessageBox.Show("The trailer is yours now.", "Done!");
                     return;
                 } catch (Exception e) {

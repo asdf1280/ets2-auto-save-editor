@@ -736,8 +736,35 @@ namespace ETS2SaveAutoEditor {
                     // Set current_job to null
                     saveGame.SetUnitItem(player, new UnitItem { name = "current_job", value = "null" });
 
+                    // Set my_trailer to this
+                    saveGame.SetUnitItem(player, new UnitItem { name = "my_trailer", value = currentTrailerId });
+
                     // Delete current job instance
-                    saveGame.DeleteUnit(UnitIdSelector.Of(currentJobId));
+                    var job = UnitIdSelector.Of(currentJobId);
+                    { // Special transport
+                        var special = saveGame.GetUnitItem(job, "special").value;
+                        if (special != "null") { // Special transport - we need to delete some more units
+                            saveGame.DeleteUnit(UnitIdSelector.Of(special));
+
+                            var specialSave = UnitIdSelector.Of(saveGame.GetUnitItem(economy, "stored_special_job").value);
+                            var l = new List<string>();
+
+                            var i1 = saveGame.GetUnitItem(specialSave, "trajectory_orders");
+                            if (i1.array != null)
+                                l.AddRange(i1.array);
+                            var i2 = saveGame.GetUnitItem(specialSave, "active_blocks_rules");
+                            if (i2.array != null)
+                                l.AddRange(i2.array);
+
+                            l.ForEach((v) => {
+                                saveGame.DeleteUnit(UnitIdSelector.Of(v));
+                            });
+
+                            saveGame.DeleteUnit(specialSave);
+                            saveGame.SetUnitItem(economy, new UnitItem { name = "stored_special_job", value = "null" });
+                        }
+                    }
+                    saveGame.DeleteUnit(job);
 
                     // Get trailers I own now
                     var trailers = saveGame.GetUnitItem(player, "trailers").array;
@@ -808,7 +835,7 @@ namespace ETS2SaveAutoEditor {
                     var player = UnitTypeSelector.Of("player");
 
                     var assignedTrailerId = saveGame.GetUnitItem(player, "assigned_trailer").value;
-                    if(assignedTrailerId == "null") {
+                    if (assignedTrailerId == "null") {
                         MessageBox.Show("활성화된 트레일러가 없습니다.", "오류");
                         return;
                     }

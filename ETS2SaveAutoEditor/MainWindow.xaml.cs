@@ -111,6 +111,7 @@ namespace ETS2SaveAutoEditor
         private void LoadTasks()
         {
             tasks = new SaveeditTasks();
+
             var addAction = new Action<SaveEditTask>((t) =>
             {
                 TaskList.Items.Add(t);
@@ -127,6 +128,10 @@ namespace ETS2SaveAutoEditor
             addAction(tasks.InjectLocation());
             addAction(tasks.StealCompanyTrailer());
             addAction(tasks.ChangeCargoMass());
+
+            tasks.StateChanged += (Object sender, string data) => {
+                AppStatus.Items[0] = data;
+            };
         }
 
         public static DateTime FuckUnixTime(long unixtime)

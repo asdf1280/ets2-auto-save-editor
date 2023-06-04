@@ -21,6 +21,7 @@ namespace ETS2SaveAutoEditor {
     }
     public class SaveeditTasks {
         public ProfileSave saveFile;
+        public event EventHandler<string> StateChanged;
 
         public SaveEditTask MoneySet() {
             var run = new Action(() => {
@@ -733,13 +734,15 @@ namespace ETS2SaveAutoEditor {
                         }
                     }
 
+                    StateChanged(null, "작업 정보 지우는 중...");
+
                     // Set current_job to null
                     saveGame.SetUnitItem(player, new UnitItem { name = "current_job", value = "null" });
 
                     // Set my_trailer to this
                     saveGame.SetUnitItem(player, new UnitItem { name = "my_trailer", value = currentTrailerId });
 
-                    // Delete current job instance
+                    // Current job unit
                     var job = UnitIdSelector.Of(currentJobId);
                     { // Special transport
                         var special = saveGame.GetUnitItem(job, "special").value;
@@ -764,6 +767,27 @@ namespace ETS2SaveAutoEditor {
                             saveGame.SetUnitItem(economy, new UnitItem { name = "stored_special_job", value = "null" });
                         }
                     }
+
+                    // Check if company truck exists and remove it
+                    {
+                        var v1 = saveGame.GetUnitItem(job, "company_truck");
+                        if (v1.value != "null") {
+                            var truck = UnitIdSelector.Of(v1.value);
+                            var l = new List<string>();
+
+                            l.AddRange(saveGame.GetUnitItem(truck, "accessories").array);
+
+                            l.ForEach((v) => {
+                                saveGame.DeleteUnit(UnitIdSelector.Of(v));
+                            });
+
+                            saveGame.DeleteUnit(truck);
+                        }
+
+                        saveGame.SetUnitItem(player, new UnitItem { name = "assigned_truck", value = saveGame.GetUnitItem(player, "my_truck").value });
+                    }
+
+                    // Delete the job unit
                     saveGame.DeleteUnit(job);
 
                     // Get trailers I own now

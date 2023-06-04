@@ -21,58 +21,7 @@ namespace ETS2SaveAutoEditor {
     }
     public class SaveeditTasks {
         public ProfileSave saveFile;
-        public SaveEditTask OwnTest() {
-            var run = new Action(() => {
-                var pattern = @"\bplayer : [\w\.]+ {";
-                if (Regex.IsMatch(saveFile.content, pattern)) {
-                    var mr = Regex.Match(saveFile.content, pattern);
-                    var sr = saveFile.content.Substring(mr.Index);
-                    var sp = sr.Split('\n');
-                    var notFound = false;
-                    var foundTruck = false;
-                    var foundTrailer = false;
-                    foreach (var str in sp) {
-                        if (str.Trim() == "}") {
-                            if (!foundTrailer && !foundTruck)
-                                notFound = true;
-                            break;
-                        }
-                        var pa = @"\bassigned_truck: ([\w\.]+)\b";
-                        var pb = @"\bassigned_trailer: ([\w\.]+)\b";
-                        if (Regex.IsMatch(str, pa)) {
-                            if (Regex.Match(str, pa).Groups[1].Value.ToLower() != "null")
-                                foundTruck = true;
-                        }
-                        if (Regex.IsMatch(str, pb)) {
-                            if (Regex.Match(str, pb).Groups[1].Value.ToLower() != "null")
-                                foundTrailer = true;
-                        }
-                    }
-                    if (notFound) {
-                        MessageBox.Show("트럭/트레일러 소유 여부를 찾을 수 없습니다", "오류");
-                        return;
-                    } else {
-                        if (foundTruck) {
-                            MessageBox.Show("할당된 트럭이 있습니다.", "테스트");
-                        } else {
-                            MessageBox.Show("할당된 트럭이 없습니다.", "테스트");
-                        }
-                        if (foundTrailer) {
-                            MessageBox.Show("할당된 트레일러가 있습니다.", "테스트");
-                        } else {
-                            MessageBox.Show("할당된 트레일러가 없습니다.", "테스트");
-                        }
-                    }
-                } else {
-                    MessageBox.Show("플레이어 정보를 찾을 수 없습니다", "오류");
-                }
-            });
-            return new SaveEditTask {
-                name = "테스트",
-                run = run,
-                description = "할당된 트럭과 트레일러가 존재하는지 확인합니다."
-            };
-        }
+
         public SaveEditTask MoneySet() {
             var run = new Action(() => {
                 try {

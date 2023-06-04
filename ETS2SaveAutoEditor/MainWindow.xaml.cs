@@ -115,7 +115,6 @@ namespace ETS2SaveAutoEditor
             {
                 TaskList.Items.Add(t);
             });
-            addAction(tasks.OwnTest());
             addAction(tasks.MoneySet());
             addAction(tasks.ExpSet());
             addAction(tasks.UnlockScreens());

@@ -50,6 +50,14 @@ namespace ETS2SaveAutoEditor {
             NormaliseSiiLists();
         }
 
+        public SiiSaveGame(string saveGame) : this(saveGame.Replace("\r\n", "\n").Split('\n').ToList()) {
+
+        }
+
+        public string MergeResult() {
+            return string.Join("\r\n", lines);
+        }
+
         private void ValidateUnitFile() {
             if (!lines[0].StartsWith("SiiNunit")) throw new ArgumentException("invalid unit file");
         }

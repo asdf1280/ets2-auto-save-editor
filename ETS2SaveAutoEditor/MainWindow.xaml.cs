@@ -53,7 +53,7 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        public static string Version = "1.2 Alpha";
+        public static string Version = "1.3 Alpha";
         public static byte[] StringToByteArray(String hex)
         {
             int NumberChars = hex.Length / 2;
@@ -72,7 +72,7 @@ namespace ETS2SaveAutoEditor
             originalString = originalString.Replace("@@noname_save_game@@", "빠른 저장");
             if (originalString.Length == 0)
             {
-                originalString = "[자동저장]";
+                originalString = "[자동 저장]";
             }
             var ml = Regex.Matches(originalString, "(?<=[^\\\\]|^)\\\\");
             var hexString = "";

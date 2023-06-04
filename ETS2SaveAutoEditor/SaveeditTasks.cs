@@ -25,61 +25,18 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask MoneySet() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var pattern0 = @"\beconomy : [\w\.]+ {";
-                    var pattern1 = @"\bbank: ([\w\.]+)\b";
-                    var matchIndex = Regex.Match(content, pattern0).Index;
-                    var substr = content.Substring(matchIndex);
-                    string resultLine = null;
-                    int resultIndex = -1;
-                    {
-                        var index = matchIndex;
-                        foreach (var str in substr.Split('\n')) {
-                            if (Regex.IsMatch(str, pattern1)) {
-                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
-                                break;
-                            }
-                            if (str.Trim() == "}") break;
-                            index += str.Length + 1;
-                        }
-                    }
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var bank = saveGame.FindUnitWithType("bank");
+                    var currentBank = saveGame.GetUnitItem(bank, "money_account").value;
 
-                    if (resultLine == null) {
-                        MessageBox.Show("손상된 세이브 파일입니다.", "오류");
-                        return;
-                    }
-
-                    pattern0 = @"\bbank : " + resultLine + " {";
-                    pattern1 = @"\bmoney_account: ([\w\.]+)\b";
-                    matchIndex = Regex.Match(content, pattern0).Index;
-                    substr = content.Substring(matchIndex);
-                    resultLine = null;
-                    resultIndex = -1;
-                    {
-                        int index = matchIndex;
-                        foreach (var str in substr.Split('\n')) {
-                            if (Regex.IsMatch(str, pattern1)) {
-                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
-                                break;
-                            }
-                            if (str.Trim() == "}") break;
-                            index += str.Length + 1;
-                        }
-                    }
-
-                    var specifiedCash = NumberInputBox.Show("돈 지정하기", "자본을 몇으로 설정할까요?\n현재 자본: " + resultLine + "\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
+                    var specifiedCash = NumberInputBox.Show("자본 설정", "자본을 몇으로 설정할까요?\n현재 자본: " + currentBank + "\n수가 너무 크면 세이브 파일이 손상될 수 있습니다.");
 
                     if (specifiedCash == -1) {
                         return;
                     }
 
-                    var sb = new StringBuilder();
-                    sb.Append(saveFile.content.Substring(0, resultIndex));
-                    sb.Append(specifiedCash.ToString());
-                    sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
-                    saveFile.Save(sb.ToString());
+                    saveGame.SetUnitItem(bank, new UnitItem { name = "money_account", value = specifiedCash.ToString() });
+                    saveFile.Save(saveGame.MergeResult());
                     MessageBox.Show("완료되었습니다!", "완료");
                 } catch (Exception e) {
                     MessageBox.Show("오류가 발생했습니다.", "오류");
@@ -88,51 +45,27 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "돈 지정",
+                name = "자본 설정",
                 run = run,
-                description = "소유하고 있는 돈을 원하는 숫자로 설정합니다. 너무 크면 게임 로딩 시 오류가 발생하며 개발자는 책임지지 않습니다. 100억 이하로 적당히 이용하시기 바랍니다."
+                description = "자본을 원하는 값으로 설정합니다."
             };
         }
         public SaveEditTask ExpSet() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var pattern0 = @"\beconomy : [\w\.]+ {";
-                    var pattern1 = @"\bexperience_points: ([\w\.]+)\b";
-                    var matchIndex = Regex.Match(content, pattern0).Index;
-                    var substr = content.Substring(matchIndex);
-                    string resultLine = null;
-                    int resultIndex = 0;
-                    {
-                        var index = matchIndex;
-                        foreach (var str in substr.Split('\n')) {
-                            if (Regex.IsMatch(str, pattern1)) {
-                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                                resultIndex = Regex.Match(str, pattern1).Groups[1].Index + index;
-                                break;
-                            }
-                            if (str.Trim() == "}") break;
-                            index += str.Length + 1;
-                        }
-                    }
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var economy = saveGame.FindUnitWithType("economy");
+                    var currentExp = saveGame.GetUnitItem(economy, "experience_points").value;
 
-                    if (resultLine == null) {
-                        MessageBox.Show("손상된 세이브 파일입니다.", "오류");
-                        return;
-                    }
-
-                    var specifiedExp = NumberInputBox.Show("경험치 지정하기", "경험치를 몇으로 설정할까요?\n경험치의 절대적인 수치를 입력하세요. 더하는 것이 아니라 완전히 해당 경험치로 설정됩니다.\n현재 소유한 경험치는 " + resultLine + "입니다.\n경고: 너무 높은 값으로 설정하면 게임 로딩 시 오류가 발생할 수 있습니다. 이 경우 개발자는 책임지지 않습니다.");
+                    var specifiedExp = NumberInputBox.Show("경험치 설정", "경험치를 몇으로 설정할까요?\n입력한 값으로 누적 경험치가 설정됩니다. 더하는 것이 아닙니다.\n현재 소유한 경험치는 " + currentExp + "xp입니다.\n수가 너무 크면 세이브 파일이 손상될 수 있습니다.");
 
                     if (specifiedExp == -1) {
                         return;
                     }
 
-                    var sb = new StringBuilder();
-                    sb.Append(saveFile.content.Substring(0, resultIndex));
-                    sb.Append(specifiedExp.ToString());
-                    sb.Append(saveFile.content.Substring(resultIndex + resultLine.Length));
-                    saveFile.Save(sb.ToString());
-                    MessageBox.Show("[69exp]\n충전이 완료되었습니다!", "69exp");
+                    saveGame.SetUnitItem(economy, new UnitItem { name = "experience_points", value = specifiedExp.ToString() });
+                    saveFile.Save(saveGame.MergeResult());
+                    MessageBox.Show("완료되었습니다!", "완료");
                 } catch (Exception e) {
                     MessageBox.Show("오류가 발생했습니다.", "오류");
                     Console.WriteLine(e);
@@ -140,55 +73,25 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "경험치 지정",
+                name = "경험치 설정",
                 run = run,
-                description = "경험치를 지정합니다."
+                description = "경험치를 원하는 값으로 설정합니다."
             };
         }
         public SaveEditTask UnlockScreens() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var pattern0 = @"\beconomy : [\w\.]+ {";
-                    var pattern1 = @"\bscreen_access_list: ([\w\.]+)\b";
-                    var matchIndex = Regex.Match(content, pattern0).Index;
-                    var substr = content.Substring(matchIndex);
-                    string resultLine = null;
-                    int resultLineIndex = 0;
-                    {
-                        var index = matchIndex;
-                        foreach (var str in substr.Split('\n')) {
-                            if (Regex.IsMatch(str, pattern1)) {
-                                resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                                resultLineIndex = index;
-                                break;
-                            }
-                            if (str.Trim() == "}") break;
-                            index += str.Length + 1;
-                        }
-                    }
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var economy = saveGame.FindUnitWithType("economy");
 
-                    var msgBoxRes = MessageBox.Show("[69cheat]\n모든 메뉴를 해금합니다. 트레일러 조정 등 일부 메뉴는 원래 사용이 불가함에도 해금될 수 있으니 주의하세요!\n이 작업은 시간이 조금 걸릴 수 있습니다.", "69cheat", MessageBoxButton.OKCancel);
+                    var msgBoxRes = MessageBox.Show("모든 메뉴를 잠금 해제합니다. '트레일러 조정' 등 게임 상황에 따라 비활성화 상태여야 하는 메뉴도 강제로 열릴 수 있습니다. 계속 진행하시겠습니까?", "기능 잠금 해제", MessageBoxButton.OKCancel);
                     if (msgBoxRes == MessageBoxResult.Cancel) {
                         return;
                     }
 
-                    var sb = new StringBuilder();
-                    sb.Append(content.Substring(0, resultLineIndex));
-
-                    content = content.Substring(resultLineIndex);
-                    foreach (var line in content.Split('\n')) {
-                        var str = line;
-                        if (str.Contains("screen_access_list:")) {
-                            str = " screen_access_list: 0";
-                        } else if (str.Contains("screen_access_list[")) {
-                            continue;
-                        }
-                        sb.Append(str.Replace("\r", "") + "\n");
-                    }
-
-                    saveFile.Save(sb.ToString());
-                    MessageBox.Show("[69cheat]\n해금이 완료되었습니다!", "69cheat");
+                    saveGame.SetUnitItem(economy, new UnitItem { name = "screen_access_list", value = "0" });
+                    saveFile.Save(saveGame.ToString());
+                    MessageBox.Show("완료되었습니다!", "완료");
                 } catch (Exception e) {
                     MessageBox.Show("오류가 발생했습니다.", "오류");
                     Console.WriteLine(e);
@@ -196,9 +99,9 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "기능 모두 해제",
+                name = "메뉴 잠금 해제",
                 run = run,
-                description = "새 프로필에서 스킬 등 메뉴를 모두 해금합니다.\n트레일러 조정 등 일부 메뉴는 원래 사용이 불가함에도 해금될 수 있으니 주의하세요!"
+                description = "새로 만든 프로파일에서 아직 잠금 해제되지 않은 모든 기능을 강제로 활성화합니다."
             };
         }
         public SaveEditTask TruckEngineSet() {
@@ -706,16 +609,15 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ShareLocation() {
             var run = new Action(() => {
                 try {
-                    string content = saveFile.content;
-                    List<string> lines = content.Split('\n').ToList();
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var player = saveGame.FindUnitWithType("player");
 
-                    UnitRange playerUnit = UnitTools.FindUnitWithType(lines, "player");
                     UnitItem[] positions = {
-                        UnitTools.SearchChildrenWithId(lines, "my_truck_placement", playerUnit),
-                        UnitTools.SearchChildrenWithId(lines, "my_trailer_placement", playerUnit),
-                        UnitTools.SearchChildrenWithId(lines, "truck_placement", playerUnit),
-                        UnitTools.SearchChildrenWithId(lines, "trailer_placement", playerUnit),
-                        UnitTools.SearchChildrenWithId(lines, "slave_trailer_placements", playerUnit),
+                        saveGame.GetUnitItem(player, "my_truck_placement"),
+                        saveGame.GetUnitItem(player, "my_trailer_placement"),
+                        saveGame.GetUnitItem(player, "truck_placement"),
+                        saveGame.GetUnitItem(player, "trailer_placement"),
+                        saveGame.GetUnitItem(player, "slave_trailer_placements"),
                     };
                     Dictionary<string, string> dictionary = new Dictionary<string, string>();
                     foreach (UnitItem children in positions) {
@@ -809,24 +711,20 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask StealCompanyTrailer() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var lines = content.Split('\n').ToList();
-                    UnitTools.NormalizeArrayNotation(lines);
-                    var sb = new StringBuilder();
-
-                    var unitEconomy = UnitTools.FindUnitWithType(lines, "economy");
-                    var unitPlayer = UnitTools.FindUnitWithType(lines, "player");
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var economy = UnitTypeSelector.Of("economy");
+                    var player = UnitTypeSelector.Of("player");
 
                     var currentTrailerId = "";
                     var currentJobId = "";
                     { // 현재 작업이나 트레일러가 없으면 오류 발생
-                        currentTrailerId = UnitTools.SearchChildrenWithId(lines, "assigned_trailer", unitPlayer).value;
+                        currentTrailerId = saveGame.GetUnitItem(player, "assigned_trailer").value;
                         if (currentTrailerId == "null") {
                             MessageBox.Show("활성화된 트레일러가 없습니다.", "오류");
                             return;
                         }
 
-                        currentJobId = UnitTools.SearchChildrenWithId(lines, "current_job", unitPlayer).value;
+                        currentJobId = saveGame.GetUnitItem(player, "current_job").value;
                         if (currentJobId == "null") {
                             MessageBox.Show("활성화된 작업이 없습니다.", "오류");
                             return;
@@ -834,16 +732,15 @@ namespace ETS2SaveAutoEditor {
                     }
 
                     // Set current_job to null
-                    UnitTools.InsertOrReplaceChildren(lines, new UnitItem { name = "current_job", value = "null", array = { } }, unitPlayer);
-                    unitPlayer = UnitTools.FindUnitWithType(lines, "player");
+                    saveGame.SetUnitItem(player, new UnitItem { name = "current_job", value = "null" });
 
                     // Delete current job instance
-                    UnitTools.DeleteUnit(lines, UnitTools.FindUnitWithId(lines, currentJobId));
+                    saveGame.DeleteUnit(UnitIdSelector.Of(currentJobId));
 
                     // Get trailers I own now
-                    var trailers = UnitTools.SearchChildrenWithId(lines, "trailers", unitPlayer).array;
+                    var trailers = saveGame.GetUnitItem(player, "trailers").array;
                     if (trailers.Contains(currentTrailerId)) { // Owned trailer - cancel job and return
-                        saveFile.Save(String.Join("\n", lines));
+                        saveFile.Save(saveGame.ToString());
                         MessageBox.Show("작업에 사용된 트레일러를 이미 보유하고 있습니다. 화물이 남은 상태로 작업을 취소했습니다.", "완료");
                         return;
                     }
@@ -851,7 +748,7 @@ namespace ETS2SaveAutoEditor {
                     // Not owned trailers - Add to owned trailers and selected garage
                     var garageId = "";
                     {
-                        var garageNamesFound = (from item in UnitTools.SearchChildrenWithId(lines, "garages", unitEconomy).array select item.Split(new string[] { "garage." }, StringSplitOptions.None)[1]).ToList();
+                        var garageNamesFound = (from item in saveGame.GetUnitItem(economy, "garages").array select item.Split(new string[] { "garage." }, StringSplitOptions.None)[1]).ToList();
                         garageNamesFound.Sort();
 
                         if (garageNamesFound.Count == 0) {
@@ -870,24 +767,24 @@ namespace ETS2SaveAutoEditor {
                     {
                         var t = trailers.ToList();
                         t.Add(currentTrailerId);
-                        UnitTools.InsertOrReplaceChildren(lines, new UnitItem { name = "trailers", value = "", array = t.ToArray() }, unitPlayer);
+                        saveGame.SetUnitItem(player, new UnitItem { name = "trailers", array = t.ToArray() });
                     }
 
                     // Add trailer to garage trailer list
                     {
-                        var unitGarage = UnitTools.FindUnitWithId(lines, garageId);
+                        var garage = UnitIdSelector.Of(garageId);
 
-                        var tValues = UnitTools.SearchChildrenWithId(lines, "trailers", unitGarage);
+                        var tValues = saveGame.GetUnitItem(garage, "trailers");
                         var ts = new string[] { };
                         if (tValues.array != null) {
                             ts = tValues.array;
                         }
                         var t = ts.ToList();
                         t.Add(currentTrailerId);
-                        UnitTools.InsertOrReplaceChildren(lines, new UnitItem { name = "trailers", value = "", array = t.ToArray() }, unitGarage);
+                        saveGame.SetUnitItem(garage, new UnitItem { name = "trailers", array = t.ToArray() });
                     }
 
-                    saveFile.Save(String.Join("\n", lines));
+                    saveFile.Save(saveGame.ToString());
                     MessageBox.Show("이 트레일러는 이제 제 겁니다. 제 마음대로 탈 수 있는 겁니다.", "완료");
                     return;
                 } catch (Exception e) {

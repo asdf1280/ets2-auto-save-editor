@@ -20,11 +20,19 @@ namespace ETS2SaveAutoEditor {
 
     public class UnitIdSelector : IUnitResolvable {
         public string id;
+
+        public static UnitIdSelector Of(string id) {
+            return new UnitIdSelector { id = id };
+        }
     }
 
     public class UnitTypeSelector : IUnitResolvable {
         public string type;
         public int offset;
+
+        public static UnitTypeSelector Of(string type, int offset = 0) {
+            return new UnitTypeSelector { type = type, offset = offset };
+        }
     }
 
     public class UnitItem {
@@ -56,6 +64,10 @@ namespace ETS2SaveAutoEditor {
 
         public string MergeResult() {
             return string.Join("\r\n", lines);
+        }
+
+        public override string ToString() {
+            return MergeResult();
         }
 
         private void ValidateUnitFile() {
@@ -219,24 +231,22 @@ namespace ETS2SaveAutoEditor {
             var offset = 0;
             for (int i = unit.start + 1; i < unit.end - 1; i++) {
                 string line = lines[i + offset];
-                var ma1 = Regex.Match(line, $@"^(\s+){data.name}: (.*)$");
-                var ma2 = Regex.Match(line, $@"^(\s+){data.name}\[\d*\]: (.*)$");
+                var ma1 = Regex.Match(line, $@"^\s+{data.name}: (.*)$");
+                var ma2 = Regex.Match(line, $@"^\s+{data.name}\[\d*\]: (.*)$");
                 if (ma1.Success || ma2.Success) {
-                    var whiteSpaces = (ma1.Success ? ma1 : ma2).Groups[1].Value;
-
                     lines.RemoveAt(i + offset);
-                    offset--;
                     if (!insertedAlready) {
                         insertedAlready = true;
                         if (data.array != null && data.array.Length > 0) {
-                            var ar = from d in data.array select $"{whiteSpaces}{data.name}[]: {d}";
+                            var ar = from d in data.array select $" {data.name}[]: {d}";
                             lines.InsertRange(i + offset, ar);
                             offset += ar.Count();
                         } else if (data.value != null && data.value.Length > 0) {
-                            lines.Insert(i + offset, $"{whiteSpaces}{data.name}: {data.value}");
+                            lines.Insert(i + offset, $" {data.name}: {data.value}");
                             offset += 1;
                         }
                     }
+                    offset--;
                 }
             }
             if (!insertedAlready) {

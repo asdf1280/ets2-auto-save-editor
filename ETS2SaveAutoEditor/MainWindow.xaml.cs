@@ -126,6 +126,7 @@ namespace ETS2SaveAutoEditor
             addAction(tasks.ShareLocation());
             addAction(tasks.InjectLocation());
             addAction(tasks.StealCompanyTrailer());
+            addAction(tasks.ChangeCargoMass());
         }
 
         public static DateTime FuckUnixTime(long unixtime)

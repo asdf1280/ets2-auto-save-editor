@@ -788,11 +788,7 @@ namespace ETS2SaveAutoEditor {
                     MessageBox.Show("이 트레일러는 이제 제 겁니다. 제 마음대로 탈 수 있는 겁니다.", "완료");
                     return;
                 } catch (Exception e) {
-                    if (e.Message == "incompatible version") {
-                        MessageBox.Show("다른 버전의 툴로 만들어진 데이터입니다.", "오류");
-                    } else {
-                        MessageBox.Show("오류가 발생했습니다.", "오류");
-                    }
+                    MessageBox.Show("오류가 발생했습니다.", "오류");
                     Console.WriteLine(e);
                 }
             });
@@ -800,6 +796,42 @@ namespace ETS2SaveAutoEditor {
                 name = "작업 트레일러 훔치기",
                 run = run,
                 description = "이 트레일러는 이제 제 겁니다. 제 마음대로 탈 수 있는 겁니다."
+            };
+        }
+
+        public SaveEditTask ChangeCargoMass() {
+            var run = new Action(() => {
+                try {
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var player = UnitTypeSelector.Of("player");
+
+                    var assignedTrailerId = saveGame.GetUnitItem(player, "assigned_trailer").value;
+                    if(assignedTrailerId == "null") {
+                        MessageBox.Show("활성화된 트레일러가 없습니다.", "오류");
+                        return;
+                    }
+
+                    var specifiedMass = NumberInputBox.Show("무게 설정", "화물 무게를 몇 kg으로 설정하시겠습니까? 지나치게 높은 값으로 설정하면 물리 엔진 오류가 발생합니다. 화물을 없애는 경우 0으로 설정하면 됩니다.");
+
+                    if (specifiedMass == -1) {
+                        return;
+                    }
+
+                    var trailer = UnitIdSelector.Of(assignedTrailerId);
+                    saveGame.SetUnitItem(trailer, new UnitItem { name = "cargo_mass", value = $"{specifiedMass}" });
+
+                    saveFile.Save(saveGame.ToString());
+                    MessageBox.Show("트레일러 화물 무게를 변경했습니다!", "완료");
+                    return;
+                } catch (Exception e) {
+                    MessageBox.Show("오류가 발생했습니다.", "오류");
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask {
+                name = "트레일러 화물 무게 설정",
+                run = run,
+                description = "트레일러의 화물 무게 값을 임의로 변경할 수 있습니다."
             };
         }
     }

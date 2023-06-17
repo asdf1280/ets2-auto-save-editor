@@ -211,7 +211,7 @@ namespace ETS2SaveAutoEditor {
                     throw new ArgumentException("Invalid game specified.");
             }
 
-            return path + @"/profiles";
+            return path + @"\profiles";
         }
 
         private void LoadGame(Trucksim game, bool animate) {
@@ -339,14 +339,17 @@ namespace ETS2SaveAutoEditor {
                         continue;
                     }
 
-                    string namePattern = "name: \"(.*)\"";
+                    string namePattern = "name: (.*)";
                     string fileTimePattern = @"file_time: \b(\d+)\b";
 
                     if (!Regex.IsMatch(content, namePattern)) continue;
                     var nameResult = "N/A";
                     {
                         var result = Regex.Match(content, namePattern);
-                        nameResult = result.Groups[1].Value;
+                        nameResult = result.Groups[1].Value.Trim();
+                        if (nameResult.StartsWith("\"") && nameResult.EndsWith("\"")) {
+                            nameResult = nameResult.Substring(1, nameResult.Length - 2);
+                        }
                         nameResult = GetUnescapedSaveName(nameResult);
                     }
 
@@ -491,6 +494,7 @@ namespace ETS2SaveAutoEditor {
 
         private void OpenFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) {
             var ps = (ProfileSave)SaveList.SelectedItem;
+            MessageBox.Show(currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
             Process.Start("explorer.exe", currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
         }
 

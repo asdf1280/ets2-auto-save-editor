@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ETS2SaveAutoEditor"
         xmlns:System="clr-namespace:System;assembly=mscorlib" x:Class="ETS2SaveAutoEditor.MainWindow"
         mc:Ignorable="d"
-        Title="ETS2 Auto Save Editor" Height="450" Width="800" WindowStartupLocation="CenterScreen">
+        Title="Truck Sim Auto Save Editor" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     <DockPanel>
         <StatusBar x:Name="AppStatus" DockPanel.Dock="Bottom" Background="#FF005104" Foreground="White" Padding="5,0,0,0">
             <System:String>안녕하세요</System:String>
@@ -18,44 +18,45 @@
                 <ColumnDefinition Width="50*"/>
             </Grid.ColumnDefinitions>
             <DockPanel LastChildFill="True" Grid.Column="0" Background="#FF005104">
-                <Label x:Name="SelectProfile" Content="1 프로필 선택" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Margin="10,0,0,0"/>
-                <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,10,5"></Button>
+                <Label x:Name="SelectProfile" Content="1 프로필 선택" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5"/>
+                <Grid VerticalAlignment="Top" DockPanel.Dock="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="0.4*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,0,5" Padding="3,3,3,3"></Button>
+                    <Button x:Name="GameSwitchBtn" Content="ATS" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="GameSwitchButtonPressed" Margin="5,0,10,5" Grid.Column="1" Padding="3,3,3,3"></Button>
+                </Grid>
                 <ListBox x:Name="ProfileList" Margin="10,0" SelectionChanged="ProfileList_SelectionChanged" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0"/>
             </DockPanel>
             <Grid Background="#FF7C7C7C" Grid.Column="1">
                 <DockPanel x:Name="SaveListPanel" Grid.Column="1" LastChildFill="True">
-                    <Label Content="2 세이브 선택" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Margin="10,0,0,0"/>
+                    <Label Content="2 세이브 선택" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5"/>
                     <DockPanel Margin="10,0">
                         <StackPanel x:Name="SaveInfo" DockPanel.Dock="Bottom" Margin="0,5,0,0" Background="#FF5D5D5D">
                             <Label x:Name="SaveInfo_Name" Content="이름" Foreground="White"/>
-                            <Label x:Name="SaveInfo_Dir" Content="폴더" Foreground="White"/>
+                            <Label x:Name="SaveInfo_Dir" Content="폴더" Foreground="White" Cursor="Hand" MouseUp="OpenFolder_Click"/>
                             <Label x:Name="SaveInfo_Date" Content="날짜" Foreground="White"/>
-                            <Button x:Name="LoadSaveFileButton" Content="불러오기" Click="LoadSaveFileButton_Click"></Button>
+                            <Button x:Name="LoadSaveFileButton" Content="불러오기" Click="LoadSaveFileButton_Click" Padding="0,3,0,3" Grid.Column="1"></Button>
                         </StackPanel>
-                        <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5"></Button>
+                        <Button Content="새로고침" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5" Padding="3,3,3,3"></Button>
                         <ListBox x:Name="SaveList" SelectionChanged="SaveList_SelectionChanged" Foreground="Black" Background="#FFF0F0F0" BorderThickness="0" />
                     </DockPanel>
                 </DockPanel>
             </Grid>
             <Grid Grid.Column="2" Background="#FF2C2C2C">
                 <DockPanel x:Name="TaskListPanel">
-                    <Label Content="3 작업 지정" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Margin="10,0,0,0"/>
+                    <Label Content="3 작업 선택" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5"/>
                     <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="8*"/>
-                            <RowDefinition Height="2*"/>
-                        </Grid.RowDefinitions>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition/>
-                            </Grid.ColumnDefinitions>
-                            <ListBox x:Name="TaskList" Margin="10,0,5,5" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" SelectionChanged="TaskList_SelectionChanged"/>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <ListBox x:Name="TaskList" Margin="10,0,5,0" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" SelectionChanged="TaskList_SelectionChanged"/>
+                        <DockPanel Grid.Column="1">
+                            <Button x:Name="StartTaskButton" Content="실행" Margin="5,5,10,0" HorizontalAlignment="Stretch" Padding="0,10" Click="StartTaskButton_Click" VerticalAlignment="Bottom" DockPanel.Dock="Bottom"></Button>
                             <TextBlock x:Name="TaskDescription" Grid.Column="1" Margin="5,0,10,5" TextWrapping="Wrap" Foreground="White"/>
-                        </Grid>
-                        <Grid Grid.Row="1" Background="Black">
-                            <Button x:Name="StartTaskButton" Content="시작!" Margin="10,5,10,10" HorizontalAlignment="Center" Padding="30,1" Click="StartTaskButton_Click"></Button>
-                        </Grid>
+                        </DockPanel>
                     </Grid>
                 </DockPanel>
             </Grid>

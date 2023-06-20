@@ -49,7 +49,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.8 Alpha";
+        public static string Version = "1.8.1 Alpha";
         public static byte[] StringToByteArray(String hex) {
             int NumberChars = hex.Length / 2;
             byte[] bytes = new byte[NumberChars];
@@ -239,7 +239,7 @@ namespace ETS2SaveAutoEditor {
                 var dlist = dinfo.GetDirectories();
                 var pattern = @"^([ABCDEF\d]{2,2})+$";
                 foreach (var delem in dlist) {
-                    var ename = delem.Name;
+                    var ename = delem.Name.ToUpper();
                     if (!Regex.IsMatch(ename, pattern)) continue;
                     byte[] dBytes = StringToByteArray(ename);
                     string utf8result = Encoding.UTF8.GetString(dBytes);

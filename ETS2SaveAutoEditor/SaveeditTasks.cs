@@ -565,7 +565,7 @@ namespace ETS2SaveAutoEditor {
         private Dictionary<string, string> DecodePositionData(string encoded) {
             Encoding encoding = Encoding.UTF8;
             {
-                Match matchCompression = Regex.Match(encoded.Trim(), "A_(\\d+)\\=_(\\d+)");
+                Match matchCompression = Regex.Match(encoded, "A_(\\d+)\\=_(\\d+)");
                 int As = int.Parse(matchCompression.Groups[1].Value);
                 int Eqs = int.Parse(matchCompression.Groups[2].Value);
                 int segmentLength = matchCompression.Groups[0].Value.Length;
@@ -660,7 +660,7 @@ namespace ETS2SaveAutoEditor {
                     var lines = content.Split('\n');
                     var sb = new StringBuilder();
 
-                    var decoded = DecodePositionData(Clipboard.GetText());
+                    var decoded = DecodePositionData(Clipboard.GetText().Trim());
                     string my_truck_placement = decoded["my_truck_placement"].Substring(1);
                     string truck_placement = decoded["truck_placement"].Substring(1);
                     string my_trailer_placement = decoded["my_trailer_placement"].Substring(1);

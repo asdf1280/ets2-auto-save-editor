@@ -565,7 +565,7 @@ namespace ETS2SaveAutoEditor {
         private Dictionary<string, string> DecodePositionData(string encoded) {
             Encoding encoding = Encoding.UTF8;
             {
-                Match matchCompression = Regex.Match(encoded, "A_(\\d+)\\=_(\\d+)");
+                Match matchCompression = Regex.Match(encoded.Trim(), "A_(\\d+)\\=_(\\d+)");
                 int As = int.Parse(matchCompression.Groups[1].Value);
                 int Eqs = int.Parse(matchCompression.Groups[2].Value);
                 int segmentLength = matchCompression.Groups[0].Value.Length;

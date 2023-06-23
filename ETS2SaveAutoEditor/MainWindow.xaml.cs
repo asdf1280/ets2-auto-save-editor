@@ -494,7 +494,6 @@ namespace ETS2SaveAutoEditor {
 
         private void OpenFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) {
             var ps = (ProfileSave)SaveList.SelectedItem;
-            MessageBox.Show(currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
             Process.Start("explorer.exe", currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
         }
 

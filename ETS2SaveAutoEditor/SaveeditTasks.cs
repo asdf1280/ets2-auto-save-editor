@@ -504,109 +504,102 @@ namespace ETS2SaveAutoEditor {
             SINGLE,
             MULTI
         }
-        private readonly int positionDataVersion = 1;
-        private string SimpleCompress(string data) {
-            return data.Replace("truck_placement", "TRPL").Replace("trailer_placement", "TAPL");
-        }
-        private string SimpleDecompress(string data) {
-            return data.Replace("TRPL", "truck_placement").Replace("TAPL", "trailer_placement");
-        }
-        private string EncodePositionData(Dictionary<string, string> data) {
-            Encoding encoding = Encoding.UTF8;
+        private readonly int positionDataVersion = 2;
+
+        private string EncodePositionData(List<float[]> data) {
             MemoryStream memoryStream = new MemoryStream();
-            GZipStream compressionStream = new GZipStream(memoryStream, CompressionLevel.Optimal);
-            BinaryWriter binaryWriter = new BinaryWriter(compressionStream, Encoding.ASCII);
-            void sendString(string text) {
-                byte[] bytes = encoding.GetBytes(text);
-                binaryWriter.Write(bytes.Length);
-                binaryWriter.Write(bytes);
+            //GZipStream compressionStream = new GZipStream(memoryStream, CompressionLevel.Optimal);
+            BinaryWriter binaryWriter = new BinaryWriter(memoryStream, Encoding.ASCII);
+            void sendHeader(PositionDataHeader h) {
+                binaryWriter.Write((byte)h);
             }
-            void sendHeader(PositionDataHeader header) {
-                binaryWriter.Write((byte)header);
+            void sendPlacement(float[] p) {
+                for (int t = 0; t < 7; t++) {
+                    binaryWriter.Write(p[t]);
+                }
             }
             binaryWriter.Write(positionDataVersion);
-            foreach (string key in data.Keys) {
-                string value = data[key];
-
+            foreach (float[] p in data) {
                 sendHeader(PositionDataHeader.KEY);
-                sendString(SimpleCompress(key));
-
-                if (value.StartsWith("m")) {
-                    sendHeader(PositionDataHeader.MULTI);
-                } else {
-                    sendHeader(PositionDataHeader.SINGLE);
-                }
-                value = value.Substring(1);
-                sendString(SimpleCompress(value));
+                sendPlacement(p);
             }
             sendHeader(PositionDataHeader.END);
+
+
             binaryWriter.Flush();
             binaryWriter.Close();
-            string encoded = Convert.ToBase64String(memoryStream.GetBuffer());
+            string encoded = Convert.ToBase64String(memoryStream.ToArray());
             int Eqs = 0;
-            int As = 0;
             int i;
             for (i = encoded.Length - 1; i >= 0; i--) {
-                if (encoded[i] != '=' && encoded[i] != 'A') {
-                    break;
-                }
                 if (encoded[i] == '=') {
-                    if (As != 0) {
-                        break;
-                    } else {
-                        Eqs++;
-                    }
-                } else if (encoded[i] == 'A') {
-                    As++;
-                }
+                    Eqs++;
+                } else break;
             }
-            return encoded.Substring(0, i + 1) + "A_" + As + "=_" + Eqs;
+            return encoded.Substring(0, i + 1) + Eqs.ToString("X");
         }
-        private Dictionary<string, string> DecodePositionData(string encoded) {
-            Encoding encoding = Encoding.UTF8;
+        private List<float[]> DecodePositionData(string encoded) {
             {
-                Match matchCompression = Regex.Match(encoded, "A_(\\d+)\\=_(\\d+)");
-                int As = int.Parse(matchCompression.Groups[1].Value);
-                int Eqs = int.Parse(matchCompression.Groups[2].Value);
+                Match matchCompression = Regex.Match(encoded, "(.)$");
+                int Eqs = Convert.ToInt32(matchCompression.Groups[1].Value, 16);
                 int segmentLength = matchCompression.Groups[0].Value.Length;
+                MessageBox.Show(matchCompression.Groups[1].Value);
                 encoded = encoded.Substring(0, encoded.Length - segmentLength);
-                for (int i = 0; i < As; i++) {
-                    encoded += 'A';
-                }
                 for (int i = 0; i < Eqs; i++) {
                     encoded += '=';
                 }
             }
             byte[] data = Convert.FromBase64String(encoded);
-            Dictionary<string, string> dictionary = new Dictionary<string, string>();
+            List<float[]> list = new List<float[]>();
 
             MemoryStream memoryStream = new MemoryStream(data);
-            GZipStream compressionStream = new GZipStream(memoryStream, CompressionMode.Decompress);
-            BinaryReader binaryReader = new BinaryReader(compressionStream, Encoding.UTF8);
-            string receiveString() {
-                int length = binaryReader.ReadInt32();
-                byte[] bytes = new byte[length];
-                _ = binaryReader.Read(bytes, 0, length);
-                return encoding.GetString(bytes);
-            }
+            //GZipStream compressionStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+            BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
             PositionDataHeader receiveHeader() {
                 return (PositionDataHeader)binaryReader.ReadByte();
+            }
+            float[] receivePlacement() {
+                float[] result = new float[7];
+                for (int i = 0; i < 7; i++) {
+                    result[i] = binaryReader.ReadSingle();
+                }
+                return result;
             }
             int version = binaryReader.ReadInt32();
             if (version != positionDataVersion) throw new IOException("incompatible version");
             while (receiveHeader() == PositionDataHeader.KEY) {
-                string key = SimpleDecompress(receiveString());
-                PositionDataHeader type = receiveHeader();
-                string value = "";
-                if (type == PositionDataHeader.MULTI) {
-                    value = "m";
-                } else {
-                    value = "s";
-                }
-                value += SimpleDecompress(receiveString());
-                dictionary.Add(key, value);
+                list.Add(receivePlacement());
             }
-            return dictionary;
+            return list;
+        }
+
+        public float ParseScsFloat(string data) {
+            if (data.StartsWith("&")) {
+                byte[] bytes = new byte[4];
+                for (int i = 0; i < 4; i++) {
+                    bytes[i] = byte.Parse(data.Substring(i * 2 + 1, 2), System.Globalization.NumberStyles.HexNumber);
+                }
+                return BitConverter.ToSingle(bytes, 0);
+            } else {
+                return float.Parse(data);
+            }
+        }
+
+        public string EncodeScsFloat(float value) {
+            byte[] bytes = BitConverter.GetBytes(value);
+            string hexString = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+            return "&" + hexString;
+        }
+
+        public float[] DecodeSCSPosition(string placement) {
+            var a = placement.Split(new string[] { "(", ")", ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
+            var q = from v in a select v.Trim() into b where b.Length > 0 select ParseScsFloat(b);
+            return q.ToArray();
+        }
+
+        public string EncodeSCSPosition(float[] data) {
+            var data0 = (from d in data select EncodeScsFloat(d)).ToArray();
+            return $"({data0[0]}, {data0[1]}, {data0[2]}) ({data0[3]}; {data0[4]}, {data0[5]}, {data0[6]})";
         }
 
         public SaveEditTask ShareLocation() {
@@ -615,27 +608,22 @@ namespace ETS2SaveAutoEditor {
                     var saveGame = new SiiSaveGame(saveFile.content);
                     var player = saveGame.FindUnitWithType("player");
 
-                    UnitItem[] positions = {
-                        saveGame.GetUnitItem(player, "my_truck_placement"),
-                        saveGame.GetUnitItem(player, "my_trailer_placement"),
-                        saveGame.GetUnitItem(player, "truck_placement"),
-                        saveGame.GetUnitItem(player, "trailer_placement"),
-                        saveGame.GetUnitItem(player, "slave_trailer_placements"),
-                    };
-                    Dictionary<string, string> dictionary = new Dictionary<string, string>();
-                    foreach (UnitItem children in positions) {
-                        if (children.array != null) {
-                            string str = "m";
-                            foreach (string childLine in children.array) {
-                                str += childLine + "\n";
-                            }
-                            dictionary[children.name] = str.Trim();
-                        } else {
-                            dictionary[children.name] = "s" + children.value;
+                    List<float[]> placements = new List<float[]>();
+
+                    string truckPlacement = saveGame.GetUnitItem(player, "truck_placement").value;
+                    placements.Add(DecodeSCSPosition(truckPlacement));
+
+                    string trailerPlacement = saveGame.GetUnitItem(player, "trailer_placement").value;
+                    placements.Add(DecodeSCSPosition(trailerPlacement));
+
+                    var slaveTrailers = saveGame.GetUnitItem(player, "slave_trailer_placements");
+                    if (slaveTrailers.array != null) {
+                        foreach (var slave in slaveTrailers.array) {
+                            placements.Add(DecodeSCSPosition(slave));
                         }
                     }
 
-                    string encodedData = EncodePositionData(dictionary);
+                    string encodedData = EncodePositionData(placements);
                     Clipboard.SetText(encodedData);
                     MessageBox.Show("The location of your truck, trailer was copied to the clipboard. Share it to others.", "Done");
                 } catch (Exception e) {
@@ -656,44 +644,21 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask InjectLocation() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var lines = content.Split('\n');
-                    var sb = new StringBuilder();
+                    var saveGame = new SiiSaveGame(saveFile.content);
+                    var player = saveGame.FindUnitWithType("player");
 
-                    var decoded = DecodePositionData(Clipboard.GetText().Trim());
-                    string my_truck_placement = decoded["my_truck_placement"].Substring(1);
-                    string truck_placement = decoded["truck_placement"].Substring(1);
-                    string my_trailer_placement = decoded["my_trailer_placement"].Substring(1);
-                    string trailer_placement = decoded["trailer_placement"].Substring(1);
-                    string slave_trailer_placements = decoded["slave_trailer_placements"];
-
-                    foreach (string line in lines) {
-                        string str = line;
-                        if (line.StartsWith(" my_truck_placement:")) {
-                            str = " my_truck_placement: " + my_truck_placement;
-                        }
-                        if (line.StartsWith(" my_trailer_placement:")) {
-                            str = " my_trailer_placement: " + my_trailer_placement;
-                        }
-                        if (line.StartsWith(" truck_placement:")) {
-                            str = " truck_placement: " + truck_placement;
-                        }
-                        if (line.StartsWith(" trailer_placement:")) {
-                            str = " trailer_placement: " + trailer_placement;
-                        }
-                        if (line.StartsWith(" slave_trailer_placements:")) {
-                            if (slave_trailer_placements.StartsWith("m")) {
-                                str = string.Join("\n", from a in slave_trailer_placements.Substring(1).Split('\n') select " slave_trailer_placements[]: " + a);
-                            } else {
-                                str = " slave_trailer_placements: " + slave_trailer_placements.Substring(1);
-                            }
-                        } else if (line.StartsWith(" slave_trailer_placements")) {
-                            str = null;
-                        }
-                        if (str != null)
-                            _ = sb.Append(str + "\n");
+                    var decoded = (from a in DecodePositionData(Clipboard.GetText().Trim()) select EncodeSCSPosition(a)).ToArray();
+                    if (decoded.Count() >= 1) {
+                        saveGame.SetUnitItem(player, new UnitItem { name = "truck_placement", value = decoded[0] });
                     }
-                    saveFile.Save(sb.ToString());
+                    if (decoded.Count() >= 2) {
+                        saveGame.SetUnitItem(player, new UnitItem { name = "trailer_placement", value = decoded[1] });
+                    }
+                    if (decoded.Count() > 2) {
+                        saveGame.SetUnitItem(player, new UnitItem { name = "slave_trailer_placements", array = decoded.Skip(2).ToArray() });
+                    }
+
+                    saveFile.Save(saveGame.ToString());
                     MessageBox.Show("Successfully injected the position of player vehicles.", "Done");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {

@@ -19,29 +19,57 @@ namespace ETS2SaveAutoEditor {
         public int end;
     }
 
-    public class UnitIdSelector : IUnitResolvable {
-        public string id;
-        public int lastFound = 0;
-
-        public static UnitIdSelector Of(string id) {
-            return new UnitIdSelector { id = id };
+    public interface IUnitTrackable : IUnitResolvable {
+        int LastFoundStart {
+            get;
         }
 
-        public static UnitIdSelector Of(string id, int lastFound) {
-            return new UnitIdSelector { id = id, lastFound = lastFound };
+        int LastFoundEnd {
+            get;
         }
     }
 
-    public class UnitTypeSelector : IUnitResolvable {
-        public string type;
-        public int lastFound = 0;
+    public class UnitIdSelector : IUnitTrackable {
+        public string id;
 
-        public static UnitTypeSelector Of(string type) {
-            return new UnitTypeSelector { type = type };
+        public int lastFoundStart = 0;
+        public int lastFoundEnd = 0;
+        int IUnitTrackable.LastFoundStart {
+            get {
+                return lastFoundStart;
+            }
         }
 
-        public static UnitTypeSelector Of(string type, int lastFound) {
-            return new UnitTypeSelector { type = type, lastFound = lastFound };
+        int IUnitTrackable.LastFoundEnd {
+            get {
+                return lastFoundEnd;
+            }
+        }
+
+        public static UnitIdSelector Of(string id, int lastFoundStart = 0, int lastFoundEnd = 0) {
+            return new UnitIdSelector { id = id, lastFoundStart = lastFoundStart, lastFoundEnd = lastFoundEnd };
+        }
+    }
+
+    public class UnitTypeSelector : IUnitTrackable {
+        public string type;
+
+        public int lastFoundStart = 0;
+        public int lastFoundEnd = 0;
+        int IUnitTrackable.LastFoundStart {
+            get {
+                return lastFoundStart;
+            }
+        }
+
+        int IUnitTrackable.LastFoundEnd {
+            get {
+                return lastFoundEnd;
+            }
+        }
+
+        public static UnitTypeSelector Of(string type, int lastFoundStart = 0, int lastFoundEnd = 0) {
+            return new UnitTypeSelector { type = type, lastFoundStart = lastFoundStart, lastFoundEnd = lastFoundEnd };
         }
     }
 
@@ -112,15 +140,17 @@ namespace ETS2SaveAutoEditor {
             if (target is UnitRange range) {
                 return range;
             } else if (target is UnitIdSelector selector) {
-                var result = FindUnitWithId(selector.id, selector.lastFound);
+                var result = FindUnitWithId(selector.id, selector.lastFoundStart);
                 if (result != null) {
-                    selector.lastFound = result.start;
+                    selector.lastFoundStart = result.start;
+                    selector.lastFoundEnd = result.end;
                 }
                 return result;
             } else if (target is UnitTypeSelector selector1) {
-                var result = FindUnitWithType(selector1.type, selector1.lastFound);
+                var result = FindUnitWithType(selector1.type, selector1.lastFoundStart);
                 if (result != null) {
-                    selector1.lastFound = result.start;
+                    selector1.lastFoundStart = result.start;
+                    selector1.lastFoundEnd = result.end;
                 }
                 return result;
             } else {
@@ -252,8 +282,8 @@ namespace ETS2SaveAutoEditor {
             var offset = 0;
             for (int i = unit.start + 1; i < unit.end; i++) {
                 string line = lines[i + offset];
-                if(data.name == "refund")
-                Console.WriteLine(line);
+                if (data.name == "refund")
+                    Console.WriteLine(line);
                 var ma1 = Regex.Match(line, $@"^\s+{data.name}: (.*)$");
                 var ma2 = Regex.Match(line, $@"^\s+{data.name}\[\d*\]: (.*)$");
                 if (ma1.Success || ma2.Success) {
@@ -292,6 +322,77 @@ namespace ETS2SaveAutoEditor {
                     offset += 1;
                 }
             }
+        }
+
+        public UnitEntity Entity(IUnitTrackable target) {
+            return new UnitEntity(this, target);
+        }
+
+        public UnitEntity EntityId(string id, int searchFrom = 0) {
+            return Entity(UnitIdSelector.Of(id, searchFrom));
+        }
+
+        public UnitEntity EntityType(string type, int searchFrom = 0) {
+            return Entity(UnitTypeSelector.Of(type, searchFrom));
+        }
+    }
+
+    public class UnitEntity {
+        public readonly SiiSaveGame Game;
+        public readonly IUnitTrackable Target;
+        public UnitEntity(SiiSaveGame game, IUnitTrackable target) {
+            Game = game;
+            Target = target;
+        }
+
+        public string Id {
+            get {
+                return ResolvedUnit.id;
+            }
+        }
+
+        public string Type {
+            get {
+                return ResolvedUnit.type;
+            }
+        }
+
+        public UnitRange ResolvedUnit {
+            get {
+                return Game.ResolveUnit(Target);
+            }
+        }
+
+        public void Delete() {
+            Game.DeleteUnit(Target);
+        }
+
+        public UnitItem Get(string key) {
+            return Game.GetUnitItem(Target, key);
+        }
+
+        public UnitEntity GetPointer(string key) {
+            return Game.Entity(UnitIdSelector.Of(Get(key).value, Target.LastFoundEnd));
+        }
+
+        public UnitEntity[] GetAllPointers(string key) {
+            return (from item in Get(key).array select Game.Entity(UnitIdSelector.Of(item, Target.LastFoundEnd))).ToArray();
+        }
+
+        public void Set(string key, IEnumerable<string> data) {
+            Game.SetUnitItem(Target, new UnitItem { name = key, array = data.ToArray() });
+        }
+
+        public void Set(string key, string data) {
+            Game.SetUnitItem(Target, new UnitItem { name = key, value = data });
+        }
+
+        public UnitEntity EntityIdAround(string id) {
+            return Game.Entity(UnitIdSelector.Of(id, Target.LastFoundEnd));
+        }
+
+        public UnitEntity EntityTypeAround(string type) {
+            return Game.Entity(UnitTypeSelector.Of(type, Target.LastFoundEnd));
         }
     }
 }

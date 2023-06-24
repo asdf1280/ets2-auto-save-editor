@@ -105,16 +105,14 @@ namespace ETS2SaveAutoEditor {
             addAction(tasks.ExpSet());
             addAction(tasks.UnlockScreens());
             addAction(tasks.TruckEngineSet());
-            addAction(tasks.MapReset());
             addAction(tasks.Refuel());
             addAction(tasks.FixEverything());
-            addAction(tasks.SharePaint());
             addAction(tasks.ShareLocation());
             addAction(tasks.InjectLocation());
             addAction(tasks.StealCompanyTrailer());
             addAction(tasks.ChangeCargoMass());
 
-            tasks.StateChanged += (Object sender, string data) => {
+            tasks.StateChanged += (object sender, string data) => {
                 AppStatus.Items[0] = data;
             };
         }

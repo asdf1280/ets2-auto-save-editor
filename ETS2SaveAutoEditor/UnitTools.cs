@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,7 @@ namespace ETS2SaveAutoEditor {
 
     public class UnitIdSelector : IUnitResolvable {
         public string id;
+        public int lastFound = 0;
 
         public static UnitIdSelector Of(string id) {
             return new UnitIdSelector { id = id };
@@ -28,10 +30,10 @@ namespace ETS2SaveAutoEditor {
 
     public class UnitTypeSelector : IUnitResolvable {
         public string type;
-        public int offset;
+        public int lastFound = 0;
 
-        public static UnitTypeSelector Of(string type, int offset = 0) {
-            return new UnitTypeSelector { type = type, offset = offset };
+        public static UnitTypeSelector Of(string type) {
+            return new UnitTypeSelector { type = type };
         }
     }
 
@@ -99,85 +101,99 @@ namespace ETS2SaveAutoEditor {
             if (target is UnitRange range) {
                 return range;
             } else if (target is UnitIdSelector selector) {
-                return FindUnitWithId(selector.id);
+                var result = FindUnitWithId(selector.id, selector.lastFound);
+                if (result != null) {
+                    selector.lastFound = result.start;
+                }
+                return result;
             } else if (target is UnitTypeSelector selector1) {
-                return FindUnitWithType(selector1.type, selector1.offset);
+                var result = FindUnitWithType(selector1.type, selector1.lastFound);
+                if (result != null) {
+                    selector1.lastFound = result.start;
+                }
+                return result;
             } else {
                 return null;
             }
         }
 
-        public UnitRange FindUnitWithId(string id, int searchBegin = 0, int searchEnd = -1) {
-            if (searchBegin < 0) {
-                throw new ArgumentException("searchBegin < 0");
-            }
-            if (searchEnd < -1) {
-                throw new ArgumentException("searchEnd < -1");
+        public UnitRange FindUnitWithId(string id, int searchFrom = 0) {
+            if (searchFrom < 0 || searchFrom >= lines.Count) {
+                throw new ArgumentException("searchFrom out of range");
             }
 
-            if (searchEnd == -1) {
-                searchEnd = lines.Count;
-            }
-            searchEnd = Math.Min(lines.Count, searchEnd);
+            UnitRange searchLine(int line) {
+                string lineStr = lines[line];
+                if (lineStr.StartsWith(" ")) return null;
+                var ma = Regex.Match(lineStr, $"^([a-z_]+) : {id} {{$");
+                if (!ma.Success) return null;
 
-            string startType = null;
-            int start = -1;
+                string type = ma.Groups[1].Value;
 
-            for (int i = searchBegin; i < searchEnd; i++) {
-                string line = lines[i];
-                var ma = Regex.Match(line, $"^([a-z_]+) : {id} {{$");
-                if (ma.Success) {
-                    start = i;
-                    startType = ma.Groups[1].Value;
+                for (int i = 0; line + i < lines.Count; i++) {
+                    if (lines[line + i].Trim() == "}") {
+                        UnitRange range = new UnitRange {
+                            id = id,
+                            type = type,
+                            start = line,
+                            end = line + i
+                        };
+                        return range;
+                    }
                 }
-                if (start != -1 && line == "}") {
-                    UnitRange range = new UnitRange {
-                        id = id,
-                        type = startType,
-                        start = start,
-                        end = i
-                    };
-                    return range;
+
+                return null;
+            }
+
+            for (int i = 0; searchFrom + i < lines.Count || searchFrom - i >= 0; i++) {
+                if (searchFrom + i < lines.Count) {
+                    var a = searchLine(searchFrom + i);
+                    if (a != null) { return a; }
+                }
+
+                if (searchFrom - i >= 0) {
+                    var a = searchLine(searchFrom - i);
+                    if (a != null) { return a; }
                 }
             }
             return null;
         }
 
-        public UnitRange FindUnitWithType(string type, int offset = 0, int searchBegin = 0, int searchEnd = -1) {
-            if (searchBegin < 0) {
-                throw new ArgumentException("searchBegin < 0");
-            } else if (offset < 0) {
-                throw new ArgumentException("offset < 0");
-            } else if (searchEnd < -1) {
-                throw new ArgumentException("searchEnd < -1");
+        public UnitRange FindUnitWithType(string type, int searchFrom = 0) {
+            if (searchFrom < 0 || searchFrom >= lines.Count) {
+                throw new ArgumentException("searchFrom out of range");
             }
 
-            if (searchEnd == -1) {
-                searchEnd = lines.Count;
-            }
-            searchEnd = Math.Min(lines.Count, searchEnd);
+            UnitRange searchLine(int line) {
+                string lineStr = lines[line];
+                if (!lineStr.StartsWith(type + " : ")) return null;
 
-            string startId = null;
-            int start = -1;
-            int offsetRemaining = offset;
+                string unitId = Regex.Match(lineStr.Trim(), $"^{type} : ({unitIdPattern}) {{$").Groups[1].Value;
 
-            for (int i = searchBegin; i < searchEnd; i++) {
-                string line = lines[i];
-                if (line.StartsWith(type + " : ")) {
-                    if (offsetRemaining == 0) {
-                        start = i;
-                        Console.WriteLine($"^{type} : (${unitIdPattern}) {{$");
-                        startId = Regex.Match(line.Trim(), $"^{type} : ({unitIdPattern}) {{$").Groups[1].Value;
-                    } else
-                        offsetRemaining--;
+                for (int i = 0; line + i < lines.Count; i++) {
+                    if (lines[line + i].Trim() == "}") {
+                        UnitRange range = new UnitRange {
+                            id = unitId,
+                            type = type,
+                            start = line,
+                            end = line + i
+                        };
+                        return range;
+                    }
                 }
-                if (start != -1 && line == "}") {
-                    UnitRange range = new UnitRange {
-                        id = startId,
-                        start = start,
-                        end = i
-                    };
-                    return range;
+
+                return null;
+            }
+
+            for (int i = 0; searchFrom + i < lines.Count || searchFrom - i >= 0; i++) {
+                if (searchFrom + i < lines.Count) {
+                    var a = searchLine(searchFrom + i);
+                    if (a != null) { return a; }
+                }
+
+                if (searchFrom - i >= 0) {
+                    var a = searchLine(searchFrom - i);
+                    if (a != null) { return a; }
                 }
             }
             return null;

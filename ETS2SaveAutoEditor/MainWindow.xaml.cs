@@ -49,7 +49,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.9 Alpha";
+        public static string Version = "1.10";
         public static byte[] StringToByteArray(String hex) {
             int NumberChars = hex.Length / 2;
             byte[] bytes = new byte[NumberChars];
@@ -66,7 +66,7 @@ namespace ETS2SaveAutoEditor {
             if (originalString.Length == 0) {
                 originalString = "[자동 저장]";
             }
-            var ml = Regex.Matches(originalString, "(?<=[^\\\\]|^)\\\\");
+            var ml = Regex.Matches(originalString, @"(?<=[^\\]|^)\\");
             var hexString = "";
             for (int i = 0; i < originalString.Length; i++) {
                 var found = false;
@@ -80,7 +80,7 @@ namespace ETS2SaveAutoEditor {
                     }
                 }
                 if (!found) {
-                    Byte[] stringBytes = Encoding.UTF8.GetBytes(ch + "");
+                    byte[] stringBytes = Encoding.UTF8.GetBytes(ch + "");
                     StringBuilder sbBytes = new StringBuilder(stringBytes.Length * 2);
                     foreach (byte b in stringBytes) {
                         sbBytes.AppendFormat("{0:X2}", b);
@@ -88,9 +88,8 @@ namespace ETS2SaveAutoEditor {
                     hexString += sbBytes.ToString();
                 }
             }
-            Console.WriteLine(hexString);
             byte[] dBytes = StringToByteArray(hexString);
-            return System.Text.Encoding.UTF8.GetString(dBytes);
+            return Encoding.UTF8.GetString(dBytes);
         }
 
         private SaveeditTasks tasks;
@@ -132,10 +131,20 @@ namespace ETS2SaveAutoEditor {
 
         public MainWindow() {
             if (!File.Exists("SII_Decrypt.exe")) {
-                var res = MessageBox.Show("세이브 파일 복호화 프로그램을 찾을 수 없습니다. 설치하시겠습니까?\n처음 실행 시 설치하십시오.", "안내", MessageBoxButton.YesNo);
+                InstallSII("SII_Decrypt를 찾을 수 없습니다. 설치하시겠습니까?");
+            } else {
+                byte[] currentSII = File.ReadAllBytes("SII_Decrypt.exe");
+                byte[] resourceSII = Properties.Resources.SII_Decrypt;
+                if (!currentSII.SequenceEqual(resourceSII)) {
+                    InstallSII("SII_Decrypt를 업데이트해야 합니다. 설치하시겠습니까?");
+                }
+            }
+
+            void InstallSII(string message) {
+                var res = MessageBox.Show(message, "필수 항목 설치", MessageBoxButton.YesNo);
                 if (res == MessageBoxResult.Yes) {
                     File.WriteAllBytes("SII_Decrypt.exe", Properties.Resources.SII_Decrypt);
-                    MessageBox.Show("설치했습니다!");
+                    MessageBox.Show("SII_Decrypt를 설치했습니다!");
                 } else {
                     Application.Current.Shutdown(0);
                 }
@@ -266,8 +275,9 @@ namespace ETS2SaveAutoEditor {
             AppStatus.Items[0] = "세이브 파일 복호화 중...";
 
             var onEnd = new Action<string>((string str) => {
-                tasks.saveFile = (ProfileSave)SaveList.SelectedItem;
-                tasks.saveFile.content = str;
+                var save = (ProfileSave)SaveList.SelectedItem;
+                save.content = str;
+                tasks.setSaveFile(save);
 
                 AppStatus.Items[0] = "완료했습니다.";
                 ShowTasks(true);

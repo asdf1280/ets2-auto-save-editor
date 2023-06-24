@@ -20,15 +20,21 @@ namespace ETS2SaveAutoEditor {
         public string data_path;
     }
     public class SaveeditTasks {
-        public ProfileSave saveFile;
+        public void setSaveFile(ProfileSave file) {
+            saveFile = file;
+            saveGame = new SiiSaveGame(file.content);
+            saveFile.Save(saveGame.ToString());
+        }
+        private ProfileSave saveFile;
+        private SiiSaveGame saveGame;
+
         public event EventHandler<string> StateChanged;
 
         public SaveEditTask MoneySet() {
             var run = new Action(() => {
                 try {
-                    var saveGame = new SiiSaveGame(saveFile.content);
-                    var bank = saveGame.FindUnitWithType("bank");
-                    var currentBank = saveGame.GetUnitItem(bank, "money_account").value;
+                    var bank = saveGame.EntityType("bank");
+                    var currentBank = bank.Get("money_account").value;
 
                     var specifiedCash = NumberInputBox.Show("Specify cash", "Please specify the new cash.\nCurrent cash: " + currentBank + "\nCaution: Too high value may crash the game. Please be careful.");
 
@@ -36,7 +42,7 @@ namespace ETS2SaveAutoEditor {
                         return;
                     }
 
-                    saveGame.SetUnitItem(bank, new UnitItem { name = "money_account", value = specifiedCash.ToString() });
+                    bank.Set("money_account", specifiedCash.ToString());
                     saveFile.Save(saveGame.MergeResult());
                     MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
@@ -54,9 +60,8 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ExpSet() {
             var run = new Action(() => {
                 try {
-                    var saveGame = new SiiSaveGame(saveFile.content);
-                    var economy = saveGame.FindUnitWithType("economy");
-                    var currentExp = saveGame.GetUnitItem(economy, "experience_points").value;
+                    var economy = saveGame.EntityType("economy");
+                    var currentExp = economy.Get("experience_points").value;
 
                     var specifiedExp = NumberInputBox.Show("Specify EXP", "Please specify the new exps.\nCurrent exps: " + currentExp + "\nCaution: Too high value may crash the game. Please be careful.");
 
@@ -64,7 +69,7 @@ namespace ETS2SaveAutoEditor {
                         return;
                     }
 
-                    saveGame.SetUnitItem(economy, new UnitItem { name = "experience_points", value = specifiedExp.ToString() });
+                    economy.Set("experience_points", specifiedExp.ToString());
                     saveFile.Save(saveGame.MergeResult());
                     MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
@@ -82,15 +87,14 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask UnlockScreens() {
             var run = new Action(() => {
                 try {
-                    var saveGame = new SiiSaveGame(saveFile.content);
-                    var economy = saveGame.FindUnitWithType("economy");
+                    var economy = saveGame.EntityType("economy");
 
                     var msgBoxRes = MessageBox.Show("Unlock GUIs such as skills. This can even unlock some items which is supposed to be disabled. Would you like to proceed?", "Unlock", MessageBoxButton.OKCancel);
                     if (msgBoxRes == MessageBoxResult.Cancel) {
                         return;
                     }
 
-                    saveGame.SetUnitItem(economy, new UnitItem { name = "screen_access_list", value = "0" });
+                    economy.Set("screen_access_list", "0");
                     saveFile.Save(saveGame.ToString());
                     MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
@@ -108,38 +112,11 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask TruckEngineSet() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var pattern0 = @"\beconomy : [\w\.]+ {";
-                    var pattern1 = @"\bplayer: ([\w\.]+)\b";
-                    var matchIndex = Regex.Match(content, pattern0).Index;
-                    var substr = content.Substring(matchIndex);
-                    string resultLine = null;
-                    foreach (var str in substr.Split('\n')) {
-                        if (Regex.IsMatch(str, pattern1)) {
-                            resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                            break;
-                        }
-                        if (str.Trim() == "}") break;
-                    }
+                    var player = saveGame.EntityType("player");
+                    var assignedTruckId = player.Get("assigned_truck").value;
 
-                    pattern0 = @"\bplayer : " + resultLine + " {";
-                    pattern1 = @"\bassigned_truck: ([\w\.]+)\b";
-                    matchIndex = Regex.Match(content, pattern0).Index;
-                    substr = content.Substring(matchIndex);
-                    resultLine = null;
-                    foreach (var str in substr.Split('\n')) {
-                        if (Regex.IsMatch(str, pattern1)) {
-                            resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                            break;
-                        }
-                        if (str.Trim() == "}") break; // End of the class
-                    }
-
-                    if (resultLine == null) {
-                        MessageBox.Show("Corrupted savegame.", "Error");
-                        return;
-                    } else if (resultLine == "null") {
-                        MessageBox.Show("No assigned truck found. Assign a truck in game.", "Error");
+                    if (assignedTruckId == "null") {
+                        MessageBox.Show("You're not driving a truck now.", "Error");
                         return;
                     }
 
@@ -162,33 +139,15 @@ namespace ETS2SaveAutoEditor {
                         enginePath = enginePaths[res];
                     }
 
-                    pattern0 = @"\bvehicle : " + resultLine + " {";
-                    pattern1 = @"\baccessories\[\d*\]: ([\w\.]+)\b";
-                    matchIndex = Regex.Match(content, pattern0).Index;
-                    substr = content.Substring(matchIndex);
-                    resultLine = null;
-                    foreach (var line in substr.Split('\n')) {
-                        if (Regex.IsMatch(line, pattern1)) {
-                            var id = Regex.Match(line, pattern1).Groups[1].Value;
-                            var p50 = @"\bvehicle_(addon_|sound_|wheel_|drv_plate_|paint_job_)?accessory : " + id + " {";
-                            var matchIndex0 = Regex.Match(substr, p50).Index + matchIndex;
-                            var substr0 = content.Substring(matchIndex0);
-                            var index = 0;
-                            foreach (var line0 in substr0.Split('\n')) {
-                                if (Regex.IsMatch(line0, @"\bdata_path:\s""\/def\/vehicle\/truck\/[^/]+?\/engine\/")) {
-                                    var sb = new StringBuilder();
-                                    sb.Append(content.Substring(0, (int)(matchIndex0 + index)));
-                                    sb.Append(" data_path: \"" + enginePath + "\"\n");
-                                    sb.Append(content.Substring((int)(matchIndex0 + index + line0.Length + 1)));
-                                    content = sb.ToString();
-                                }
-                                if (line0.Trim() == "}") break;
-                                index += line0.Length + 1;
-                            }
+                    var truck = player.EntityIdAround(assignedTruckId);
+                    var accessories = truck.GetAllPointers("accessories");
+                    foreach (var accessory in accessories) {
+                        if (Regex.IsMatch(accessory.Get("data_path").value, @"""\/def\/vehicle\/truck\/[^/]+?\/engine\/")) {
+                            accessory.Set("data_path", $"\"{enginePath}\"");
                         }
-                        if (line.Trim() == "}") break; // End of the class
                     }
-                    saveFile.Save(content);
+
+                    saveFile.Save(saveGame.ToString());
                     MessageBox.Show("Successfully changed!", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
@@ -200,32 +159,6 @@ namespace ETS2SaveAutoEditor {
                 name = "Set truck engine",
                 run = run,
                 description = "Change the truck's engine to a few engines available."
-            };
-        }
-        public SaveEditTask MapReset() {
-            var run = new Action(() => {
-                try {
-                    var content = saveFile.content;
-                    var sb = new StringBuilder();
-                    foreach (var line in content.Split('\n')) {
-                        var str = line;
-                        if (line.Contains("discovered_items:"))
-                            str = " discovered_items: 0";
-                        else if (line.Contains("discovered_items")) continue;
-                        sb.AppendLine(str);
-                    }
-                    saveFile.Save(sb.ToString());
-                    MessageBox.Show("Done!", "Done");
-                } catch (Exception e) {
-                    MessageBox.Show("An error occured.", "Error");
-                    Console.WriteLine(e);
-                    throw;
-                }
-            });
-            return new SaveEditTask {
-                name = "Reset map",
-                run = run,
-                description = "Reset explorered roads."
             };
         }
         public SaveEditTask Refuel() {
@@ -295,214 +228,10 @@ namespace ETS2SaveAutoEditor {
                 description = "Repair all truck/trailers in current savegame."
             };
         }
-        public SaveEditTask SharePaint() {
-            var run = new Action(() => {
-                try {
-                    var content = saveFile.content;
-                    var pattern0 = @"\beconomy : [\w\.]+ {";
-                    var pattern1 = @"\bplayer: ([\w\.]+)\b";
-                    var matchIndex = Regex.Match(content, pattern0).Index;
-                    var substr = content.Substring(matchIndex);
-                    string resultLine = null;
-                    foreach (var str in substr.Split('\n')) {
-                        if (Regex.IsMatch(str, pattern1)) {
-                            resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                            break;
-                        }
-                        if (str.Trim() == "}") break;
-                    }
-
-                    if (resultLine == null) {
-                        MessageBox.Show("Corrupted save file", "Error");
-                        return;
-                    }
-
-                    var operationNames = new string[] { "Import, Truck", "Export, Truck", "Import, Trailer", "Export, Trailer" };
-                    var truck = false;
-                    var import = false;
-                    {
-                        var res = ListInputBox.Show("Choose job", "Which one do you want? Please choose what to import/export paintjob from.", operationNames);
-                        if (res == -1) {
-                            return;
-                        }
-                        truck = res < 2;
-                        import = res % 2 == 0;
-                    }
-
-                    pattern0 = @"\bplayer : " + resultLine + " {";
-                    pattern1 = @"\bassigned_" + (truck ? "truck" : "trailer") + @": ([\w\.]+)\b";
-                    matchIndex = Regex.Match(content, pattern0).Index;
-                    substr = content.Substring(matchIndex);
-                    resultLine = null;
-                    foreach (var str in substr.Split('\n')) {
-                        if (Regex.IsMatch(str, pattern1)) {
-                            resultLine = Regex.Match(str, pattern1).Groups[1].Value;
-                            break;
-                        }
-                        if (str.Trim() == "}") break; // End of the class
-                    }
-                    if (resultLine == "null") {
-                        if (truck)
-                            MessageBox.Show("There's no assigned truck.", "Error");
-                        else
-                            MessageBox.Show("There's no assigned trailer.", "Error");
-                        return;
-                    }
-
-                    string path;
-
-                    var filter = (truck ? "Truck paintjob (*.paint0)|*.paint0|All files (*.*)|*.*" : "Trailer paintjob (*.paint1)|*.paint1|All files (*.*)|*.*");
-                    if (import) { // Import
-                        OpenFileDialog dialog = new OpenFileDialog {
-                            Title = "Choose paintjob file",
-                            Filter = filter
-                        };
-                        if (dialog.ShowDialog() != true) return;
-                        path = dialog.FileName;
-                    } else // Export
-                      {
-                        SaveFileDialog dialog = new SaveFileDialog {
-                            Title = "Export paintjob",
-                            Filter = filter
-                        };
-                        if (dialog.ShowDialog() != true) return;
-                        path = dialog.FileName;
-                    }
-
-                    pattern0 = @"\b" + (truck ? "vehicle" : "trailer") + " : " + resultLine + " {";
-                    pattern1 = @"\baccessories\[\d*\]: ([\w\.]+)\b";
-                    matchIndex = Regex.Match(content, pattern0).Index;
-                    substr = content.Substring(matchIndex);
-                    resultLine = null;
-
-                    if (import) {
-                        var str = File.ReadAllText(path, Encoding.UTF8);
-                        var strs = str.Split(';');
-                        if (strs.Length != 8) {
-                            MessageBox.Show("Corrupted paintjob file", "Error");
-                            return;
-                        }
-                        var paintjob = new Paintjob {
-                            mask_r_color = strs[0],
-                            mask_g_color = strs[1],
-                            mask_b_color = strs[2],
-                            flake_color = strs[3],
-                            flip_color = strs[4],
-                            base_color = strs[5],
-                            data_path = strs[6]
-                        };
-
-                        foreach (var line in substr.Split('\n')) {
-                            if (Regex.IsMatch(line, pattern1)) {
-                                var id = Regex.Match(line, pattern1).Groups[1].Value;
-                                var p50 = @"\bvehicle_paint_job_accessory : " + id + " {";
-                                if (!Regex.IsMatch(substr, p50)) continue;
-                                var matchIndex0 = Regex.Match(substr, p50).Index + matchIndex; // TODO you must escape p50 id can contain .
-                                var substr0 = content.Substring(matchIndex0);
-                                var index = 0;
-                                var sb = new StringBuilder();
-                                sb.Append(content.Substring(0, matchIndex0));
-                                foreach (var line0 in substr0.Split('\n')) {
-                                    var str0 = line0;
-                                    if (Regex.IsMatch(line0, @"\bdata_path:\s"".*?""")) {
-                                        str0 = " data_path: " + paintjob.data_path + "";
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bmask_r_color: \(.*?\)")) {
-                                        str0 = " mask_r_color: " + paintjob.mask_r_color + "";
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bmask_g_color: \(.*?\)")) {
-                                        str0 = " mask_g_color: " + paintjob.mask_g_color + "";
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bmask_b_color: \(.*?\)")) {
-                                        str0 = " mask_b_color: " + paintjob.mask_b_color + "";
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bflake_color: \(.*?\)")) {
-                                        str0 = " flake_color: " + paintjob.flake_color + "";
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bflip_color: \(.*?\)")) {
-                                        str0 = " flip_color: " + paintjob.flip_color + "";
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bbase_color: \(.*?\)")) {
-                                        str0 = " base_color: " + paintjob.base_color + "";
-                                    }
-                                    Console.WriteLine("'" + Regex.Escape(str0) + "'");
-                                    sb.AppendLine(str0);
-                                    if (line0.Trim() == "}") break;
-                                    index += line0.Length + 1;
-                                }
-                                sb.Append(content.Substring((int)(matchIndex0 + index + 1)));
-                                content = sb.ToString();
-                            }
-                            if (line.Trim() == "}") break; // End of the class
-                        }
-                        saveFile.Save(content);
-                        MessageBox.Show("Imported paintjob!", "Done");
-                    } else {
-                        var paintjob = new Paintjob();
-
-                        foreach (var line in substr.Split('\n')) {
-                            if (Regex.IsMatch(line, pattern1)) {
-                                var id = Regex.Match(line, pattern1).Groups[1].Value;
-                                var p50 = @"\bvehicle_paint_job_accessory : " + id + " {";
-                                if (!Regex.IsMatch(substr, p50)) continue;
-                                var matchIndex0 = Regex.Match(substr, p50).Index + matchIndex; // TODO you must escape p50 id can contain .
-                                var substr0 = content.Substring(matchIndex0);
-                                var index = 0;
-                                foreach (var line0 in substr0.Split('\n')) {
-                                    if (Regex.IsMatch(line0, @"\bdata_path:\s("".*?"")")) {
-                                        paintjob.data_path = Regex.Match(line0, @"\bdata_path:\s("".*?"")").Groups[1].Value;
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bmask_r_color: (\(.*?\))")) {
-                                        paintjob.mask_r_color = Regex.Match(line0, @"\bmask_r_color: (\(.*?\))").Groups[1].Value;
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bmask_g_color: (\(.*?\))")) {
-                                        paintjob.mask_g_color = Regex.Match(line0, @"\bmask_g_color: (\(.*?\))").Groups[1].Value;
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bmask_b_color: (\(.*?\))")) {
-                                        paintjob.mask_b_color = Regex.Match(line0, @"\bmask_b_color: (\(.*?\))").Groups[1].Value;
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bflake_color: (\(.*?\))")) {
-                                        paintjob.flake_color = Regex.Match(line0, @"\bflake_color: (\(.*?\))").Groups[1].Value;
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bflip_color: (\(.*?\))")) {
-                                        paintjob.flip_color = Regex.Match(line0, @"\bflip_color: (\(.*?\))").Groups[1].Value;
-                                    }
-                                    if (Regex.IsMatch(line0, @"\bbase_color: (\(.*?\))")) {
-                                        paintjob.base_color = Regex.Match(line0, @"\bbase_color: (\(.*?\))").Groups[1].Value;
-                                    }
-                                    if (line0.Trim() == "}") break;
-                                    index += line0.Length + 1;
-                                }
-                            }
-                            if (line.Trim() == "}") break; // End of the class
-                        }
-                        try {
-                            var data = paintjob.mask_r_color + ";" + paintjob.mask_g_color + ";" + paintjob.mask_b_color + ";" + paintjob.flake_color + ";" + paintjob.flip_color + ";" + paintjob.base_color + ";" + paintjob.data_path + ";";
-                            File.WriteAllText(path, data, Encoding.UTF8);
-                        } catch (Exception) {
-                            MessageBox.Show("Could not export", "Error");
-                            throw;
-                        }
-                        MessageBox.Show("Exported paintjob!", "Done");
-                    }
-                } catch (Exception e) {
-                    MessageBox.Show("An unknown error occured", "Error");
-                    Console.WriteLine(e);
-                    throw;
-                }
-            });
-            return new SaveEditTask {
-                name = "Export/import paintjob",
-                run = run,
-                description = "Import/export paintjob of assigned truck/trailer."
-            };
-        }
 
         private enum PositionDataHeader : byte {
             KEY,
-            END,
-            SINGLE,
-            MULTI
+            END
         }
         private readonly int positionDataVersion = 2;
 
@@ -543,7 +272,6 @@ namespace ETS2SaveAutoEditor {
                 Match matchCompression = Regex.Match(encoded, "(.)$");
                 int Eqs = Convert.ToInt32(matchCompression.Groups[1].Value, 16);
                 int segmentLength = matchCompression.Groups[0].Value.Length;
-                MessageBox.Show(matchCompression.Groups[1].Value);
                 encoded = encoded.Substring(0, encoded.Length - segmentLength);
                 for (int i = 0; i < Eqs; i++) {
                     encoded += '=';
@@ -605,18 +333,17 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ShareLocation() {
             var run = new Action(() => {
                 try {
-                    var saveGame = new SiiSaveGame(saveFile.content);
-                    var player = saveGame.FindUnitWithType("player");
+                    var player = saveGame.EntityType("player");
 
                     List<float[]> placements = new List<float[]>();
 
-                    string truckPlacement = saveGame.GetUnitItem(player, "truck_placement").value;
+                    string truckPlacement = player.Get("truck_placement").value;
                     placements.Add(DecodeSCSPosition(truckPlacement));
 
-                    string trailerPlacement = saveGame.GetUnitItem(player, "trailer_placement").value;
+                    string trailerPlacement = player.Get("trailer_placement").value;
                     placements.Add(DecodeSCSPosition(trailerPlacement));
 
-                    var slaveTrailers = saveGame.GetUnitItem(player, "slave_trailer_placements");
+                    var slaveTrailers = player.Get("slave_trailer_placements");
                     if (slaveTrailers.array != null) {
                         foreach (var slave in slaveTrailers.array) {
                             placements.Add(DecodeSCSPosition(slave));
@@ -644,18 +371,17 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask InjectLocation() {
             var run = new Action(() => {
                 try {
-                    var saveGame = new SiiSaveGame(saveFile.content);
-                    var player = saveGame.FindUnitWithType("player");
+                    var player = saveGame.EntityType("player");
 
                     var decoded = (from a in DecodePositionData(Clipboard.GetText().Trim()) select EncodeSCSPosition(a)).ToArray();
                     if (decoded.Count() >= 1) {
-                        saveGame.SetUnitItem(player, new UnitItem { name = "truck_placement", value = decoded[0] });
+                        player.Set("truck_placement", decoded[0]);
                     }
                     if (decoded.Count() >= 2) {
-                        saveGame.SetUnitItem(player, new UnitItem { name = "trailer_placement", value = decoded[1] });
+                        player.Set("trailer_placement", decoded[1]);
                     }
                     if (decoded.Count() > 2) {
-                        saveGame.SetUnitItem(player, new UnitItem { name = "slave_trailer_placements", array = decoded.Skip(2).ToArray() });
+                        player.Set("slave_trailer_placements", decoded.Skip(2).ToArray());
                     }
 
                     saveFile.Save(saveGame.ToString());
@@ -679,48 +405,45 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask StealCompanyTrailer() {
             var run = new Action(() => {
                 try {
-                    var saveGame = new SiiSaveGame(saveFile.content);
-                    var economy = UnitTypeSelector.Of("economy");
-                    var player = UnitTypeSelector.Of("player");
+                    var economy = saveGame.EntityType("economy");
+                    var player = saveGame.EntityType("player", economy.Target.LastFoundStart);
 
                     var currentTrailerId = "";
                     var currentJobId = "";
                     { // 현재 작업이나 트레일러가 없으면 오류 발생
-                        currentTrailerId = saveGame.GetUnitItem(player, "assigned_trailer").value;
+                        currentTrailerId = player.Get("assigned_trailer").value;
                         if (currentTrailerId == "null") {
                             MessageBox.Show("You don't have an assigned trailer.", "Error");
                             return;
                         }
 
-                        currentJobId = saveGame.GetUnitItem(player, "current_job").value;
+                        currentJobId = player.Get("current_job").value;
                         if (currentJobId == "null") {
                             MessageBox.Show("You don't have any job now.", "Error");
                             return;
                         }
                     }
 
-                    StateChanged(null, "작업 정보 지우는 중...");
-
-                    // Set current_job to null
-                    saveGame.SetUnitItem(player, new UnitItem { name = "current_job", value = "null" });
-
-                    // Set my_trailer to this
-                    saveGame.SetUnitItem(player, new UnitItem { name = "my_trailer", value = currentTrailerId });
+                    // Detach trailers
+                    player.Set("my_trailer", "null");
+                    player.Set("assigned_trailer", "null");
 
                     // Current job unit
-                    var job = UnitIdSelector.Of(currentJobId);
-                    { // Special transport
-                        var special = saveGame.GetUnitItem(job, "special").value;
-                        if (special != "null") { // Special transport - we need to delete some more units
-                            saveGame.DeleteUnit(UnitIdSelector.Of(special));
+                    var job = player.EntityIdAround(currentJobId);
 
-                            var specialSave = UnitIdSelector.Of(saveGame.GetUnitItem(economy, "stored_special_job").value);
+                    // Special transport
+                    {
+                        var special = job.Get("special").value;
+                        if (special != "null") { // Special transport - we need to delete some more units
+                            job.EntityIdAround(special).Delete();
+
+                            var specialSave = economy.GetPointer("stored_special_job");
                             var l = new List<string>();
 
-                            var i1 = saveGame.GetUnitItem(specialSave, "trajectory_orders");
+                            var i1 = specialSave.Get("trajectory_orders");
                             if (i1.array != null)
                                 l.AddRange(i1.array);
-                            var i2 = saveGame.GetUnitItem(specialSave, "active_blocks_rules");
+                            var i2 = specialSave.Get("active_blocks_rules");
                             if (i2.array != null)
                                 l.AddRange(i2.array);
 
@@ -728,14 +451,14 @@ namespace ETS2SaveAutoEditor {
                                 saveGame.DeleteUnit(UnitIdSelector.Of(v));
                             });
 
-                            saveGame.DeleteUnit(specialSave);
-                            saveGame.SetUnitItem(economy, new UnitItem { name = "stored_special_job", value = "null" });
+                            specialSave.Delete();
+                            economy.Set("stored_special_job", "null");
                         }
                     }
 
-                    // Check if company truck exists and remove it
+                    // Check if company truck exists and remove it ( Quick Job )
                     {
-                        var v1 = saveGame.GetUnitItem(job, "company_truck");
+                        var v1 = job.Get("company_truck");
                         if (v1.value != "null") {
                             var truck = UnitIdSelector.Of(v1.value);
                             var l = new List<string>();
@@ -749,61 +472,41 @@ namespace ETS2SaveAutoEditor {
                             saveGame.DeleteUnit(truck);
                         }
 
-                        saveGame.SetUnitItem(player, new UnitItem { name = "assigned_truck", value = saveGame.GetUnitItem(player, "my_truck").value });
+                        player.Set("assigned_truck", player.Get("my_truck").value);
                     }
 
+                    // Set current_job to null
+                    player.Set("current_job", "null");
+
                     // Delete the job unit
-                    saveGame.DeleteUnit(job);
+                    job.Delete();
+
+                    // Reset navigation
+                    {
+                        var i = economy.GetAllPointers("stored_gps_ahead_waypoints");
+                        foreach (var t in i) {
+                            t.Delete();
+                        }
+                        economy.Set("stored_gps_ahead_waypoints", "0");
+                    }
 
                     // Get trailers I own now
-                    var trailers = saveGame.GetUnitItem(player, "trailers").array;
+                    var trailers = player.Get("trailers").array;
                     if (trailers.Contains(currentTrailerId)) { // Owned trailer - cancel job and return
                         saveFile.Save(saveGame.ToString());
                         MessageBox.Show("You already own the trailer used for the job. The job was canceled with the cargo accessory remaining.", "Done!");
                         return;
                     }
 
-                    // Not owned trailers - Add to owned trailers and selected garage
-                    var garageId = "";
-                    {
-                        var garageNamesFound = (from item in saveGame.GetUnitItem(economy, "garages").array select item.Split(new string[] { "garage." }, StringSplitOptions.None)[1]).ToList();
-                        garageNamesFound.Sort();
-
-                        if (garageNamesFound.Count == 0) {
-                            MessageBox.Show("You need to have at least one garage to store the stolen trailer.", "Error");
-                            return;
-                        }
-
-                        var res = ListInputBox.Show("Choose your garage", "Where would you like to store the stolen trailer? Make sure only to choose the garage that you own in game.", garageNamesFound.ToArray());
-                        if (res == -1) {
-                            return;
-                        }
-                        garageId = "garage." + garageNamesFound.ToArray()[res];
-                    }
-
                     // Add trailer to player trailer list
                     {
                         var t = trailers.ToList();
                         t.Add(currentTrailerId);
-                        saveGame.SetUnitItem(player, new UnitItem { name = "trailers", array = t.ToArray() });
-                    }
-
-                    // Add trailer to garage trailer list
-                    {
-                        var garage = UnitIdSelector.Of(garageId);
-
-                        var tValues = saveGame.GetUnitItem(garage, "trailers");
-                        var ts = new string[] { };
-                        if (tValues.array != null) {
-                            ts = tValues.array;
-                        }
-                        var t = ts.ToList();
-                        t.Add(currentTrailerId);
-                        saveGame.SetUnitItem(garage, new UnitItem { name = "trailers", array = t.ToArray() });
+                        player.Set("trailers", t.ToArray());
                     }
 
                     saveFile.Save(saveGame.ToString());
-                    MessageBox.Show("The trailer is yours now.", "Done!");
+                    MessageBox.Show("The trailer is yours now. You can relocate the trailer as needed.", "Done!");
                     return;
                 } catch (Exception e) {
                     MessageBox.Show("An error occured.", "Error");
@@ -820,10 +523,9 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ChangeCargoMass() {
             var run = new Action(() => {
                 try {
-                    var saveGame = new SiiSaveGame(saveFile.content);
-                    var player = UnitTypeSelector.Of("player");
+                    var player = saveGame.EntityType("player");
 
-                    var assignedTrailerId = saveGame.GetUnitItem(player, "assigned_trailer").value;
+                    var assignedTrailerId = player.Get("assigned_trailer").value;
                     if (assignedTrailerId == "null") {
                         MessageBox.Show("You don't have an assigned trailer.", "Error");
                         return;
@@ -835,8 +537,8 @@ namespace ETS2SaveAutoEditor {
                         return;
                     }
 
-                    var trailer = UnitIdSelector.Of(assignedTrailerId);
-                    saveGame.SetUnitItem(trailer, new UnitItem { name = "cargo_mass", value = $"{specifiedMass}" });
+                    var trailer = player.EntityIdAround(assignedTrailerId);
+                    trailer.Set("cargo_mass", $"{specifiedMass}");
 
                     saveFile.Save(saveGame.ToString());
                     MessageBox.Show("Changed the trailer cargo mass!", "Done");

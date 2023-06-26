@@ -444,7 +444,7 @@ namespace ETS2SaveAutoEditor {
                     //DestroyNavigationData(economy);
 
                     saveFile.Save(saveGame.ToString());
-                    MessageBox.Show($"Successfully injected the position code!\nNumber of vehicles in the code: {positions.Count}, Connected to trailer: {(trailerConnected ? "Yes" : "No")}", "Complete!");
+                    MessageBox.Show($"Successfully injected the position code!\nNumber of vehicles in the code: {decoded.Count()}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");

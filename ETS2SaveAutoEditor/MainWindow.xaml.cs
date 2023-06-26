@@ -49,8 +49,8 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.10";
-        public static byte[] StringToByteArray(String hex) {
+        public static string Version = "1.11";
+        public static byte[] StringToByteArray(string hex) {
             int NumberChars = hex.Length / 2;
             byte[] bytes = new byte[NumberChars];
             using (var sr = new StringReader(hex)) {

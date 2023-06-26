@@ -113,6 +113,7 @@ namespace ETS2SaveAutoEditor {
         }
 
         private void NormaliseSiiLists() {
+            var modifiedLines = new List<string>();
             var workingKeyword = "";
             int workingKeywordAt = -1;
             var p2 = new Regex(@"^\s+([a-z_]+): \d+\b", RegexOptions.Compiled);
@@ -120,20 +121,22 @@ namespace ETS2SaveAutoEditor {
                 var line = lines[i];
                 if (workingKeyword.Length > 0 && line.TrimStart().StartsWith($"{workingKeyword}[")) {
                     if (workingKeywordAt != -1) {
-                        lines.RemoveAt(workingKeywordAt);
-                        i--;
+                        modifiedLines.RemoveAt(workingKeywordAt);
                         workingKeywordAt = -1;
                     }
                     var m = Regex.Match(line, $@"^(\s+{workingKeyword})\[\d*\]:\s+(.*)$");
-                    lines[i] = $"{m.Groups[1].Value}[]: {m.Groups[2].Value}";
+                    modifiedLines.Add($"{m.Groups[1].Value}[]: {m.Groups[2].Value}");
                 } else if (p2.IsMatch(line)) {
                     workingKeyword = p2.Match(line).Groups[1].Value;
-
-                    workingKeywordAt = i;
+                    workingKeywordAt = modifiedLines.Count;
+                    modifiedLines.Add(line);
                 } else {
                     workingKeyword = "";
+                    modifiedLines.Add(line);
                 }
             }
+            lines.Clear();
+            lines.AddRange(modifiedLines);
         }
 
         public UnitRange ResolveUnit(IUnitResolvable target) {

@@ -233,29 +233,28 @@ namespace ETS2SaveAutoEditor {
             KEY,
             END
         }
-        private readonly int positionDataVersion = 2;
+        private readonly int positionDataVersion = 3;
 
-        private string EncodePositionData(List<float[]> data) {
+        private struct PositionData {
+            public List<float[]> Positions;
+            public bool TrailerConnected;
+        }
+
+        private string EncodePositionData(PositionData data) {
             MemoryStream memoryStream = new MemoryStream();
-            //GZipStream compressionStream = new GZipStream(memoryStream, CompressionLevel.Optimal);
             BinaryWriter binaryWriter = new BinaryWriter(memoryStream, Encoding.ASCII);
-            void sendHeader(PositionDataHeader h) {
-                binaryWriter.Write((byte)h);
-            }
+            binaryWriter.Write(positionDataVersion);
+
             void sendPlacement(float[] p) {
                 for (int t = 0; t < 7; t++) {
                     binaryWriter.Write(p[t]);
                 }
             }
-            binaryWriter.Write(positionDataVersion);
-            foreach (float[] p in data) {
-                sendHeader(PositionDataHeader.KEY);
+            binaryWriter.Write((byte)(data.Positions.Count + (data.TrailerConnected ? 1 << 7 : 0)));
+            foreach (float[] p in data.Positions) {
                 sendPlacement(p);
             }
-            sendHeader(PositionDataHeader.END);
 
-
-            binaryWriter.Flush();
             binaryWriter.Close();
             string encoded = Convert.ToBase64String(memoryStream.ToArray());
             int Eqs = 0;
@@ -267,7 +266,7 @@ namespace ETS2SaveAutoEditor {
             }
             return encoded.Substring(0, i + 1) + Eqs.ToString("X");
         }
-        private List<float[]> DecodePositionData(string encoded) {
+        private PositionData DecodePositionData(string encoded) {
             {
                 Match matchCompression = Regex.Match(encoded, "(.)$");
                 int Eqs = Convert.ToInt32(matchCompression.Groups[1].Value, 16);
@@ -281,7 +280,47 @@ namespace ETS2SaveAutoEditor {
             List<float[]> list = new List<float[]>();
 
             MemoryStream memoryStream = new MemoryStream(data);
-            //GZipStream compressionStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+            BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
+
+            // Compatibility layer
+            int version = binaryReader.ReadInt32();
+            if (version != positionDataVersion) {
+                if (version == 2) {
+                    var v2Positions = DecodePositionDataV2(encoded);
+                    return new PositionData {
+                        TrailerConnected = true,
+                        Positions = v2Positions
+                    };
+                }
+                throw new IOException("incompatible version");
+            }
+
+            // Data exchange
+            float[] receivePlacement() {
+                float[] result = new float[7];
+                for (int i = 0; i < 7; i++) {
+                    result[i] = binaryReader.ReadSingle();
+                }
+                return result;
+            }
+
+            var length = binaryReader.ReadByte();
+            var trailerConnected = (length & 1 << 7) > 0;
+            length = (byte)(length & (~(1 << 7)));
+            for (int i = 0; i < length; i++) {
+                list.Add(receivePlacement());
+            }
+            return new PositionData {
+                Positions = list,
+                TrailerConnected = trailerConnected
+            };
+        }
+
+        private List<float[]> DecodePositionDataV2(string encoded) {
+            byte[] data = Convert.FromBase64String(encoded);
+            List<float[]> list = new List<float[]>();
+
+            MemoryStream memoryStream = new MemoryStream(data);
             BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
             PositionDataHeader receiveHeader() {
                 return (PositionDataHeader)binaryReader.ReadByte();
@@ -294,7 +333,7 @@ namespace ETS2SaveAutoEditor {
                 return result;
             }
             int version = binaryReader.ReadInt32();
-            if (version != positionDataVersion) throw new IOException("incompatible version");
+            if (version != 2) throw new IOException("incompatible version");
             while (receiveHeader() == PositionDataHeader.KEY) {
                 list.Add(receivePlacement());
             }
@@ -335,24 +374,33 @@ namespace ETS2SaveAutoEditor {
                 try {
                     var player = saveGame.EntityType("player");
 
-                    List<float[]> placements = new List<float[]>();
+                    List<float[]> positions = new List<float[]>();
 
                     string truckPlacement = player.Get("truck_placement").value;
-                    placements.Add(DecodeSCSPosition(truckPlacement));
+                    positions.Add(DecodeSCSPosition(truckPlacement));
 
-                    string trailerPlacement = player.Get("trailer_placement").value;
-                    placements.Add(DecodeSCSPosition(trailerPlacement));
+                    var trailerAssigned = player.Get("assigned_trailer").value != "null";
+                    if (trailerAssigned) {
+                        string trailerPlacement = player.Get("trailer_placement").value;
+                        positions.Add(DecodeSCSPosition(trailerPlacement));
+                    }
 
                     var slaveTrailers = player.Get("slave_trailer_placements");
                     if (slaveTrailers.array != null) {
                         foreach (var slave in slaveTrailers.array) {
-                            placements.Add(DecodeSCSPosition(slave));
+                            positions.Add(DecodeSCSPosition(slave));
                         }
                     }
 
-                    string encodedData = EncodePositionData(placements);
+                    var trailerConnected = player.Get("assigned_trailer_connected").value == "true";
+                    if (positions.Count == 1) trailerConnected = true;
+
+                    string encodedData = EncodePositionData(new PositionData {
+                        TrailerConnected = trailerConnected,
+                        Positions = positions
+                    });
                     Clipboard.SetText(encodedData);
-                    MessageBox.Show("The location of your truck, trailer was copied to the clipboard. Share it to others.", "Done");
+                    MessageBox.Show($"The location of your truck, trailer was copied to the clipboard.\nNumber of vehicles in the code: {positions.Count}, Connected to trailer: {(trailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
@@ -371,21 +419,32 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask InjectLocation() {
             var run = new Action(() => {
                 try {
+                    var economy = saveGame.EntityType("economy");
                     var player = saveGame.EntityType("player");
 
-                    var decoded = (from a in DecodePositionData(Clipboard.GetText().Trim()) select EncodeSCSPosition(a)).ToArray();
+                    var positionData = DecodePositionData(Clipboard.GetText().Trim());
+                    var decoded = (from a in positionData.Positions select EncodeSCSPosition(a)).ToArray();
                     if (decoded.Count() >= 1) {
                         player.Set("truck_placement", decoded[0]);
                     }
                     if (decoded.Count() >= 2) {
                         player.Set("trailer_placement", decoded[1]);
+                    } else {
+                        player.Set("trailer_placement", decoded[0]);
                     }
                     if (decoded.Count() > 2) {
                         player.Set("slave_trailer_placements", decoded.Skip(2).ToArray());
+                    } else {
+                        player.Set("slave_trailer_placements", "0");
                     }
 
+                    player.Set("assigned_trailer_connected", positionData.TrailerConnected ? "true" : "false");
+
+                    // Reset navigation
+                    //DestroyNavigationData(economy);
+
                     saveFile.Save(saveGame.ToString());
-                    MessageBox.Show("Successfully injected the position of player vehicles.", "Done");
+                    MessageBox.Show($"Successfully injected the position code!\nNumber of vehicles in the code: {positions.Count}, Connected to trailer: {(trailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
@@ -482,13 +541,7 @@ namespace ETS2SaveAutoEditor {
                     job.Delete();
 
                     // Reset navigation
-                    {
-                        var i = economy.GetAllPointers("stored_gps_ahead_waypoints");
-                        foreach (var t in i) {
-                            t.Delete();
-                        }
-                        economy.Set("stored_gps_ahead_waypoints", "0");
-                    }
+                    DestroyNavigationData(economy);
 
                     // Get trailers I own now
                     var trailers = player.Get("trailers").array;
@@ -518,6 +571,14 @@ namespace ETS2SaveAutoEditor {
                 run = run,
                 description = "Steals the trailer you are currently using for the job."
             };
+        }
+
+        private void DestroyNavigationData(UnitEntity economy) {
+            var i = economy.GetAllPointers("stored_gps_ahead_waypoints");
+            foreach (var t in i) {
+                t.Delete();
+            }
+            economy.Set("stored_gps_ahead_waypoints", "0");
         }
 
         public SaveEditTask ChangeCargoMass() {

@@ -405,7 +405,7 @@ namespace ETS2SaveAutoEditor {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("다른 버전의 툴로 만들어진 데이터입니다.", "오류");
                     } else {
-                        MessageBox.Show("오류가 발생했습니다.", "오류");
+                        MessageBox.Show($"오류가 발생했습니다.\n{e.GetType().FullName}: {e.Message}\n개발자에게 연락해 주세요.", "오류");
                     }
                     Console.WriteLine(e);
                 }
@@ -449,7 +449,7 @@ namespace ETS2SaveAutoEditor {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("다른 버전의 툴로 만들어진 데이터입니다.", "오류");
                     } else {
-                        MessageBox.Show("오류가 발생했습니다.", "오류");
+                        MessageBox.Show($"오류가 발생했습니다.\n{e.GetType().FullName}: {e.Message}\n개발자에게 연락해 주세요.", "오류");
                     }
                     Console.WriteLine(e);
                 }

@@ -405,7 +405,7 @@ namespace ETS2SaveAutoEditor {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
                     } else {
-                        MessageBox.Show("An error occured.", "Error");
+                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
                     }
                     Console.WriteLine(e);
                 }
@@ -449,7 +449,7 @@ namespace ETS2SaveAutoEditor {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
                     } else {
-                        MessageBox.Show("An error occured.", "Error");
+                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
                     }
                     Console.WriteLine(e);
                 }

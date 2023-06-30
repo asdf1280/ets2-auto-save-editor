@@ -109,6 +109,7 @@ namespace ETS2SaveAutoEditor {
             addAction(tasks.FixEverything());
             addAction(tasks.ShareLocation());
             addAction(tasks.InjectLocation());
+            addAction(tasks.SpecialCCTask());
             addAction(tasks.StealCompanyTrailer());
             addAction(tasks.ChangeCargoMass());
 

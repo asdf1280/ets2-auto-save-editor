@@ -229,146 +229,6 @@ namespace ETS2SaveAutoEditor {
             };
         }
 
-        private enum PositionDataHeader : byte {
-            KEY,
-            END
-        }
-        private readonly int positionDataVersion = 3;
-
-        private struct PositionData {
-            public List<float[]> Positions;
-            public bool TrailerConnected;
-        }
-
-        private string EncodePositionData(PositionData data) {
-            MemoryStream memoryStream = new MemoryStream();
-            BinaryWriter binaryWriter = new BinaryWriter(memoryStream, Encoding.ASCII);
-            binaryWriter.Write(positionDataVersion);
-
-            void sendPlacement(float[] p) {
-                for (int t = 0; t < 7; t++) {
-                    binaryWriter.Write(p[t]);
-                }
-            }
-            binaryWriter.Write((byte)(data.Positions.Count + (data.TrailerConnected ? 1 << 7 : 0)));
-            foreach (float[] p in data.Positions) {
-                sendPlacement(p);
-            }
-
-            binaryWriter.Close();
-            string encoded = Convert.ToBase64String(memoryStream.ToArray());
-            int Eqs = 0;
-            int i;
-            for (i = encoded.Length - 1; i >= 0; i--) {
-                if (encoded[i] == '=') {
-                    Eqs++;
-                } else break;
-            }
-            return encoded.Substring(0, i + 1) + Eqs.ToString("X");
-        }
-        private PositionData DecodePositionData(string encoded) {
-            {
-                Match matchCompression = Regex.Match(encoded, "(.)$");
-                int Eqs = Convert.ToInt32(matchCompression.Groups[1].Value, 16);
-                int segmentLength = matchCompression.Groups[0].Value.Length;
-                encoded = encoded.Substring(0, encoded.Length - segmentLength);
-                for (int i = 0; i < Eqs; i++) {
-                    encoded += '=';
-                }
-            }
-            byte[] data = Convert.FromBase64String(encoded);
-            List<float[]> list = new List<float[]>();
-
-            MemoryStream memoryStream = new MemoryStream(data);
-            BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
-
-            // Compatibility layer
-            int version = binaryReader.ReadInt32();
-            if (version != positionDataVersion) {
-                if (version == 2) {
-                    var v2Positions = DecodePositionDataV2(encoded);
-                    return new PositionData {
-                        TrailerConnected = true,
-                        Positions = v2Positions
-                    };
-                }
-                throw new IOException("incompatible version");
-            }
-
-            // Data exchange
-            float[] receivePlacement() {
-                float[] result = new float[7];
-                for (int i = 0; i < 7; i++) {
-                    result[i] = binaryReader.ReadSingle();
-                }
-                return result;
-            }
-
-            var length = binaryReader.ReadByte();
-            var trailerConnected = (length & 1 << 7) > 0;
-            length = (byte)(length & (~(1 << 7)));
-            for (int i = 0; i < length; i++) {
-                list.Add(receivePlacement());
-            }
-            return new PositionData {
-                Positions = list,
-                TrailerConnected = trailerConnected
-            };
-        }
-
-        private List<float[]> DecodePositionDataV2(string encoded) {
-            byte[] data = Convert.FromBase64String(encoded);
-            List<float[]> list = new List<float[]>();
-
-            MemoryStream memoryStream = new MemoryStream(data);
-            BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
-            PositionDataHeader receiveHeader() {
-                return (PositionDataHeader)binaryReader.ReadByte();
-            }
-            float[] receivePlacement() {
-                float[] result = new float[7];
-                for (int i = 0; i < 7; i++) {
-                    result[i] = binaryReader.ReadSingle();
-                }
-                return result;
-            }
-            int version = binaryReader.ReadInt32();
-            if (version != 2) throw new IOException("incompatible version");
-            while (receiveHeader() == PositionDataHeader.KEY) {
-                list.Add(receivePlacement());
-            }
-            return list;
-        }
-
-        public float ParseScsFloat(string data) {
-            if (data.StartsWith("&")) {
-                byte[] bytes = new byte[4];
-                for (int i = 0; i < 4; i++) {
-                    bytes[i] = byte.Parse(data.Substring(i * 2 + 1, 2), System.Globalization.NumberStyles.HexNumber);
-                }
-                return BitConverter.ToSingle(bytes, 0);
-            } else {
-                return float.Parse(data);
-            }
-        }
-
-        public string EncodeScsFloat(float value) {
-            byte[] bytes = BitConverter.GetBytes(value);
-            string hexString = BitConverter.ToString(bytes).Replace("-", "").ToLower();
-            return "&" + hexString;
-        }
-
-        public float[] DecodeSCSPosition(string placement) {
-            var a = placement.Split(new string[] { "(", ")", ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
-            var q = from v in a select v.Trim() into b where b.Length > 0 select ParseScsFloat(b);
-            return q.ToArray();
-        }
-
-        public string EncodeSCSPosition(float[] data) {
-            var data0 = (from d in data select EncodeScsFloat(d)).ToArray();
-            return $"({data0[0]}, {data0[1]}, {data0[2]}) ({data0[3]}; {data0[4]}, {data0[5]}, {data0[6]})";
-        }
-
         public SaveEditTask ShareLocation() {
             var run = new Action(() => {
                 try {
@@ -377,25 +237,25 @@ namespace ETS2SaveAutoEditor {
                     List<float[]> positions = new List<float[]>();
 
                     string truckPlacement = player.Get("truck_placement").value;
-                    positions.Add(DecodeSCSPosition(truckPlacement));
+                    positions.Add(SCSSpecialString.DecodeSCSPosition(truckPlacement));
 
                     var trailerAssigned = player.Get("assigned_trailer").value != "null";
                     if (trailerAssigned) {
                         string trailerPlacement = player.Get("trailer_placement").value;
-                        positions.Add(DecodeSCSPosition(trailerPlacement));
+                        positions.Add(SCSSpecialString.DecodeSCSPosition(trailerPlacement));
                     }
 
                     var slaveTrailers = player.Get("slave_trailer_placements");
                     if (slaveTrailers.array != null) {
                         foreach (var slave in slaveTrailers.array) {
-                            positions.Add(DecodeSCSPosition(slave));
+                            positions.Add(SCSSpecialString.DecodeSCSPosition(slave));
                         }
                     }
 
                     var trailerConnected = player.Get("assigned_trailer_connected").value == "true";
                     if (positions.Count == 1) trailerConnected = true;
 
-                    string encodedData = EncodePositionData(new PositionData {
+                    string encodedData = PositionCodeEncoder.EncodePositionCode(new PositionData {
                         TrailerConnected = trailerConnected,
                         Positions = positions
                     });
@@ -422,8 +282,8 @@ namespace ETS2SaveAutoEditor {
                     var economy = saveGame.EntityType("economy");
                     var player = saveGame.EntityType("player");
 
-                    var positionData = DecodePositionData(Clipboard.GetText().Trim());
-                    var decoded = (from a in positionData.Positions select EncodeSCSPosition(a)).ToArray();
+                    var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
+                    var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeSCSPosition(a)).ToArray();
                     if (decoded.Count() >= 1) {
                         player.Set("truck_placement", decoded[0]);
                     }
@@ -458,6 +318,85 @@ namespace ETS2SaveAutoEditor {
                 name = "Inject Player Position",
                 run = run,
                 description = "Imports the shared player position data to inject into this savegame."
+            };
+        }
+
+        public SaveEditTask SpecialCCTask() {
+            var run = new Action(() => {
+                var res = ListInputBox.Show("Choose sub-task", "", new string[] { "Export Active Vehicle", "Spread CC Saves" });
+                if (res == -1) return;
+                if (res == 0) {
+                    try {
+                        var economy = saveGame.EntityType("economy");
+                        var player = saveGame.EntityType("player");
+
+                        var sb = new StringBuilder();
+
+                        var assignedTruck = player.Get("assigned_truck").value;
+                        if (assignedTruck == "null") {
+                            MessageBox.Show("No truck is active.");
+                            return;
+                        }
+
+                        var trailersToProcess = new List<string>();
+                        var nextTrailer = player.Get("assigned_trailer").value;
+                        while (nextTrailer != "null") {
+                            trailersToProcess.Add(nextTrailer);
+                            nextTrailer = player.EntityIdAround(nextTrailer).Get("slave_trailer").value;
+                        }
+
+                        sb.AppendLine("ASEVEHICLE-START");
+                        sb.AppendLine($"{trailersToProcess.Count + 1}");
+                        sb.AppendLine(assignedTruck);
+                        foreach (var trailer in trailersToProcess) {
+                            sb.AppendLine(trailer);
+                        }
+
+                        void recurseUnit(UnitEntity e) {
+                            sb.AppendLine(e.GetFullString());
+
+                            var queue = new List<string>();
+                            if (e.Type == "vehicle") {
+                                queue.AddRange(e.Get("accessories").array);
+                            } else if (e.Type == "trailer") {
+                                string p = e.Get("trailer_definition").value;
+                                if (p.StartsWith("_")) {
+                                    queue.Add(p);
+                                }
+
+                                queue.AddRange(e.Get("accessories").array);
+                            }
+
+                            queue.ForEach((v) => {
+                                recurseUnit(e.EntityIdAround(v));
+                            });
+                        }
+
+                        recurseUnit(player.EntityIdAround(assignedTruck));
+
+                        foreach (var trailer in trailersToProcess) {
+                            recurseUnit(player.EntityIdAround(trailer));
+                        }
+
+                        sb.AppendLine("ASEVEHICLE-END");
+
+                        Clipboard.SetText(sb.ToString());
+                    } catch (Exception e) {
+                        if (e.Message == "incompatible version") {
+                            MessageBox.Show("Data version doesn't match the current version.", "Error");
+                        } else {
+                            MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        }
+                        Console.WriteLine(e);
+                    }
+                } else if (res == 1) {
+
+                }
+            });
+            return new SaveEditTask {
+                name = "Special CC Task",
+                run = run,
+                description = "ETS2 CC Profile sharing toolkit. For advanced users only."
             };
         }
 

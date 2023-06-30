@@ -70,6 +70,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Encoder.cs" />
     <Compile Include="ListInput.xaml.cs">
       <DependentUpon>ListInput.xaml</DependentUpon>
     </Compile>

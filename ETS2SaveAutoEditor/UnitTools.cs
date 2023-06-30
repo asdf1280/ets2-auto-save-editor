@@ -397,5 +397,31 @@ namespace ETS2SaveAutoEditor {
         public UnitEntity EntityTypeAround(string type) {
             return Game.Entity(UnitTypeSelector.Of(type, Target.LastFoundEnd));
         }
+
+        public string GetFullString() {
+            var sb = new StringBuilder();
+            var range = ResolvedUnit;
+            for (int i = range.start; i <= range.end; i++) {
+                sb.AppendLine(Game.Lines[i]);
+            }
+            return sb.ToString();
+        }
+    }
+
+    public class UnitEntityWrapper {
+        protected readonly UnitEntity e;
+        public UnitEntityWrapper(UnitEntity e) {
+            this.e = e;
+        }
+    }
+
+    public class UnitPlayerWrapper : UnitEntityWrapper {
+        public UnitPlayerWrapper(UnitEntity e) : base(e) {
+        }
+
+        public void SetActiveTrailer(string id) {
+            e.Set("my_trailer", id);
+            e.Set("assigned_trailer", id);
+        }
     }
 }

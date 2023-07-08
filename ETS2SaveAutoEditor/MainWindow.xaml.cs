@@ -49,48 +49,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.11";
-        public static byte[] StringToByteArray(string hex) {
-            int NumberChars = hex.Length / 2;
-            byte[] bytes = new byte[NumberChars];
-            using (var sr = new StringReader(hex)) {
-                for (int i = 0; i < NumberChars; i++)
-                    bytes[i] =
-                      Convert.ToByte(new string(new char[2] { (char)sr.Read(), (char)sr.Read() }), 16);
-            }
-            return bytes;
-        }
-
-        private static string GetUnescapedSaveName(string originalString) {
-            originalString = originalString.Replace("@@noname_save_game@@", "Quick Save");
-            if (originalString.Length == 0) {
-                originalString = "[Autosave]";
-            }
-            var ml = Regex.Matches(originalString, @"(?<=[^\\]|^)\\");
-            var hexString = "";
-            for (int i = 0; i < originalString.Length; i++) {
-                var found = false;
-                var ch = originalString[i];
-                for (int j = 0; j < ml.Count; j++) {
-                    if (i == ml[j].Index) {
-                        found = true;
-                        ++i; // skip backslash
-                        hexString += originalString[++i];
-                        hexString += originalString[++i];
-                    }
-                }
-                if (!found) {
-                    byte[] stringBytes = Encoding.UTF8.GetBytes(ch + "");
-                    StringBuilder sbBytes = new StringBuilder(stringBytes.Length * 2);
-                    foreach (byte b in stringBytes) {
-                        sbBytes.AppendFormat("{0:X2}", b);
-                    }
-                    hexString += sbBytes.ToString();
-                }
-            }
-            byte[] dBytes = StringToByteArray(hexString);
-            return Encoding.UTF8.GetString(dBytes);
-        }
+        public static string Version = "1.12";
 
         private SaveeditTasks tasks;
 
@@ -150,7 +109,7 @@ namespace ETS2SaveAutoEditor {
             }
 
             InitializeComponent();
-            Title += " " + Version + " EN";
+            Title += " " + Version;
             {
                 var ms = new MemoryStream();
                 Properties.Resources.Icon.Save(ms, ImageFormat.Png);
@@ -249,7 +208,7 @@ namespace ETS2SaveAutoEditor {
                 foreach (var delem in dlist) {
                     var ename = delem.Name.ToUpper();
                     if (!Regex.IsMatch(ename, pattern)) continue;
-                    byte[] dBytes = StringToByteArray(ename);
+                    byte[] dBytes = SCSSaveHexEncodingSupport.StringToByteArray(ename);
                     string utf8result = Encoding.UTF8.GetString(dBytes);
                     ProfileList.Items.Add(utf8result);
                     pNameAndPaths.Add(utf8result, ename);
@@ -359,7 +318,7 @@ namespace ETS2SaveAutoEditor {
                         if (nameResult.StartsWith("\"") && nameResult.EndsWith("\"")) {
                             nameResult = nameResult.Substring(1, nameResult.Length - 2);
                         }
-                        nameResult = GetUnescapedSaveName(nameResult);
+                        nameResult = SCSSaveHexEncodingSupport.GetUnescapedSaveName(nameResult);
                     }
 
                     if (!Regex.IsMatch(content, fileTimePattern)) continue;

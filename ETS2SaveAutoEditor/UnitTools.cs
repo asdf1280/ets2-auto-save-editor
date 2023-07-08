@@ -173,7 +173,7 @@ namespace ETS2SaveAutoEditor {
                 if (lineStr.StartsWith(" ")) return null;
                 if (!p.IsMatch(lineStr)) return null;
 
-                string type = lineStr.Substring(id.Length + 3);
+                string type = p.Match(lineStr).Groups[1].Value;
                 int end = lines.FindIndex(line + 1, s => s.Trim() == "}");
                 if (end == -1) return null;
 

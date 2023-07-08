@@ -152,4 +152,69 @@ namespace ETS2SaveAutoEditor {
             return $"({data0[0]}, {data0[1]}, {data0[2]}) ({data0[3]}; {data0[4]}, {data0[5]}, {data0[6]})";
         }
     }
+
+    internal class SCSSaveHexEncodingSupport {
+        public static byte[] StringToByteArray(string hex) {
+            int NumberChars = hex.Length / 2;
+            byte[] bytes = new byte[NumberChars];
+            using (var sr = new StringReader(hex)) {
+                for (int i = 0; i < NumberChars; i++)
+                    bytes[i] =
+                      Convert.ToByte(new string(new char[2] { (char)sr.Read(), (char)sr.Read() }), 16);
+            }
+            return bytes;
+        }
+
+        public static string ByteArrayToString(byte[] bytes) {
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in bytes) {
+                sb.Append(b.ToString("X2"));
+            }
+            return sb.ToString();
+        }
+
+        public static string GetUnescapedSaveName(string originalString) {
+            originalString = originalString.Replace("@@noname_save_game@@", "Quick Save");
+            if (originalString.Length == 0) {
+                originalString = "[Autosave]";
+            }
+            var ml = Regex.Matches(originalString, @"(?<=[^\\]|^)\\");
+            var hexString = "";
+            for (int i = 0; i < originalString.Length; i++) {
+                var found = false;
+                var ch = originalString[i];
+                for (int j = 0; j < ml.Count; j++) {
+                    if (i == ml[j].Index) {
+                        found = true;
+                        ++i; // skip backslash
+                        hexString += originalString[++i];
+                        hexString += originalString[++i];
+                    }
+                }
+                if (!found) {
+                    byte[] stringBytes = Encoding.UTF8.GetBytes(ch + "");
+                    StringBuilder sbBytes = new StringBuilder(stringBytes.Length * 2);
+                    foreach (byte b in stringBytes) {
+                        sbBytes.AppendFormat("{0:X2}", b);
+                    }
+                    hexString += sbBytes.ToString();
+                }
+            }
+            byte[] dBytes = StringToByteArray(hexString);
+            return Encoding.UTF8.GetString(dBytes);
+        }
+
+        public static string GetEscapedSaveName(string rawString) {
+            byte[] utf8Bytes = Encoding.UTF8.GetBytes(rawString);
+
+            StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (byte b in utf8Bytes) {
+                stringBuilder.Append("\\x");
+                stringBuilder.Append(b.ToString("x2"));
+            }
+    
+            return stringBuilder.ToString();
+        }
+    }
 }

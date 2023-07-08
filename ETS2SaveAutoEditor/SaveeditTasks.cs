@@ -279,7 +279,6 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask InjectLocation() {
             var run = new Action(() => {
                 try {
-                    var economy = saveGame.EntityType("economy");
                     var player = saveGame.EntityType("player");
 
                     var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
@@ -300,9 +299,6 @@ namespace ETS2SaveAutoEditor {
 
                     player.Set("assigned_trailer_connected", positionData.TrailerConnected ? "true" : "false");
 
-                    // Reset navigation
-                    //DestroyNavigationData(economy);
-
                     saveFile.Save(saveGame.ToString());
                     MessageBox.Show($"Successfully injected the position code!\nNumber of vehicles in the code: {decoded.Count()}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
@@ -321,9 +317,14 @@ namespace ETS2SaveAutoEditor {
             };
         }
 
+        class ASEVehicle {
+            public string[] Keys;
+            public string Data;
+        }
+
         public SaveEditTask SpecialCCTask() {
             var run = new Action(() => {
-                var res = ListInputBox.Show("Choose sub-task", "", new string[] { "Export Active Vehicle", "Spread CC Saves" });
+                var res = ListInputBox.Show("Choose sub-task", "", new string[] { "Export Active Vehicle", "Spread CC Saves", "Delete all CC saves in this profile" });
                 if (res == -1) return;
                 if (res == 0) {
                     try {
@@ -390,7 +391,167 @@ namespace ETS2SaveAutoEditor {
                         Console.WriteLine(e);
                     }
                 } else if (res == 1) {
+                    var lines = Clipboard.GetText().Trim();
+                    if (!lines.Contains("ASEVEHICLE-START") || !lines.Contains("ASEVEHICLE-END") || !lines.Contains("ASEPOS") || lines.Split(new string[] { "ASEPOS" }, StringSplitOptions.None)[1].Trim().Split('\n').Length % 3 != 0) {
+                        MessageBox.Show("Incorrect input");
+                        return;
+                    }
 
+                    // Adding CC to profile with job running will cause crash
+                    var srcPlayer = saveGame.EntityType("player");
+                    if (srcPlayer.Get("current_job").value != "null") {
+                        MessageBox.Show("You can't run this action with an active job in your save.");
+                        return;
+                    }
+
+                    // Injecting data into new saves
+                    var namelessIdent = $"_nameless.{DateTime.Now.Ticks % 100000:x}";
+
+                    // Parsing data
+                    // 1. vehicle data
+                    var splitResult = lines.Split(new string[] { "ASEVEHICLE-START" }, StringSplitOptions.None);
+                    var vehicles = new List<ASEVehicle>();
+                    for (int k = 1; k < splitResult.Length; k++) {
+                        var vehicleData = splitResult[k].Split(new string[] { "ASEVEHICLE-END" }, StringSplitOptions.None)[0].Trim().Replace("_nameless.", namelessIdent + k + ".");
+                        var vehicleLines = new List<string>(vehicleData.Split('\n'));
+
+                        var obj = new ASEVehicle();
+                        var cnt = int.Parse(vehicleLines[0]);
+                        vehicleLines.RemoveAt(0);
+
+                        var ids = new List<string>();
+                        for (int j = 0; j < cnt; j++) {
+                            ids.Add(vehicleLines[0].Trim());
+                            vehicleLines.RemoveAt(0);
+                        }
+
+                        obj.Keys = ids.ToArray();
+                        obj.Data = string.Join("\n", vehicleLines);
+                        vehicles.Add(obj);
+                    }
+
+                    // 2. position data - inject as progresses
+                    var positionLines = (from m in lines.Split(new string[] { "ASEPOS" }, StringSplitOptions.None)[1].Trim().Split('\n') select m.Trim()).ToArray();
+                    var positionEntryCount = positionLines.Length / 3;
+
+                    // 3. do it
+                    var saveToClone = saveGame.ToString();
+                    // loading info.sii too
+                    var infoSiiPath = saveFile.fullPath + @"\info.sii";
+                    var infoContent = File.ReadAllText(infoSiiPath);
+                    var infoGame = new SiiSaveGame(infoContent);
+
+                    var startTime = DateTime.Now;
+                    for (int k = 0; k < positionEntryCount; k++) {
+                        var targetEditedDate = startTime.AddMinutes(k + 1);
+                        var saveName = positionLines[k * 3];
+                        var vehicleData = vehicles[int.Parse(positionLines[k * 3 + 1].Trim())];
+                        var positionData = PositionCodeEncoder.DecodePositionCode(positionLines[k * 3 + 2]);
+
+                        // output path
+                        int i = 1;
+                        while (Directory.Exists(saveFile.fullPath + @"\..\" + i)) i++;
+                        var newPath = saveFile.fullPath + @"\..\" + i;
+                        Directory.CreateDirectory(newPath);
+
+                        // info.sii
+                        infoGame.EntityType("save_container").Set("name", $@"""{SCSSaveHexEncodingSupport.GetEscapedSaveName(saveName)}""");
+                        File.WriteAllText(newPath + @"\info.sii", infoGame.ToString());
+                        File.SetLastWriteTime(newPath + @"\info.sii", targetEditedDate);
+
+                        // game.sii
+                        var cloned = new SiiSaveGame(saveToClone);
+
+                        var player = cloned.EntityType("player");
+
+                        // Add the vehicle to truck list
+                        {
+                            var trucks = player.Get("trucks").array ?? (new string[] { });
+                            {
+                                var t = trucks.ToList();
+                                t.Add(vehicleData.Keys[0]);
+                                player.Set("trucks", t.ToArray());
+                            }
+
+                            player.Set("assigned_truck", vehicleData.Keys[0]);
+                            player.Set("my_truck", vehicleData.Keys[0]);
+
+                            // Prevent game CTD bug
+                            var truckProfitLogs = player.Get("truck_profit_logs").array ?? (new string[] { });
+                            {
+                                var t = truckProfitLogs.ToList();
+                                t.Add($"{namelessIdent}.aaaa.bbbb.000");
+                                player.Set("truck_profit_logs", t.ToArray());
+                            }
+                        }
+
+                        if (vehicleData.Keys.Length >= 2) { // Add the vehicle to trailer list
+                            var trailers = player.Get("trailers").array ?? (new string[] { });
+                            {
+                                var t = trailers.ToList();
+                                t.Add(vehicleData.Keys[1]);
+                                player.Set("trailers", t.ToArray());
+                            }
+
+                            player.Set("assigned_trailer", vehicleData.Keys[1]);
+                            player.Set("my_trailer", vehicleData.Keys[1]);
+
+                            var p = new Regex(@"trailer_definition: (.+?)\r?\n");
+                            if (p.Matches(vehicleData.Data)[0].Groups[1].Value.StartsWith("_nameless")) {
+                                var trailerDefs = player.Get("trailer_defs").array ?? (new string[] { });
+                                {
+                                    var t = trailerDefs.ToList();
+                                    t.Add(p.Matches(vehicleData.Data)[0].Groups[1].Value);
+                                    player.Set("trailer_defs", t.ToArray());
+                                }
+                            }
+                        } else {
+                            player.Set("assigned_trailer", "null");
+                            player.Set("my_trailer", "null");
+                        }
+
+                        // copy paste of InjectLocation
+                        {
+                            var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeSCSPosition(a)).ToArray();
+                            if (decoded.Count() >= 1) {
+                                player.Set("truck_placement", decoded[0]);
+                            }
+                            if (decoded.Count() >= 2) {
+                                player.Set("trailer_placement", decoded[1]);
+                            } else {
+                                player.Set("trailer_placement", decoded[0]);
+                            }
+                            if (decoded.Count() > 2) {
+                                player.Set("slave_trailer_placements", decoded.Skip(2).ToArray());
+                            } else {
+                                player.Set("slave_trailer_placements", "0");
+                            }
+
+                            player.Set("assigned_trailer_connected", positionData.TrailerConnected ? "true" : "false");
+                        }
+
+                        cloned.Lines.Insert(player.ResolvedUnit.end + 1, vehicleData.Data);
+                        // Prevent game CTD bug - dummy profit log
+                        cloned.Lines.Insert(player.ResolvedUnit.end + 1, $@"profit_log : {namelessIdent}.aaaa.bbbb.000 {{
+ stats_data: 0
+ acc_distance_free: 600
+ acc_distance_on_job: 0
+ history_age: nil
+}}");
+
+                        File.WriteAllText(newPath + @"\game.sii", cloned.ToString());
+                        File.SetLastWriteTime(newPath + @"\game.sii", targetEditedDate);
+
+                        File.WriteAllText(newPath + @"\ETS2ASE_CC", k + "");
+
+                        Directory.SetLastWriteTime(newPath, targetEditedDate);
+                    }
+                } else if (res == 2) {
+                    foreach (var dir in Directory.EnumerateDirectories(saveFile.fullPath + @"\..\")) {
+                        if (File.Exists(dir + @"\ETS2ASE_CC")) {
+                            Directory.Delete(dir, true);
+                        }
+                    }
                 }
             });
             return new SaveEditTask {
@@ -471,6 +632,8 @@ namespace ETS2SaveAutoEditor {
                         }
 
                         player.Set("assigned_truck", player.Get("my_truck").value);
+                        if (player.Get("my_truck_placement_valid").value == "true")
+                            player.Set("truck_placement", player.Get("my_truck_placement").value);
                     }
 
                     // Set current_job to null
@@ -483,7 +646,7 @@ namespace ETS2SaveAutoEditor {
                     DestroyNavigationData(economy);
 
                     // Get trailers I own now
-                    var trailers = player.Get("trailers").array;
+                    var trailers = player.Get("trailers").array ?? (new string[] { });
                     if (trailers.Contains(currentTrailerId)) { // Owned trailer - cancel job and return
                         saveFile.Save(saveGame.ToString());
                         MessageBox.Show("You already own the trailer used for the job. The job was canceled with the cargo accessory remaining.", "Done!");

@@ -52,9 +52,9 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "Specify cash",
+                name = "Specify Cash",
                 run = run,
-                description = "Specify cash"
+                description = "Specify the desired amount of cash in the game."
             };
         }
         public SaveEditTask ExpSet() {
@@ -81,7 +81,7 @@ namespace ETS2SaveAutoEditor {
             return new SaveEditTask {
                 name = "Specify EXP",
                 run = run,
-                description = "Specify EXP"
+                description = "Specify the desired amount of experience points (EXP)."
             };
         }
         public SaveEditTask UnlockScreens() {
@@ -106,7 +106,7 @@ namespace ETS2SaveAutoEditor {
             return new SaveEditTask {
                 name = "Unlock all UI",
                 run = run,
-                description = "Unlock GUIs such as skills. For new profiles.\nSome GUIs that's normally disabled can be enabled too."
+                description = "Enables locked GUIs, including skills, for new profiles. Some normally disabled GUIs may also be enabled."
             };
         }
         public SaveEditTask TruckEngineSet() {
@@ -156,9 +156,9 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "Set truck engine",
+                name = "Modify Truck Engine",
                 run = run,
-                description = "Change the truck's engine to a few engines available."
+                description = "Switches the truck's engine to one of the available options."
             };
         }
         public SaveEditTask Refuel() {
@@ -195,9 +195,9 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "Fill fuel tank",
+                name = "Set Fuel Level",
                 run = run,
-                description = "Set the fuel level of all trucks in chosen savegame."
+                description = "Adjusts the fuel level of all trucks in the current savegame."
             };
         }
         public SaveEditTask FixEverything() {
@@ -225,11 +225,11 @@ namespace ETS2SaveAutoEditor {
             return new SaveEditTask {
                 name = "Repair All",
                 run = run,
-                description = "Repair all truck/trailers in current savegame."
+                description = "Repairs all trucks and trailers in the current savegame."
             };
         }
 
-        public SaveEditTask ShareLocation() {
+        public SaveEditTask SharePosition() {
             var run = new Action(() => {
                 try {
                     var player = saveGame.EntityType("player");
@@ -273,10 +273,10 @@ namespace ETS2SaveAutoEditor {
             return new SaveEditTask {
                 name = "Share Player Position",
                 run = run,
-                description = "Copies the position of player's truck and trailer, which you can share to others, to clipboard."
+                description = "Duplicates the position of the player's truck and trailer, allowing you to share it with others by copying it to the clipboard."
             };
         }
-        public SaveEditTask InjectLocation() {
+        public SaveEditTask ImportPosition() {
             var run = new Action(() => {
                 try {
                     var player = saveGame.EntityType("player");
@@ -300,7 +300,7 @@ namespace ETS2SaveAutoEditor {
                     player.Set("assigned_trailer_connected", positionData.TrailerConnected ? "true" : "false");
 
                     saveFile.Save(saveGame.ToString());
-                    MessageBox.Show($"Successfully injected the position code!\nNumber of vehicles in the code: {decoded.Count()}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
+                    MessageBox.Show($"Successfully imported the position code!\nNumber of vehicles in the code: {decoded.Count()}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
@@ -311,9 +311,9 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "Inject Player Position",
+                name = "Import Player Position",
                 run = run,
-                description = "Imports the shared player position data to inject into this savegame."
+                description = "Imports the shared player position data to incorporate it into the current savegame."
             };
         }
 
@@ -557,7 +557,7 @@ namespace ETS2SaveAutoEditor {
             return new SaveEditTask {
                 name = "Special CC Task",
                 run = run,
-                description = "ETS2 CC Profile sharing toolkit. For advanced users only."
+                description = "ETS2 CC Profile sharing toolkit. Intended for experienced users only. The manual isn't available."
             };
         }
 
@@ -669,9 +669,9 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "Job trailer stealer",
+                name = "Job Trailer Theft",
                 run = run,
-                description = "Steals the trailer you are currently using for the job."
+                description = "Steals the trailer currently in use for the job."
             };
         }
 
@@ -712,9 +712,9 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "Set trailer cargo mass",
+                name = "Adjust Trailer Cargo Mass",
                 run = run,
-                description = "Change the cargo mass of the assigned trailer as you want."
+                description = "Modify the cargo mass of the assigned trailer according to your preference."
             };
         }
     }

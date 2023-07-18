@@ -55,7 +55,7 @@
                         <ListBox x:Name="TaskList" Margin="10,0,5,0" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" SelectionChanged="TaskList_SelectionChanged"/>
                         <DockPanel Grid.Column="1">
                             <Button x:Name="StartTaskButton" Content="EXECUTE" Margin="5,5,10,0" HorizontalAlignment="Stretch" Padding="5" Click="StartTaskButton_Click" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" FontFamily="Bahnschrift SemiBold"></Button>
-                            <TextBlock x:Name="TaskDescription" Grid.Column="1" Margin="5,0,10,5" TextWrapping="Wrap" Foreground="White"/>
+                            <TextBlock x:Name="TaskDescription" Grid.Column="1" Margin="5,0,10,5" TextWrapping="Wrap" Foreground="White" FontFamily="Bahnschrift" FontSize="16"/>
                         </DockPanel>
                     </Grid>
                 </DockPanel>

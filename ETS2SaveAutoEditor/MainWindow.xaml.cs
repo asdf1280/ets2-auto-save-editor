@@ -66,8 +66,8 @@ namespace ETS2SaveAutoEditor {
             addAction(tasks.TruckEngineSet());
             addAction(tasks.Refuel());
             addAction(tasks.FixEverything());
-            addAction(tasks.ShareLocation());
-            addAction(tasks.InjectLocation());
+            addAction(tasks.SharePosition());
+            addAction(tasks.ImportPosition());
             addAction(tasks.SpecialCCTask());
             addAction(tasks.StealCompanyTrailer());
             addAction(tasks.ChangeCargoMass());

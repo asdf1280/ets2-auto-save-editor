@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="Truck Sim Auto Save Editor" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     <DockPanel>
-        <StatusBar x:Name="AppStatus" DockPanel.Dock="Bottom" Background="#FF005104" Foreground="White" Padding="5,0,0,0">
+        <StatusBar x:Name="AppStatus" DockPanel.Dock="Bottom" Background="#FF495100" Foreground="White" Padding="5,0,0,0">
             <System:String>Hello</System:String>
         </StatusBar>
         <Grid>
@@ -17,36 +17,36 @@
                 <ColumnDefinition Width="25*"/>
                 <ColumnDefinition Width="50*"/>
             </Grid.ColumnDefinitions>
-            <DockPanel LastChildFill="True" Grid.Column="0" Background="#FF005104">
-                <Label x:Name="SelectProfile" Content="1 SELECT PROFILE" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5"/>
+            <DockPanel LastChildFill="True" Grid.Column="0" Background="#FF495100">
+                <Label x:Name="SelectProfile" Content="SELECT PROFILE" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
                 <Grid VerticalAlignment="Top" DockPanel.Dock="Top">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition Width="0.4*"/>
                     </Grid.ColumnDefinitions>
-                    <Button Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,0,5" Padding="3,3,3,3"></Button>
-                    <Button x:Name="GameSwitchBtn" Content="ATS" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="GameSwitchButtonPressed" Margin="5,0,10,5" Grid.Column="1" Padding="3,3,3,3"></Button>
+                    <Button Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,0,5" Padding="5" FontFamily="Bahnschrift SemiBold"></Button>
+                    <Button x:Name="GameSwitchBtn" Content="ATS" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="GameSwitchButtonPressed" Margin="5,0,10,5" Grid.Column="1" Padding="5" FontFamily="Bahnschrift SemiBold"></Button>
                 </Grid>
                 <ListBox x:Name="ProfileList" Margin="10,0" SelectionChanged="ProfileList_SelectionChanged" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0"/>
             </DockPanel>
-            <Grid Background="#FF7C7C7C" Grid.Column="1">
+            <Grid Background="#FF646745" Grid.Column="1">
                 <DockPanel x:Name="SaveListPanel" Grid.Column="1" LastChildFill="True">
-                    <Label Content="2 SELECT SAVE" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5"/>
+                    <Label Content="SELECT SAVE" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
                     <DockPanel Margin="10,0">
-                        <StackPanel x:Name="SaveInfo" DockPanel.Dock="Bottom" Margin="0,5,0,0" Background="#FF5D5D5D">
+                        <StackPanel x:Name="SaveInfo" DockPanel.Dock="Bottom" Margin="0,5,0,0" Background="#FF495100">
                             <Label x:Name="SaveInfo_Name" Content="Name" Foreground="White"/>
                             <Label x:Name="SaveInfo_Dir" Content="Dir" Foreground="White" Cursor="Hand" MouseUp="OpenFolder_Click"/>
                             <Label x:Name="SaveInfo_Date" Content="Date" Foreground="White"/>
-                            <Button x:Name="LoadSaveFileButton" Content="Load" Click="LoadSaveFileButton_Click" Padding="0,3,0,3" Grid.Column="1"></Button>
+                            <Button x:Name="LoadSaveFileButton" Content="LOAD" Click="LoadSaveFileButton_Click" Padding="5" Grid.Column="1" FontFamily="Bahnschrift SemiBold"></Button>
                         </StackPanel>
-                        <Button Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5" Padding="3,3,3,3"></Button>
+                        <Button Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5" Padding="5" FontFamily="Bahnschrift SemiBold"></Button>
                         <ListBox x:Name="SaveList" SelectionChanged="SaveList_SelectionChanged" Foreground="Black" Background="#FFF0F0F0" BorderThickness="0" />
                     </DockPanel>
                 </DockPanel>
             </Grid>
-            <Grid Grid.Column="2" Background="#FF2C2C2C">
+            <Grid Grid.Column="2" Background="#FF818274">
                 <DockPanel x:Name="TaskListPanel">
-                    <Label Content="3 SELECT TASK" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5"/>
+                    <Label Content="SELECT TASK" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition/>
@@ -54,7 +54,7 @@
                         </Grid.ColumnDefinitions>
                         <ListBox x:Name="TaskList" Margin="10,0,5,0" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" SelectionChanged="TaskList_SelectionChanged"/>
                         <DockPanel Grid.Column="1">
-                            <Button x:Name="StartTaskButton" Content="Execute" Margin="5,5,10,0" HorizontalAlignment="Stretch" Padding="0,10" Click="StartTaskButton_Click" VerticalAlignment="Bottom" DockPanel.Dock="Bottom"></Button>
+                            <Button x:Name="StartTaskButton" Content="EXECUTE" Margin="5,5,10,0" HorizontalAlignment="Stretch" Padding="5" Click="StartTaskButton_Click" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" FontFamily="Bahnschrift SemiBold"></Button>
                             <TextBlock x:Name="TaskDescription" Grid.Column="1" Margin="5,0,10,5" TextWrapping="Wrap" Foreground="White"/>
                         </DockPanel>
                     </Grid>

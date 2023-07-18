@@ -19,7 +19,7 @@ namespace ETS2SaveAutoEditor {
     }
 
     internal class PositionCodeEncoder {
-        private static readonly int POSITION_DATA_VERSION = 3;
+        private static readonly int POSITION_DATA_VERSION = 4;
 
         public static string EncodePositionCode(PositionData data) {
             MemoryStream memoryStream = new MemoryStream();
@@ -66,6 +66,9 @@ namespace ETS2SaveAutoEditor {
             // Compatibility layer
             int version = binaryReader.ReadInt32();
             if (version != POSITION_DATA_VERSION) {
+                if (version == 3) {
+                    return DecodePositionCodeV3(encoded);
+                }
                 if (version == 2) {
                     var v2Positions = DecodePositionCodeV2(encoded);
                     return new PositionData {
@@ -75,6 +78,38 @@ namespace ETS2SaveAutoEditor {
                 }
                 throw new IOException("incompatible version");
             }
+
+            // Data exchange
+            float[] receivePlacement() {
+                float[] result = new float[7];
+                for (int i = 0; i < 7; i++) {
+                    result[i] = binaryReader.ReadSingle();
+                }
+                return result;
+            }
+
+            var length = binaryReader.ReadByte();
+            var trailerConnected = (length & 1 << 7) > 0;
+            length = (byte)(length & (~(1 << 7)));
+            for (int i = 0; i < length; i++) {
+                list.Add(receivePlacement());
+            }
+            return new PositionData {
+                Positions = list,
+                TrailerConnected = trailerConnected
+            };
+        }
+
+        private static PositionData DecodePositionCodeV3(string encoded) {
+            byte[] data = Convert.FromBase64String(encoded);
+            List<float[]> list = new List<float[]>();
+
+            MemoryStream memoryStream = new MemoryStream(data);
+            BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
+
+            // Compatibility layer
+            int version = binaryReader.ReadInt32();
+            if (version != 3) throw new IOException("incompatible version");
 
             // Data exchange
             float[] receivePlacement() {
@@ -213,7 +248,7 @@ namespace ETS2SaveAutoEditor {
                 stringBuilder.Append("\\x");
                 stringBuilder.Append(b.ToString("x2"));
             }
-    
+
             return stringBuilder.ToString();
         }
     }

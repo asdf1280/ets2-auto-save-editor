@@ -57,6 +57,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="Base32768Tests.cs" />
+    <Compile Include="EncoderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

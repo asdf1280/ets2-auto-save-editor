@@ -17,12 +17,12 @@ namespace ETS2SaveAutoEditor {
         END
     }
 
-    internal struct PositionData {
+    public struct PositionData {
         public List<float[]> Positions;
         public bool TrailerConnected;
     }
 
-    internal class PositionCodeEncoder {
+    public class PositionCodeEncoder {
         private static readonly int POSITION_DATA_VERSION = 1;
 
         public static string EncodePositionCode(PositionData data) {
@@ -311,25 +311,19 @@ namespace ETS2SaveAutoEditor {
         }
 
         public byte[] BEncode(byte[] original) {
-            var encryptor = AES.CreateEncryptor();
             var ms = new MemoryStream();
-            //var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
             var zs = new DeflateStream(ms, CompressionLevel.Optimal, false);
             zs.Write(original, 0, original.Length);
             zs.Close();
-            //cs.Close();
             return ms.ToArray();
         }
 
         public byte[] BDecode(byte[] encoded) {
-            var decryptor = AES.CreateDecryptor();
             var ms = new MemoryStream(encoded);
-            //var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
             var zs = new DeflateStream(ms, CompressionMode.Decompress);
             var ms2 = new MemoryStream();
             zs.CopyTo(ms2);
             zs.Close();
-            //cs.Close();
             ms.Close();
             return ms2.ToArray();
         }

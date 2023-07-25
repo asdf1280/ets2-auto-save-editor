@@ -24,10 +24,10 @@
                         <ColumnDefinition/>
                         <ColumnDefinition Width="0.4*"/>
                     </Grid.ColumnDefinitions>
-                    <Button Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,0,5" Padding="5" FontFamily="Bahnschrift SemiBold"></Button>
-                    <Button x:Name="GameSwitchBtn" Content="ATS" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="GameSwitchButtonPressed" Margin="5,0,10,5" Grid.Column="1" Padding="5" FontFamily="Bahnschrift SemiBold"></Button>
+                    <Button x:Name="RefreshProfilesButton" Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,0,5" Padding="5" FontFamily="Bahnschrift SemiBold" AutomationProperties.Name="RefreshProfiles"></Button>
+                    <Button x:Name="GameSwitchButton" Content="ATS" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="GameSwitchButtonPressed" Margin="5,0,10,5" Grid.Column="1" Padding="5" FontFamily="Bahnschrift SemiBold" AutomationProperties.Name="SwitchGame"></Button>
                 </Grid>
-                <ListBox x:Name="ProfileList" Margin="10,0" SelectionChanged="ProfileList_SelectionChanged" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0"/>
+                <ListBox x:Name="ProfileList" Margin="10,0" SelectionChanged="ProfileList_SelectionChanged" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" AutomationProperties.Name="ProfileList"/>
             </DockPanel>
             <Grid Background="#FF646745" Grid.Column="1">
                 <DockPanel x:Name="SaveListPanel" Grid.Column="1" LastChildFill="True">
@@ -37,10 +37,10 @@
                             <Label x:Name="SaveInfo_Name" Content="Name" Foreground="White"/>
                             <Label x:Name="SaveInfo_Dir" Content="Dir" Foreground="White" Cursor="Hand" MouseUp="OpenFolder_Click"/>
                             <Label x:Name="SaveInfo_Date" Content="Date" Foreground="White"/>
-                            <Button x:Name="LoadSaveFileButton" Content="LOAD" Click="LoadSaveFileButton_Click" Padding="5" Grid.Column="1" FontFamily="Bahnschrift SemiBold"></Button>
+                            <Button x:Name="LoadSaveButton" Content="LOAD" Click="LoadSaveFileButton_Click" Padding="5" Grid.Column="1" FontFamily="Bahnschrift SemiBold"></Button>
                         </StackPanel>
-                        <Button Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5" Padding="5" FontFamily="Bahnschrift SemiBold"></Button>
-                        <ListBox x:Name="SaveList" SelectionChanged="SaveList_SelectionChanged" Foreground="Black" Background="#FFF0F0F0" BorderThickness="0" />
+                        <Button x:Name="RefreshSavesButton" Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5" Padding="5" FontFamily="Bahnschrift SemiBold" AutomationProperties.Name="RefreshSaves"></Button>
+                        <ListBox x:Name="SaveList" SelectionChanged="SaveList_SelectionChanged" Foreground="Black" Background="#FFF0F0F0" BorderThickness="0" AutomationProperties.Name="SaveList" />
                     </DockPanel>
                 </DockPanel>
             </Grid>
@@ -52,9 +52,9 @@
                             <ColumnDefinition/>
                             <ColumnDefinition/>
                         </Grid.ColumnDefinitions>
-                        <ListBox x:Name="TaskList" Margin="10,0,5,0" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" SelectionChanged="TaskList_SelectionChanged"/>
+                        <ListBox x:Name="TaskList" Margin="10,0,5,0" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" SelectionChanged="TaskList_SelectionChanged" AutomationProperties.Name="TaskList"/>
                         <DockPanel Grid.Column="1">
-                            <Button x:Name="StartTaskButton" Content="EXECUTE" Margin="5,5,10,0" HorizontalAlignment="Stretch" Padding="5" Click="StartTaskButton_Click" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" FontFamily="Bahnschrift SemiBold"></Button>
+                            <Button x:Name="ExecuteButton" Content="EXECUTE" Margin="5,5,10,0" HorizontalAlignment="Stretch" Padding="5" Click="StartTaskButton_Click" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" FontFamily="Bahnschrift SemiBold"></Button>
                             <TextBlock x:Name="TaskDescription" Grid.Column="1" Margin="5,0,10,5" TextWrapping="Wrap" Foreground="White" FontFamily="Bahnschrift" FontSize="16"/>
                         </DockPanel>
                     </Grid>

@@ -11,17 +11,8 @@ using System.Threading.Tasks;
 using System.Windows;
 
 namespace ETS2SaveAutoEditor {
-    struct Paintjob {
-        public string mask_r_color;
-        public string mask_g_color;
-        public string mask_b_color;
-        public string flake_color;
-        public string flip_color;
-        public string base_color;
-        public string data_path;
-    }
     public class SaveeditTasks {
-        public void setSaveFile(ProfileSave file) {
+        public void SetSaveFile(ProfileSave file) {
             saveFile = file;
             saveGame = new SiiSaveGame(file.content);
             saveFile.Save(saveGame.ToString());

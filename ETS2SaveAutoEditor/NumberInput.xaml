@@ -14,7 +14,7 @@
             <StackPanel DockPanel.Dock="Bottom" Background="#FF646745">
                 <DockPanel>
                     <Label Foreground="White" Content="Enter"></Label>
-                    <TextBox x:Name="Input" Margin="5,5,5,0" Background="#FF444444" BorderBrush="White" Foreground="White"></TextBox>
+                    <TextBox x:Name="Input" Margin="5,5,5,0" Background="#FF444444" BorderBrush="White" Foreground="White" AutomationProperties.Name="Input"></TextBox>
                 </DockPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Button Content="OK" Padding="15,5" Margin="5" Background="#FF414232" Foreground="White" BorderBrush="White" Click="Button_Click_1"/>

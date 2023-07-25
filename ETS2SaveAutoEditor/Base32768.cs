@@ -84,7 +84,7 @@ namespace ETS2SaveAutoEditor {
             if (data == null) {
                 throw new ArgumentNullException("data");
             }
-            if(data.Length == 0) {
+            if (data.Length == 0) {
                 return new byte[0];
             }
 
@@ -106,5 +106,4 @@ namespace ETS2SaveAutoEditor {
             return bytes;
         }
     }
-
 }

@@ -186,9 +186,9 @@ namespace ETS2SaveAutoEditor {
             currentGamePath = path;
 
             var nextGame = GetNextAvailableGame(game);
-            GameSwitchBtn.Content = game.ToString();
+            GameSwitchButton.Content = game.ToString();
             if (nextGame == game) {
-                GameSwitchBtn.IsEnabled = false;
+                GameSwitchButton.IsEnabled = false;
             }
 
             currentGame = game;
@@ -235,7 +235,7 @@ namespace ETS2SaveAutoEditor {
             var onEnd = new Action<string>((string str) => {
                 var save = (ProfileSave)SaveList.SelectedItem;
                 save.content = str;
-                tasks.setSaveFile(save);
+                tasks.SetSaveFile(save);
 
                 AppStatus.Items[0] = "Finished";
                 ShowTasks(true);
@@ -515,12 +515,12 @@ namespace ETS2SaveAutoEditor {
                 };
                 anim.Completed += (object sender, EventArgs e) => {
                     TaskListPanel.Visibility = Visibility.Hidden;
-                    StartTaskButton.Visibility = Visibility.Hidden;
+                    ExecuteButton.Visibility = Visibility.Hidden;
                 };
                 TaskListPanel.BeginAnimation(DockPanel.OpacityProperty, anim);
             } else {
                 TaskListPanel.Visibility = Visibility.Hidden;
-                StartTaskButton.Visibility = Visibility.Hidden;
+                ExecuteButton.Visibility = Visibility.Hidden;
             }
             TaskList.SelectedIndex = -1;
             TaskList.SelectedItem = null;
@@ -607,26 +607,26 @@ namespace ETS2SaveAutoEditor {
         }
         private void ShowTaskStart(bool animate) {
             ShowTasks(animate);
-            if (animate && StartTaskButton.Visibility != Visibility.Visible) {
-                StartTaskButton.BeginAnimation(Button.OpacityProperty, null);
+            if (animate && ExecuteButton.Visibility != Visibility.Visible) {
+                ExecuteButton.BeginAnimation(Button.OpacityProperty, null);
                 var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.1))) {
                     DecelerationRatio = 1
                 };
-                StartTaskButton.BeginAnimation(Button.OpacityProperty, anim);
+                ExecuteButton.BeginAnimation(Button.OpacityProperty, anim);
             }
-            StartTaskButton.Visibility = Visibility.Visible;
+            ExecuteButton.Visibility = Visibility.Visible;
         }
         private void DisableAll() {
             ProfileList.IsEnabled = false;
             SaveList.IsEnabled = false;
             TaskList.IsEnabled = false;
-            LoadSaveFileButton.IsEnabled = false;
+            LoadSaveButton.IsEnabled = false;
         }
         private void EnableAll() {
             ProfileList.IsEnabled = true;
             SaveList.IsEnabled = true;
             TaskList.IsEnabled = true;
-            LoadSaveFileButton.IsEnabled = true;
+            LoadSaveButton.IsEnabled = true;
         }
     }
 }

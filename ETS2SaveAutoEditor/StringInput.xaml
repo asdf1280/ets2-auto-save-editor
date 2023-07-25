@@ -7,11 +7,11 @@
         mc:Ignorable="d"
         Title="Title" Height="370" Width="600" WindowStartupLocation="CenterScreen">
     <Grid>
-        <DockPanel Background="#FF272727">
+        <DockPanel Background="#FF818274">
             <StatusBar DockPanel.Dock="Bottom" Background="#FF005104">
                 <StatusBarItem Content="Please enter the text and press OK.." Foreground="White"/>
             </StatusBar>
-            <StackPanel DockPanel.Dock="Bottom" Background="#FF1D1D1D">
+            <StackPanel DockPanel.Dock="Bottom" Background="#FF646745">
                 <DockPanel>
                     <Label Foreground="White" Content="Enter"></Label>
                     <TextBox x:Name="Input" Margin="5,5,5,0" Background="#FF444444" BorderBrush="White" Foreground="White"></TextBox>

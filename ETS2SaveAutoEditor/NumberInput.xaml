@@ -8,7 +8,7 @@
         Title="Title" Height="370" Width="600" WindowStartupLocation="CenterScreen">
     <Grid>
         <DockPanel Background="#FF272727">
-            <StatusBar DockPanel.Dock="Bottom" Background="#FF005104">
+            <StatusBar DockPanel.Dock="Bottom" Background="#FF495100">
                 <StatusBarItem Content="Please enter a number and press OK." Foreground="White"/>
             </StatusBar>
             <StackPanel DockPanel.Dock="Bottom" Background="#FF1D1D1D">

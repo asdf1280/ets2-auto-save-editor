@@ -71,6 +71,7 @@ namespace ETS2SaveAutoEditor
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             number = -1;
+            Hide();
             Close();
         }
 
@@ -83,7 +84,12 @@ namespace ETS2SaveAutoEditor
                 return;
             }
             number = result;
+            Hide();
             Close();
+        }
+
+        private void Description_MouseDown(object sender, MouseButtonEventArgs e) {
+            Clipboard.SetText(Description.Text);
         }
     }
 }

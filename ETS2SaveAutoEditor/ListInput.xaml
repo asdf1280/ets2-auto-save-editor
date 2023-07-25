@@ -22,7 +22,9 @@
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="Description" TextWrapping="Wrap" Foreground="White" Padding="10"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock x:Name="Description" TextWrapping="Wrap" Foreground="White" Padding="10" Cursor="Hand" ToolTip="Click here to copy the text" MouseDown="Description_MouseDown"/>
+                </ScrollViewer>
                 <ListBox x:Name="ItemList" Grid.Column="1" Background="{x:Null}" BorderBrush="#FFB4B4B4" Foreground="White" BorderThickness="3"></ListBox>
             </Grid>
         </DockPanel>

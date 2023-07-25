@@ -208,7 +208,7 @@ namespace ETS2SaveAutoEditor {
                 foreach (var delem in dlist) {
                     var ename = delem.Name.ToUpper();
                     if (!Regex.IsMatch(ename, pattern)) continue;
-                    byte[] dBytes = SCSSaveHexEncodingSupport.StringToByteArray(ename);
+                    byte[] dBytes = HexEncoder.HexStringToByteArray(ename);
                     string utf8result = Encoding.UTF8.GetString(dBytes);
                     ProfileList.Items.Add(utf8result);
                     pNameAndPaths.Add(utf8result, ename);

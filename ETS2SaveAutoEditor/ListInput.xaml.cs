@@ -80,7 +80,7 @@ namespace ETS2SaveAutoEditor
             int result = ItemList.SelectedIndex;
             if(result == -1)
             {
-                MessageBox.Show("항목을 선택하세요.", "오류");
+                MessageBox.Show("Select an item.");
                 return;
             }
             number = result;
@@ -90,6 +90,7 @@ namespace ETS2SaveAutoEditor
 
         private void Description_MouseDown(object sender, MouseButtonEventArgs e) {
             Clipboard.SetText(Description.Text);
+            MessageBox.Show("Copied content to clipboard.");
         }
     }
 }

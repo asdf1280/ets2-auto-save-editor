@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ETS2SaveAutoEditor {
     internal enum PositionDataHeader : byte {
@@ -22,76 +23,73 @@ namespace ETS2SaveAutoEditor {
     }
 
     internal class PositionCodeEncoder {
-        private static readonly int POSITION_DATA_VERSION = 4;
+        private static readonly int POSITION_DATA_VERSION = 1;
 
         public static string EncodePositionCode(PositionData data) {
-            MemoryStream memoryStream = new MemoryStream();
-            BinaryWriter binaryWriter = new BinaryWriter(memoryStream, Encoding.ASCII);
-            binaryWriter.Write(POSITION_DATA_VERSION);
+            MemoryStream ms1 = new MemoryStream();
+            BinaryWriter bs1 = new BinaryWriter(ms1);
+            bs1.Write(POSITION_DATA_VERSION);
+
+            MemoryStream ms2 = new MemoryStream();
+            BinaryWriter bs2 = new BinaryWriter(ms2);
 
             void sendPlacement(float[] p) {
                 for (int t = 0; t < 7; t++) {
-                    binaryWriter.Write(p[t]);
+                    bs2.Write(p[t]);
                 }
             }
-            binaryWriter.Write((byte)(data.Positions.Count + (data.TrailerConnected ? 1 << 7 : 0)));
+            bs2.Write((byte)(data.Positions.Count + (data.TrailerConnected ? 1 << 7 : 0)));
             foreach (float[] p in data.Positions) {
                 sendPlacement(p);
             }
 
-            binaryWriter.Close();
-            string encoded = Convert.ToBase64String(memoryStream.ToArray());
-            int Eqs = 0;
-            int i;
-            for (i = encoded.Length - 1; i >= 0; i--) {
-                if (encoded[i] == '=') {
-                    Eqs++;
-                } else break;
-            }
-            return encoded.Substring(0, i + 1) + Eqs.ToString("X");
+            bs2.Close();
+
+            bs1.Write(AESEncoder.InstanceC.BEncode(ms2.ToArray()));
+            bs1.Close();
+
+            string encoded = Base32768.EncodeBase32768(ms1.ToArray());
+            return encoded;
         }
         public static PositionData DecodePositionCode(string encoded) {
-            {
-                Match matchCompression = Regex.Match(encoded, "(.)$");
-                int Eqs = Convert.ToInt32(matchCompression.Groups[1].Value, 16);
-                int segmentLength = matchCompression.Groups[0].Value.Length;
-                encoded = encoded.Substring(0, encoded.Length - segmentLength);
-                for (int i = 0; i < Eqs; i++) {
-                    encoded += '=';
-                }
-            }
-            byte[] data = Convert.FromBase64String(encoded);
+            byte[] data = Base32768.DecodeBase32768(encoded);
             List<float[]> list = new List<float[]>();
 
-            MemoryStream memoryStream = new MemoryStream(data);
-            BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
+            MemoryStream ms1 = new MemoryStream(data);
+            BinaryReader bs1 = new BinaryReader(ms1);
 
             // Compatibility layer
-            int version = binaryReader.ReadInt32();
+            int version = bs1.ReadInt32();
             if (version != POSITION_DATA_VERSION) {
-                if (version == 3) {
-                    return DecodePositionCodeV3(encoded);
-                }
-                if (version == 2) {
-                    var v2Positions = DecodePositionCodeV2(encoded);
-                    return new PositionData {
-                        TrailerConnected = true,
-                        Positions = v2Positions
-                    };
-                }
+                //if (version == 3 || version == 4) {
+                //    return DecodePositionCodeV3V4(encoded);
+                //}
+                //if (version == 2) {
+                //    var v2Positions = DecodePositionCodeV2(encoded);
+                //    return new PositionData {
+                //        TrailerConnected = true,
+                //        Positions = v2Positions
+                //    };
+                //}
                 throw new IOException("incompatible version");
             }
 
+            MemoryStream msTemp = new MemoryStream();
+            ms1.CopyTo(msTemp);
+
+            MemoryStream ms2 = new MemoryStream(AESEncoder.InstanceC.BDecode(msTemp.ToArray()));
+            BinaryReader bs2 = new BinaryReader(ms2);
+
             // Data exchange
             float[] receivePlacement() {
                 float[] result = new float[7];
                 for (int i = 0; i < 7; i++) {
-                    result[i] = binaryReader.ReadSingle();
+                    result[i] = bs2.ReadSingle();
                 }
                 return result;
             }
 
-            var length = binaryReader.ReadByte();
+            var length = bs2.ReadByte();
             var trailerConnected = (length & 1 << 7) > 0;
             length = (byte)(length & (~(1 << 7)));
             for (int i = 0; i < length; i++) {
@@ -101,62 +99,6 @@ namespace ETS2SaveAutoEditor {
                 Positions = list,
                 TrailerConnected = trailerConnected
             };
-        }
-
-        private static PositionData DecodePositionCodeV3(string encoded) {
-            byte[] data = Convert.FromBase64String(encoded);
-            List<float[]> list = new List<float[]>();
-
-            MemoryStream memoryStream = new MemoryStream(data);
-            BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
-
-            // Compatibility layer
-            int version = binaryReader.ReadInt32();
-            if (version != 3) throw new IOException("incompatible version");
-
-            // Data exchange
-            float[] receivePlacement() {
-                float[] result = new float[7];
-                for (int i = 0; i < 7; i++) {
-                    result[i] = binaryReader.ReadSingle();
-                }
-                return result;
-            }
-
-            var length = binaryReader.ReadByte();
-            var trailerConnected = (length & 1 << 7) > 0;
-            length = (byte)(length & (~(1 << 7)));
-            for (int i = 0; i < length; i++) {
-                list.Add(receivePlacement());
-            }
-            return new PositionData {
-                Positions = list,
-                TrailerConnected = trailerConnected
-            };
-        }
-
-        private static List<float[]> DecodePositionCodeV2(string encoded) {
-            byte[] data = Convert.FromBase64String(encoded);
-            List<float[]> list = new List<float[]>();
-
-            MemoryStream memoryStream = new MemoryStream(data);
-            BinaryReader binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
-            PositionDataHeader receiveHeader() {
-                return (PositionDataHeader)binaryReader.ReadByte();
-            }
-            float[] receivePlacement() {
-                float[] result = new float[7];
-                for (int i = 0; i < 7; i++) {
-                    result[i] = binaryReader.ReadSingle();
-                }
-                return result;
-            }
-            int version = binaryReader.ReadInt32();
-            if (version != 2) throw new IOException("incompatible version");
-            while (receiveHeader() == PositionDataHeader.KEY) {
-                list.Add(receivePlacement());
-            }
-            return list;
         }
     }
 
@@ -301,6 +243,7 @@ namespace ETS2SaveAutoEditor {
     internal class AESEncoder {
         public static AESEncoder InstanceA = new AESEncoder("A42Twypl*H03FV9XFVrjLJATCyxrc2bsE2qUFFvII@&l5WIFmy", "6Jvp0*1a2#ROBzQ1B5L3vIWK4F#spys$Lmcv7q8p!L8zcRfL!p");
         public static AESEncoder InstanceB = new AESEncoder("iU9SVr1mhkH%#I9LaZo4jjIBSl8X5u*cc2O0Ol%tjj4ahTwXr&", "7AaG#ZcoPJ@rF*eaLT!*@S2Zxc357W!6DcUYX63Wo*vRo44cdy");
+        public static AESEncoder InstanceC = new AESEncoder("Q1*ZlH1k%42^8KzhC*t2yN7NE&ZVGjufTEw3@6wu#%&YUi1i9R", "000000112");
 
         private static byte[] GenerateLength(string rawString, int bytes) {
             var data = Encoding.UTF8.GetBytes(rawString);
@@ -350,12 +293,10 @@ namespace ETS2SaveAutoEditor {
             cs.Close();
 
             var data = HexEncoder.ByteArrayToHexString(ms.ToArray());
-            MessageBox.Show(data);
             return data;
         }
 
         public string Decode(string hex) {
-            MessageBox.Show(hex);
             var array = HexEncoder.HexStringToByteArray(hex);
 
             var decryptor = AES.CreateDecryptor();
@@ -363,7 +304,34 @@ namespace ETS2SaveAutoEditor {
             var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
             var zs = new DeflateStream(cs, CompressionMode.Decompress);
             var data = new StreamReader(zs, Encoding.UTF8).ReadToEnd();
+            zs.Close();
+            cs.Close();
+            ms.Close();
             return data;
+        }
+
+        public byte[] BEncode(byte[] original) {
+            var encryptor = AES.CreateEncryptor();
+            var ms = new MemoryStream();
+            //var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
+            var zs = new DeflateStream(ms, CompressionLevel.Optimal, false);
+            zs.Write(original, 0, original.Length);
+            zs.Close();
+            //cs.Close();
+            return ms.ToArray();
+        }
+
+        public byte[] BDecode(byte[] encoded) {
+            var decryptor = AES.CreateDecryptor();
+            var ms = new MemoryStream(encoded);
+            //var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            var zs = new DeflateStream(ms, CompressionMode.Decompress);
+            var ms2 = new MemoryStream();
+            zs.CopyTo(ms2);
+            zs.Close();
+            //cs.Close();
+            ms.Close();
+            return ms2.ToArray();
         }
     }
 }

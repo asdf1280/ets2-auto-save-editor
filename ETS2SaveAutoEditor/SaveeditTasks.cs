@@ -481,7 +481,6 @@ END
                         var vehicles = new List<ASEVehicle>();
                         for (int k = 0; k < vehicleCount; k++) {
                             var vehicleData = AESEncoder.InstanceA.Decode(r.ReadString()).Replace("_nameless.", namelessIdent + k + ".");
-                            MessageBox.Show(vehicleData);
                             var vehicleLines = new List<string>(vehicleData.Split('\n'));
 
                             var obj = new ASEVehicle();

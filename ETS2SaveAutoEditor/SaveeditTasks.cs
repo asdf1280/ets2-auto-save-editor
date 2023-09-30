@@ -20,8 +20,6 @@ namespace ETS2SaveAutoEditor {
         private ProfileSave saveFile;
         private SiiSaveGame saveGame;
 
-        public event EventHandler<string> StateChanged;
-
         public SaveEditTask MoneySet() {
             var run = new Action(() => {
                 try {
@@ -195,18 +193,26 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask FixEverything() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var sb = new StringBuilder();
+                    var lines = saveFile.content.Split('\n');
+                    var fs = new FileStream(saveFile.fullPath + @"\game.sii", FileMode.OpenOrCreate);
+                    var sw = new StreamWriter(fs, Encoding.UTF8);
 
-                    foreach (var line in content.Split('\n')) {
-                        var str = line;
-                        if (Regex.IsMatch(str, @"([a-z_]*_wear(?:\[\d*\])?:) (.*)\b")) {
-                            str = Regex.Replace(str, @"([a-z_]*_wear(?:\[\d*\])?:) (.*)\b", "$1 0");
+                    var p = new Regex(@"([a-z_]*_wear(?:\[\d*\])?:) (.*)\b", RegexOptions.Compiled);
+                    for (int i = 0; i < lines.Length; i++) {
+                        var str = lines[i];
+
+                        if (str.Contains("disco") || str.Contains("unlock") || str.Contains("{") || str.Contains("}") || !str.Contains("wear") || !p.IsMatch(str)) {
+                            sw.Write(str);
+                            sw.Write('\n');
+                            continue;
                         }
 
-                        sb.Append(str + "\n");
+                        sw.Write(p.Replace(str, "$1 0"));
+                        sw.Write('\n');
                     }
-                    saveFile.Save(sb.ToString());
+                    sw.Close();
+                    fs.Close();
+
                     MessageBox.Show("Repaired all truck/trailers.", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unknown error occured.", "Error");
@@ -306,6 +312,63 @@ namespace ETS2SaveAutoEditor {
                 name = "Import Player Position",
                 run = run,
                 description = "Imports the shared player position data to incorporate it into the current savegame."
+            };
+        }
+        public SaveEditTask ReducePosition() {
+            var run = new Action(() => {
+                try {
+                    var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
+                    var a = positionData.Positions[0];
+                    positionData.Positions = new List<float[]> {
+                        a
+                    };
+
+                    positionData.TrailerConnected = true;
+
+                    string encodedData = PositionCodeEncoder.EncodePositionCode(positionData);
+                    Clipboard.SetText(encodedData);
+                    MessageBox.Show($"The reduced position code was copied to clipboard!", "Complete!");
+                } catch (Exception e) {
+                    if (e.Message == "incompatible version") {
+                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                    } else {
+                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                    }
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask {
+                name = "Reduce Position Code",
+                run = run,
+                description = "Reduce the length of position code by removing trailer position data. These are not necessary as long as you create the code with enough space behind."
+            };
+        }
+
+        public SaveEditTask ConnectTrailerInstantly() {
+            var run = new Action(() => {
+                try {
+                    var player = saveGame.EntityType("player");
+
+                    var truckPlacement = player.Get("truck_placement").value;
+                    player.Set("trailer_placement", truckPlacement);
+                    player.Set("slave_trailer_placements", "0");
+                    player.Set("assigned_trailer_connected", "true");
+
+                    saveFile.Save(saveGame.ToString());
+                    MessageBox.Show($"Success!", "Complete!");
+                } catch (Exception e) {
+                    if (e.Message == "incompatible version") {
+                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                    } else {
+                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                    }
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask {
+                name = "Connect Trailer Here",
+                run = run,
+                description = "Forces the assigned trailer to connect to the truck immediately. Make sure there's enough space for the straight trailer behind!"
             };
         }
 
@@ -445,7 +508,7 @@ END
                         Buffer.BlockCopy(content, 32, data, 0, data.Length);
                         content = null;
 
-                        if(!AESEncoder.GetDataChecksum(data).SequenceEqual(checksum)) {
+                        if (!AESEncoder.GetDataChecksum(data).SequenceEqual(checksum)) {
                             MessageBox.Show("Corrupted CC data! Checksum failed!");
                             return;
                         }
@@ -604,12 +667,15 @@ END
 
                             Directory.SetLastWriteTime(newPath, targetEditedDate);
                         }
+                        MessageBox.Show("Success!");
+                        return;
                     } else if (res == 2) { // Delete all CC saves in this profile
                         foreach (var dir in Directory.EnumerateDirectories(saveFile.fullPath + @"\..\")) {
                             if (File.Exists(dir + @"\ETS2ASE_CC")) {
                                 Directory.Delete(dir, true);
                             }
                         }
+                        MessageBox.Show("Success!");
                         return;
                     } else if (res == 5) { // Compile CC Data
                         void CompileData() {

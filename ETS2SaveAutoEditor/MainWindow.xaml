@@ -8,9 +8,7 @@
         mc:Ignorable="d"
         Title="Truck Sim Auto Save Editor" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     <DockPanel>
-        <StatusBar x:Name="AppStatus" DockPanel.Dock="Bottom" Background="#FF495100" Foreground="White" Padding="5,0,0,0">
-            <System:String>Hello</System:String>
-        </StatusBar>
+        <Label x:Name="CreditOpen" DockPanel.Dock="Bottom" Foreground="#FFFFD0A8" Padding="10,5,5,5" Background="#FF495100" Cursor="Hand" MouseUp="CreditOpen_MouseUp">About ASE...</Label>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="25*"/>

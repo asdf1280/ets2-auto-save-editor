@@ -49,7 +49,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.13";
+        public static string Version = "1.15";
 
         private SaveeditTasks tasks;
 
@@ -68,13 +68,11 @@ namespace ETS2SaveAutoEditor {
             addAction(tasks.FixEverything());
             addAction(tasks.SharePosition());
             addAction(tasks.ImportPosition());
+            addAction(tasks.ReducePosition());
+            addAction(tasks.ConnectTrailerInstantly());
             addAction(tasks.SpecialCCTask());
             addAction(tasks.StealCompanyTrailer());
             addAction(tasks.ChangeCargoMass());
-
-            tasks.StateChanged += (object sender, string data) => {
-                AppStatus.Items[0] = data;
-            };
         }
 
         public static DateTime FuckUnixTime(long unixtime) {
@@ -102,7 +100,6 @@ namespace ETS2SaveAutoEditor {
                 var res = MessageBox.Show(message, "Installing requirements", MessageBoxButton.YesNo);
                 if (res == MessageBoxResult.Yes) {
                     File.WriteAllBytes("SII_Decrypt.exe", Properties.Resources.SII_Decrypt);
-                    MessageBox.Show("Installed SII_Decrypt!");
                 } else {
                     Application.Current.Shutdown(0);
                 }
@@ -230,14 +227,11 @@ namespace ETS2SaveAutoEditor {
         }
 
         private void LoadSaveFile(string path) {
-            AppStatus.Items[0] = "Decrypting the save...";
-
             var onEnd = new Action<string>((string str) => {
                 var save = (ProfileSave)SaveList.SelectedItem;
                 save.content = str;
                 tasks.SetSaveFile(save);
 
-                AppStatus.Items[0] = "Finished";
                 ShowTasks(true);
                 EnableAll();
             });
@@ -269,7 +263,6 @@ namespace ETS2SaveAutoEditor {
         }
 
         private void LoadSaves(string path) {
-            AppStatus.Items[0] = "Loading saves...";
             new Thread(() => {
                 Dispatcher.Invoke(() => {
                     SaveList.Items.Clear();
@@ -359,7 +352,6 @@ namespace ETS2SaveAutoEditor {
                         SaveList.Items.Add(item);
                     }
                     ShowSavegames(true);
-                    AppStatus.Items[0] = "Finished";
                     EnableAll();
                 });
             }).Start();
@@ -466,9 +458,7 @@ namespace ETS2SaveAutoEditor {
         }
 
         private void StartTaskButton_Click(object sender, RoutedEventArgs e) {
-            AppStatus.Items[0] = "Executing the task...";
             ((SaveEditTask)TaskList.SelectedItem).run();
-            AppStatus.Items[0] = "Finished";
         }
 
         private void GameChanged(bool animate) {
@@ -627,6 +617,10 @@ namespace ETS2SaveAutoEditor {
             SaveList.IsEnabled = true;
             TaskList.IsEnabled = true;
             LoadSaveButton.IsEnabled = true;
+        }
+
+        private void CreditOpen_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
+            new CreditWindow().ShowDialog();
         }
     }
 }

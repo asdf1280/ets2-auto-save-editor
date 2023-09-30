@@ -15,6 +15,8 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -48,6 +50,9 @@
     <ManifestKeyFile>
     </ManifestKeyFile>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>ETS2SaveAutoEditor.App</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -71,6 +76,9 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Base32768.cs" />
+    <Compile Include="CreditWindow.xaml.cs">
+      <DependentUpon>CreditWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Encoder.cs" />
     <Compile Include="ListInput.xaml.cs">
       <DependentUpon>ListInput.xaml</DependentUpon>
@@ -83,6 +91,10 @@
     </Compile>
     <Compile Include="SaveeditTasks.cs" />
     <Compile Include="UnitTools.cs" />
+    <Page Include="CreditWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ListInput.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -125,6 +137,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <None Include="ETS2SaveAutoEditor_TemporaryKey.pfx" />
     <None Include="Properties\Settings.settings">
@@ -152,6 +165,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\SII_Decrypt.exe" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\SII_Decrypt %281%29.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

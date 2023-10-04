@@ -23,7 +23,7 @@ namespace ETS2SaveAutoEditor {
     }
 
     public class PositionCodeEncoder {
-        private static readonly int POSITION_DATA_VERSION = 1;
+        private static readonly int POSITION_DATA_VERSION = 2;
 
         public static string EncodePositionCode(PositionData data) {
             MemoryStream ms1 = new MemoryStream();
@@ -60,7 +60,7 @@ namespace ETS2SaveAutoEditor {
 
             // Compatibility layer
             int version = bs1.ReadInt32();
-            if (version != POSITION_DATA_VERSION) {
+            if (version != POSITION_DATA_VERSION && version != 1) {
                 //if (version == 3 || version == 4) {
                 //    return DecodePositionCodeV3V4(encoded);
                 //}

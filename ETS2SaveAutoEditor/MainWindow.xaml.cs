@@ -49,7 +49,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.16";
+        public static string Version = "1.17";
 
         private SaveeditTasks tasks;
 
@@ -107,16 +107,6 @@ namespace ETS2SaveAutoEditor {
 
             InitializeComponent();
             Title += " " + Version;
-            {
-                var ms = new MemoryStream();
-                Properties.Resources.Icon.Save(ms, ImageFormat.Png);
-                var img = new BitmapImage();
-                img.BeginInit();
-                img.StreamSource = ms;
-                img.CacheOption = BitmapCacheOption.OnLoad;
-                img.EndInit();
-                Icon = img;
-            }
 
             // This code will load ETS2 saves by default
             var gameThatShouldBeAvailable = GetNextAvailableGame(Trucksim.ATS);

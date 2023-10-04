@@ -1,11 +1,8 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETS2SaveAutoEditor", "ETS2SaveAutoEditor\ETS2SaveAutoEditor.csproj", "{398A428C-0E9A-4AB6-9D4B-D39C3FD5A46C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETS2SaveAutoEditorTests", "ETS2SaveAutoEditorTests\ETS2SaveAutoEditorTests.csproj", "{42282C86-5BA3-4749-BBBD-97F43F98B9D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ETS2SaveAutoEditor", "ETS2SaveAutoEditor\ETS2SaveAutoEditor.csproj", "{398A428C-0E9A-4AB6-9D4B-D39C3FD5A46C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +14,6 @@ Global
 		{398A428C-0E9A-4AB6-9D4B-D39C3FD5A46C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{398A428C-0E9A-4AB6-9D4B-D39C3FD5A46C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{398A428C-0E9A-4AB6-9D4B-D39C3FD5A46C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{42282C86-5BA3-4749-BBBD-97F43F98B9D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42282C86-5BA3-4749-BBBD-97F43F98B9D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42282C86-5BA3-4749-BBBD-97F43F98B9D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42282C86-5BA3-4749-BBBD-97F43F98B9D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

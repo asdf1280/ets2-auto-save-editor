@@ -49,7 +49,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.15";
+        public static string Version = "1.16";
 
         private SaveeditTasks tasks;
 
@@ -271,6 +271,10 @@ namespace ETS2SaveAutoEditor {
                 foreach (var save in Directory.GetDirectories(path)) {
                     var fpath = save + @"\info.sii";
                     Console.WriteLine(fpath);
+                    // File does not exist
+                    if (!File.Exists(fpath)) {
+                        continue;
+                    }
                     if (File.ReadLines(fpath).First().StartsWith("SiiNunit")) {
                         Console.WriteLine("Skipping decryption");
                     } else {

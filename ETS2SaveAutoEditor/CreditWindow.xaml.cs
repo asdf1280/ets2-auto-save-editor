@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,10 @@ namespace ETS2SaveAutoEditor {
 
         private void Button_Click(object sender, RoutedEventArgs e) {
             Close();
+        }
+
+        private void Hyperlink_MouseDown(object sender, MouseButtonEventArgs e) {
+            Process.Start(((Hyperlink)sender).NavigateUri.ToString());
         }
     }
 }

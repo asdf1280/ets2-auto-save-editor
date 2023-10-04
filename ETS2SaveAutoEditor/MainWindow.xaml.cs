@@ -614,7 +614,10 @@ namespace ETS2SaveAutoEditor {
         }
 
         private void CreditOpen_MouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e) {
-            new CreditWindow().ShowDialog();
+            var w = new CreditWindow {
+                Owner = this
+            };
+            w.ShowDialog();
         }
     }
 }

@@ -26,8 +26,11 @@ namespace ETS2SaveAutoEditor {
             Close();
         }
 
-        private void Hyperlink_MouseDown(object sender, MouseButtonEventArgs e) {
-            Process.Start(((Hyperlink)sender).NavigateUri.ToString());
+        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e) {
+            Process.Start(new ProcessStartInfo() {
+                UseShellExecute = true,
+                FileName = e.Uri.ToString()
+            });
         }
     }
 }

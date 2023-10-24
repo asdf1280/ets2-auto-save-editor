@@ -374,12 +374,20 @@ namespace ETS2SaveAutoEditor {
             return Game.GetUnitItem(Target, key);
         }
 
+        public string[] GetArray(string key) {
+            var l = Game.GetUnitItem(Target, key).array;
+            if(l == null) {
+                l = Array.Empty<string>();
+            }
+            return l;
+        }
+
         public UnitEntity GetPointer(string key) {
             return Game.Entity(UnitIdSelector.Of(Get(key).value, Target.LastFoundEnd));
         }
 
         public UnitEntity[] GetAllPointers(string key) {
-            return (from item in Get(key).array select Game.Entity(UnitIdSelector.Of(item, Target.LastFoundEnd))).ToArray();
+            return (from item in GetArray(key) select Game.Entity(UnitIdSelector.Of(item, Target.LastFoundEnd))).ToArray();
         }
 
         public void Set(string key, IEnumerable<string> data) {

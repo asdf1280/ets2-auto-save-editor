@@ -263,7 +263,11 @@ namespace ETS2SaveAutoEditor {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
                     } else {
-                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        if (e.Message.Contains("Clipboard")) {
+                            MessageBox.Show($"There was an error when copying the position code. However, it may have already worked. Please check your clipboard.", "Complete!");
+                        } else {
+                            MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        }
                     }
                     Console.WriteLine(e);
                 }
@@ -347,12 +351,22 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ConnectTrailerInstantly() {
             var run = new Action(() => {
                 try {
+                    var economy = saveGame.EntityType("economy");
                     var player = saveGame.EntityType("player");
 
                     var truckPlacement = player.Get("truck_placement").value;
                     player.Set("trailer_placement", truckPlacement);
                     player.Set("slave_trailer_placements", "0");
                     player.Set("assigned_trailer_connected", "true");
+
+                    foreach(var item in economy.GetAllPointers("stored_gps_behind_waypoints")) {
+                        item.Delete();
+                    }
+                    foreach (var item in economy.GetAllPointers("stored_gps_ahead_waypoints")) {
+                        item.Delete();
+                    }
+                    economy.Set("stored_gps_behind_waypoints", "0");
+                    economy.Set("stored_gps_ahead_waypoints", "0");
 
                     saveFile.Save(saveGame.ToString());
                     MessageBox.Show($"Success!", "Complete!");

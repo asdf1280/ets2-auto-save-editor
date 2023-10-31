@@ -197,7 +197,7 @@ namespace ETS2SaveAutoEditor {
                     var fs = new FileStream(saveFile.fullPath + @"\game.sii", FileMode.OpenOrCreate);
                     var sw = new StreamWriter(fs, Encoding.UTF8);
 
-                    var p = new Regex(@"([a-z_]*_wear(?:\[\d*\])?:) (.*)\b", RegexOptions.Compiled);
+                    var p = new Regex(@"(([a-z_]*_wear(?:_unfixable)?(?:\[\d*\])?|integrity_odometer(?:_float_part)?):) (.*)\b", RegexOptions.Compiled);
                     for (int i = 0; i < lines.Length; i++) {
                         var str = lines[i];
 
@@ -223,7 +223,7 @@ namespace ETS2SaveAutoEditor {
             return new SaveEditTask {
                 name = "Repair All",
                 run = run,
-                description = "Repairs all trucks and trailers in the current savegame."
+                description = "Repairs all trucks and trailers in the current savegame.\n\n1.49 Warning - This will even repair trucks in used truck dealer!"
             };
         }
 

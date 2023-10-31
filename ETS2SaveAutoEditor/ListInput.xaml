@@ -7,14 +7,14 @@
         mc:Ignorable="d"
         Title="Title" Height="370" Width="600" ResizeMode="CanResizeWithGrip" WindowStyle="ThreeDBorderWindow" WindowStartupLocation="CenterScreen">
     <Grid>
-        <DockPanel Background="#FF818274">
-            <StatusBar DockPanel.Dock="Bottom" Background="#FF495100">
+        <DockPanel Background="#756653">
+            <StatusBar DockPanel.Dock="Bottom" Background="#FF512D00">
                 <StatusBarItem Content="Choose any item and press OK" Foreground="White"/>
             </StatusBar>
-            <StackPanel DockPanel.Dock="Bottom" Background="#FF646745">
+            <StackPanel DockPanel.Dock="Bottom" Background="#5e3604">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Button Content="OK" Padding="15,5" Margin="5" Background="#FF414232" Foreground="White" BorderBrush="White" Click="Button_Click_1"/>
-                    <Button Content="Cancel" Padding="15,5" Margin="0,5,5,5" Foreground="White" Background="#FF414232" BorderBrush="White" Click="Button_Click"/>
+                    <Button Content="OK" Padding="15,5" Margin="5" Background="#402709" Foreground="White" BorderBrush="White" Click="Button_Click_1"/>
+                    <Button Content="Cancel" Padding="15,5" Margin="0,5,5,5" Foreground="White" Background="#402709" BorderBrush="White" Click="Button_Click"/>
                 </StackPanel>
             </StackPanel>
             <Grid>

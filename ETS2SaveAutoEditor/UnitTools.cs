@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Shapes;
 using System.Xml.Linq;
 
@@ -404,6 +405,15 @@ namespace ETS2SaveAutoEditor {
 
         public UnitEntity EntityTypeAround(string type) {
             return Game.Entity(UnitTypeSelector.Of(type, Target.LastFoundEnd));
+        }
+
+        public UnitIdSelector InsertAfter(string unitType, string unitId) {
+            var insertAt = ResolvedUnit.end + 2;
+            Game.Lines.Insert(insertAt++, unitType + " : " + unitId + " {");
+            Game.Lines.Insert(insertAt++, "}");
+            Game.Lines.Insert(insertAt++, "");
+
+            return UnitIdSelector.Of(unitId);
         }
 
         public string GetFullString() {

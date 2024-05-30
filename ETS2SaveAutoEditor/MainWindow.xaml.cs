@@ -49,7 +49,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.19";
+        public static string Version = "1.25";
 
         private SaveeditTasks tasks;
 
@@ -453,6 +453,8 @@ namespace ETS2SaveAutoEditor {
 
         private void StartTaskButton_Click(object sender, RoutedEventArgs e) {
             ((SaveEditTask)TaskList.SelectedItem).run();
+            var ps = (ProfileSave)SaveList.SelectedItem;
+            LoadSaveFile(currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
         }
 
         private void GameChanged(bool animate) {

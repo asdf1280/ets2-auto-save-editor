@@ -154,12 +154,14 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask Refuel() {
             var run = new Action(() => {
                 try {
-                    var content = saveFile.content;
-                    var sb = new StringBuilder();
+                    var player = saveGame.EntityType("player");
+                    if (player.Get("assigned_truck").value == "null") {
+                        MessageBox.Show("You don't have any truck assigned.", "Done");
+                    }
 
-                    var fuelPresetNames = new string[] { "1000x Tank", "100x Tank", "10x Tank", "5x Tank", "100%", "50%", "10%", "5%", "0%(...)" };
+                    var fuelPresetNames = new string[] { "1000x Tank", "10x Tank", "100%", "50%", "Empty" };
                     var fullPresetValues = new string[] {
-                        "1000", "100", "10", "5", "1", "0.5", "0.1", "0.05", "0"
+                        "1000", "10", "1", "0.5", "0"
                     };
                     var fuelId = "";
                     {
@@ -170,14 +172,11 @@ namespace ETS2SaveAutoEditor {
                         fuelId = fullPresetValues[res];
                     }
 
-                    foreach (var line in content.Split('\n')) {
-                        var str = line;
-                        if (line.Contains("fuel_relative:"))
-                            str = " fuel_relative: " + fuelId;
-                        sb.Append(str + "\n");
-                    }
-                    saveFile.Save(sb.ToString());
-                    MessageBox.Show("Modifyed fuel level of all trucks!", "Done");
+                    var assignedTruckObj = player.GetPointer("assigned_truck");
+                    assignedTruckObj.Set("fuel_relative", fuelId);
+
+                    saveFile.Save(saveGame.ToString());
+                    MessageBox.Show("Done", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unknown error occured.", "Error");
                     Console.WriteLine(e);
@@ -187,7 +186,7 @@ namespace ETS2SaveAutoEditor {
             return new SaveEditTask {
                 name = "Set Fuel Level",
                 run = run,
-                description = "Adjusts the fuel level of all trucks in the current savegame."
+                description = "Change the fuel level of current truck you're driving."
             };
         }
         public SaveEditTask FixEverything() {
@@ -201,7 +200,7 @@ namespace ETS2SaveAutoEditor {
                     for (int i = 0; i < lines.Length; i++) {
                         var str = lines[i];
 
-                        if (str.Contains("disco") || str.Contains("unlock") || str.Contains("{") || str.Contains("}") || !str.Contains("wear") || !p.IsMatch(str)) {
+                        if (str.Contains("disco") || str.Contains("unlock") || str.Contains("{") || str.Contains("}") || (!str.Contains("wear") && !str.Contains("integrity_odometer")) || !p.IsMatch(str)) {
                             sw.Write(str);
                             sw.Write('\n');
                             continue;
@@ -264,7 +263,7 @@ namespace ETS2SaveAutoEditor {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
                     } else {
                         if (e.Message.Contains("Clipboard")) {
-                            MessageBox.Show($"There was an error when copying the position code. However, it may have already worked. Please check your clipboard.", "Complete!");
+                            MessageBox.Show($"There was an error while copying the position code. However, it may have already worked. Please check your clipboard.", "Complete!");
                         } else {
                             MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
                         }
@@ -300,6 +299,8 @@ namespace ETS2SaveAutoEditor {
                     }
 
                     player.Set("assigned_trailer_connected", positionData.TrailerConnected ? "true" : "false");
+
+                    DestroyNavigationData(saveGame.EntityType("economy"));
 
                     saveFile.Save(saveGame.ToString());
                     MessageBox.Show($"Successfully imported the position code!\nNumber of vehicles in the code: {decoded.Count()}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
@@ -359,7 +360,7 @@ namespace ETS2SaveAutoEditor {
                     player.Set("slave_trailer_placements", "0");
                     player.Set("assigned_trailer_connected", "true");
 
-                    foreach(var item in economy.GetAllPointers("stored_gps_behind_waypoints")) {
+                    foreach (var item in economy.GetAllPointers("stored_gps_behind_waypoints")) {
                         item.Delete();
                     }
                     foreach (var item in economy.GetAllPointers("stored_gps_ahead_waypoints")) {
@@ -367,6 +368,11 @@ namespace ETS2SaveAutoEditor {
                     }
                     economy.Set("stored_gps_behind_waypoints", "0");
                     economy.Set("stored_gps_ahead_waypoints", "0");
+
+                    var registry = economy.GetPointer("registry");
+                    var regData = registry.GetArray("data");
+                    regData[0] = "0";
+                    registry.Set("data", regData);
 
                     saveFile.Save(saveGame.ToString());
                     MessageBox.Show($"Success!", "Complete!");
@@ -667,12 +673,16 @@ END
 
                             cloned.Lines.Insert(player.ResolvedUnit.end + 1, vehicleData.Data);
                             // Prevent game CTD bug - dummy profit log
-                            cloned.Lines.Insert(player.ResolvedUnit.end + 1, $@"profit_log : {namelessIdent}.aaaa.bbbb.000 {{
- stats_data: 0
- acc_distance_free: 600
- acc_distance_on_job: 0
- history_age: nil
-}}");
+                            // Append profit log entry
+                            {
+                                var kk = player.InsertAfter("profit_log", $"{namelessIdent}.aaaa.bbbb.000");
+                                var newLog = saveGame.Entity(kk);
+                                saveFile.Save(saveGame.ToString());
+                                newLog.Set("stats_data", "0");
+                                newLog.Set("acc_distance_free", "0");
+                                newLog.Set("acc_distance_on_job", "0");
+                                newLog.Set("history_age", "nil");
+                            }
 
                             File.WriteAllText(newPath + @"\game.sii", cloned.ToString());
                             File.SetLastWriteTime(newPath + @"\game.sii", targetEditedDate);
@@ -865,28 +875,108 @@ END
                     var economy = saveGame.EntityType("economy");
                     var player = saveGame.EntityType("player", economy.Target.LastFoundStart);
 
-                    var currentTrailerId = "";
-                    var currentJobId = "";
-                    { // 현재 작업이나 트레일러가 없으면 오류 발생
-                        currentTrailerId = player.Get("assigned_trailer").value;
-                        if (currentTrailerId == "null") {
-                            MessageBox.Show("You don't have an assigned trailer.", "Error");
-                            return;
-                        }
-
-                        currentJobId = player.Get("current_job").value;
-                        if (currentJobId == "null") {
-                            MessageBox.Show("You don't have any job now.", "Error");
-                            return;
-                        }
+                    var currentJobId = player.Get("current_job").value;
+                    if (currentJobId == "null") {
+                        MessageBox.Show("You don't have any job now.", "Error");
+                        return;
                     }
-
-                    // Detach trailers
-                    player.Set("my_trailer", "null");
-                    player.Set("assigned_trailer", "null");
-
                     // Current job unit
                     var job = player.EntityIdAround(currentJobId);
+
+                    // Job truck
+                    var currentTruckId = player.Get("assigned_truck").value;
+                    var isCurrentTruckStealable = job.Get("company_truck").value == currentTruckId;
+                    if (currentTruckId == "null") {
+                        MessageBox.Show("You don't have a truck active.", "Error");
+                        return;
+                    }
+
+                    // Job trailer
+                    var currentTrailerId = player.Get("assigned_trailer").value;
+                    var isCurrentTrailerStealable = job.Get("company_trailer").value == currentTrailerId;
+                    if (currentTrailerId == "null") {
+                        MessageBox.Show("You don't have a trailer connected.", "Error");
+                        return;
+                    }
+
+                    var stealTruck = isCurrentTruckStealable;
+                    var stealTrailer = isCurrentTrailerStealable;
+
+                    if (stealTruck)
+                        stealTruck = MessageBox.Show("Do you want to steal the truck?", "Own Job Vehicle", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+
+                    if (stealTruck) { // Truck steal logic
+                        // Create new profit log entry
+                        var profitLogId = currentTruckId + "01";
+
+                        // Append profit log entry
+                        var i = player.InsertAfter("profit_log", profitLogId);
+                        var newLog = saveGame.Entity(i);
+                        saveFile.Save(saveGame.ToString());
+                        newLog.Set("stats_data", "0");
+                        newLog.Set("acc_distance_free", "0");
+                        newLog.Set("acc_distance_on_job", "0");
+                        newLog.Set("history_age", "nil");
+
+                        {
+                            var trucks = player.Get("trucks").array ?? (Array.Empty<string>());
+                            var t = trucks.ToList();
+                            t.Add(currentTruckId);
+                            player.Set("trucks", t.ToArray());
+                        }
+
+                        {
+                            var truckProfitLogs = player.Get("truck_profit_logs").array ?? (Array.Empty<string>());
+                            var t = truckProfitLogs.ToList();
+                            t.Add(profitLogId);
+                            player.Set("truck_profit_logs", t.ToArray());
+                        }
+                    } else if (isCurrentTruckStealable) { // Delete unused job truck
+                        var s = UnitIdSelector.Of(currentTruckId);
+                        var l = new List<string>();
+
+                        l.AddRange(saveGame.GetUnitItem(s, "accessories").array);
+
+                        l.ForEach((v) => {
+                            saveGame.DeleteUnit(UnitIdSelector.Of(v));
+                        });
+
+                        saveGame.DeleteUnit(s);
+                    }
+
+                    // Return to last position of owned truck, if exists
+                    player.Set("assigned_truck", player.Get("my_truck").value);
+                    if (player.Get("my_truck_placement_valid").value == "true")
+                        player.Set("truck_placement", player.Get("my_truck_placement").value);
+
+                    if (stealTruck && stealTrailer)
+                        stealTrailer = MessageBox.Show("Do you want to steal the trailer?", "Own Job Vehicle", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
+
+                    if (stealTrailer) { // Trailer steal logic
+                        var trailers = player.Get("trailers").array ?? (Array.Empty<string>());
+                        var t = trailers.ToList();
+                        t.Add(currentTrailerId);
+                        player.Set("trailers", t.ToArray());
+                    } else if (isCurrentTrailerStealable) { // Delete unused job trailer
+                        var s = UnitIdSelector.Of(currentTrailerId);
+                        var l = new List<string>();
+
+                        l.AddRange(saveGame.GetUnitItem(s, "accessories").array);
+
+                        l.ForEach((v) => {
+                            saveGame.DeleteUnit(UnitIdSelector.Of(v));
+                        });
+
+                        saveGame.DeleteUnit(s);
+                    }
+
+                    if (player.Get("my_trailer_attached").value == "true") {
+                        player.Set("assigned_trailer", player.Get("my_trailer").value);
+                        player.Set("assigned_trailer_connected", "true");
+                    } else {
+                        player.Set("assigned_trailer", "null");
+                        player.Set("assigned_trailer_connected", "false");
+                    }
 
                     // Special transport
                     {
@@ -913,53 +1003,21 @@ END
                         }
                     }
 
-                    // Check if company truck exists and remove it ( Quick Job )
-                    {
-                        var v1 = job.Get("company_truck");
-                        if (v1.value != "null") {
-                            var truck = UnitIdSelector.Of(v1.value);
-                            var l = new List<string>();
-
-                            l.AddRange(saveGame.GetUnitItem(truck, "accessories").array);
-
-                            l.ForEach((v) => {
-                                saveGame.DeleteUnit(UnitIdSelector.Of(v));
-                            });
-
-                            saveGame.DeleteUnit(truck);
-                        }
-
-                        player.Set("assigned_truck", player.Get("my_truck").value);
-                        if (player.Get("my_truck_placement_valid").value == "true")
-                            player.Set("truck_placement", player.Get("my_truck_placement").value);
-                    }
-
-                    // Set current_job to null
+                    // Delete the job and reset navigation
                     player.Set("current_job", "null");
-
-                    // Delete the job unit
                     job.Delete();
-
-                    // Reset navigation
                     DestroyNavigationData(economy);
 
-                    // Get trailers I own now
-                    var trailers = player.Get("trailers").array ?? (new string[] { });
-                    if (trailers.Contains(currentTrailerId)) { // Owned trailer - cancel job and return
-                        saveFile.Save(saveGame.ToString());
-                        MessageBox.Show("You already own the trailer used for the job. The job was canceled with the cargo accessory remaining.", "Done!");
-                        return;
-                    }
-
-                    // Add trailer to player trailer list
-                    {
-                        var t = trailers.ToList();
-                        t.Add(currentTrailerId);
-                        player.Set("trailers", t.ToArray());
-                    }
-
                     saveFile.Save(saveGame.ToString());
-                    MessageBox.Show("The trailer is yours now. You can relocate the trailer as needed.", "Done!");
+                    if (stealTruck && stealTrailer) {
+                        MessageBox.Show("The truck and trailer are yours now. You can relocate them as needed.\n\nWARNING: The game will buggy until you reloate the new truck to any garage slot!", "Done!");
+                    } else if (stealTrailer) {
+                        MessageBox.Show("The trailer is yours now. You can relocate the trailer as needed.", "Done!");
+                    } else if (stealTruck) {
+                        MessageBox.Show("The truck is yours now.\n\nWARNING: The game will buggy until you reloate the new truck to any garage slot!", "Done!");
+                    } else {
+                        MessageBox.Show("The job has been canceled without removing cargo accessory.");
+                    }
                     return;
                 } catch (Exception e) {
                     MessageBox.Show("An error occured.", "Error");
@@ -967,9 +1025,9 @@ END
                 }
             });
             return new SaveEditTask {
-                name = "Job Trailer Theft",
+                name = "Own Job Vehicle",
                 run = run,
-                description = "Steals the trailer currently in use for the job."
+                description = "You can steal the trailer or truck from the job. If the trailer is yours, you can steal the cargo loaded in it."
             };
         }
 
@@ -979,6 +1037,11 @@ END
                 t.Delete();
             }
             economy.Set("stored_gps_ahead_waypoints", "0");
+
+            var registry = economy.GetPointer("registry");
+            var regData = registry.GetArray("data");
+            if (regData.Length >= 3) regData[0] = "0";
+            registry.Set("data", regData);
         }
 
         public SaveEditTask ChangeCargoMass() {

@@ -159,21 +159,8 @@ namespace ETS2SaveAutoEditor {
                         MessageBox.Show("You don't have any truck assigned.", "Done");
                     }
 
-                    var fuelPresetNames = new string[] { "1000x Tank", "10x Tank", "100%", "50%", "Empty" };
-                    var fullPresetValues = new string[] {
-                        "1000", "10", "1", "0.5", "0"
-                    };
-                    var fuelId = "";
-                    {
-                        var res = ListInputBox.Show("Choose fuel level", "Choose fuel level for your assigned truck.", fuelPresetNames);
-                        if (res == -1) {
-                            return;
-                        }
-                        fuelId = fullPresetValues[res];
-                    }
-
                     var assignedTruckObj = player.GetPointer("assigned_truck");
-                    assignedTruckObj.Set("fuel_relative", fuelId);
+                    assignedTruckObj.Set("fuel_relative", "1");
 
                     saveFile.Save(saveGame.ToString());
                     MessageBox.Show("Done", "Done");
@@ -184,9 +171,9 @@ namespace ETS2SaveAutoEditor {
                 }
             });
             return new SaveEditTask {
-                name = "Set Fuel Level",
+                name = "Refuel current vehicle",
                 run = run,
-                description = "Change the fuel level of current truck you're driving."
+                description = "Set the fuel(or battery) level of current truck to maximum."
             };
         }
         public SaveEditTask FixEverything() {

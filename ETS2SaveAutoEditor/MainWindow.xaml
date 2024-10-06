@@ -8,14 +8,14 @@
         mc:Ignorable="d"
         Title="Truck Sim Auto Save Editor" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     <DockPanel>
-        <Label x:Name="CreditOpen" DockPanel.Dock="Bottom" Foreground="#FFFFD0A8" Padding="10,5,5,5" Background="#FF512D00" Cursor="Hand" MouseUp="CreditOpen_MouseUp">About ASE...</Label>
+        <Label x:Name="CreditOpen" DockPanel.Dock="Bottom" Foreground="#FFFFD0A8" Padding="10,5,5,5" Background="#005eff" Cursor="Hand" MouseUp="CreditOpen_MouseUp">About ASE...</Label>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="25*"/>
                 <ColumnDefinition Width="25*"/>
                 <ColumnDefinition Width="50*"/>
             </Grid.ColumnDefinitions>
-            <DockPanel LastChildFill="True" Grid.Column="0" Background="#FF512D00">
+            <DockPanel LastChildFill="True" Grid.Column="0" Background="#005eff">
                 <Label x:Name="SelectProfile" Content="SELECT PROFILE" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
                 <Grid VerticalAlignment="Top" DockPanel.Dock="Top">
                     <Grid.ColumnDefinitions>
@@ -27,11 +27,11 @@
                 </Grid>
                 <ListBox x:Name="ProfileList" Margin="10,0" SelectionChanged="ProfileList_SelectionChanged" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" AutomationProperties.Name="ProfileList"/>
             </DockPanel>
-            <Grid Background="#5e3604" Grid.Column="1">
+            <Grid Background="#525252" Grid.Column="1">
                 <DockPanel x:Name="SaveListPanel" Grid.Column="1" LastChildFill="True">
                     <Label Content="SELECT SAVE" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
                     <DockPanel Margin="10,0">
-                        <StackPanel x:Name="SaveInfo" DockPanel.Dock="Bottom" Margin="0,5,0,0" Background="#402709">
+                        <StackPanel x:Name="SaveInfo" DockPanel.Dock="Bottom" Margin="0,5,0,0" Background="#3b3b3b">
                             <Label x:Name="SaveInfo_Name" Content="Name" Foreground="White"/>
                             <Label x:Name="SaveInfo_Dir" Content="Dir" Foreground="White" Cursor="Hand" MouseUp="OpenFolder_Click"/>
                             <Label x:Name="SaveInfo_Date" Content="Date" Foreground="White"/>
@@ -42,7 +42,7 @@
                     </DockPanel>
                 </DockPanel>
             </Grid>
-            <Grid Grid.Column="2" Background="#756653">
+            <Grid Grid.Column="2" Background="#525252">
                 <DockPanel x:Name="TaskListPanel">
                     <Label Content="SELECT TASK" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
                     <Grid>

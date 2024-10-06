@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Shapes;
 using System.Xml.Linq;
+using Windows.Devices.PointOfService;
 
 namespace ETS2SaveAutoEditor {
     public interface IUnitResolvable {
@@ -166,6 +167,8 @@ namespace ETS2SaveAutoEditor {
             if (searchFrom < 0 || searchFrom >= lines.Count) {
                 throw new ArgumentException("searchFrom out of range");
             }
+
+            if (id == "null") return null;
 
             var p = new Regex($"^([a-z_]+) : {id} {{$", RegexOptions.Compiled);
 
@@ -328,6 +331,23 @@ namespace ETS2SaveAutoEditor {
             }
         }
 
+        public List<Tuple<string, UnitItem>> ReadUnit(IUnitResolvable target) {
+            HashSet<string> processedItems = new();
+            List<Tuple<string, UnitItem>> items = new();
+            var unit = ResolveUnit(target);
+
+            for (int ln = unit.start + 1; ln < unit.end - 1; ln++) {
+                var itemName = lines[ln].Split(":")[0].TrimStart();
+                if (itemName.Contains('[')) itemName = itemName.Split("[")[0];
+                if (processedItems.Contains(itemName)) continue;
+
+                processedItems.Add(itemName);
+                items.Add(new Tuple<string, UnitItem>(itemName, GetUnitItem(UnitIdSelector.Of(unit.id, ln), itemName)));
+            }
+
+            return items;
+        }
+
         public UnitEntity Entity(IUnitTrackable target) {
             return new UnitEntity(this, target);
         }
@@ -375,13 +395,32 @@ namespace ETS2SaveAutoEditor {
             return Game.GetUnitItem(Target, key);
         }
 
+        public bool Contains(string key) {
+            return Get(key) != null;
+        }
+
+        public List<Tuple<string, UnitItem>> Read() {
+            return Game.ReadUnit(Target);
+        }
+
+        public string GetValue(string key) {
+            var item = Get(key);
+            if (item.array != null) return null;
+            return item.value;
+        }
+
+        // This will return null if the key is not found or it's not an array. If you want to check if the key is an array, use IsArray(key) method.
         public string[] GetArray(string key) {
             var l = Game.GetUnitItem(Target, key).array;
-            if(l == null) {
-                l = Array.Empty<string>();
-            }
             return l;
         }
+
+        // A shortcut for GetArray(key).ToList() to make the code more readable. Please note that editing the list will not affect the unit. You should use Set(key, list) or other methods to edit the array.
+        public List<string> GetList(string key) {
+            return GetArray(key).ToList();
+        }
+
+        // Shortcut methods for pointer manipulation
 
         public UnitEntity GetPointer(string key) {
             return Game.Entity(UnitIdSelector.Of(Get(key).value, Target.LastFoundEnd));
@@ -389,6 +428,43 @@ namespace ETS2SaveAutoEditor {
 
         public UnitEntity[] GetAllPointers(string key) {
             return (from item in GetArray(key) select Game.Entity(UnitIdSelector.Of(item, Target.LastFoundEnd))).ToArray();
+        }
+
+        // Shortcut methods for array manipulation
+
+        // This method is used to check if the key is an array. If it is, you can use GetArray(key) to get the array. If it is not, you can use Get(key) to get the value.
+        public bool IsArray(string key) {
+            var item = Get(key);
+            if (item == null) return false;
+            return item.array != null;
+        }
+
+        public bool ArrayContains(string key, string value) {
+            return GetArray(key).Contains(value);
+        }
+
+        public int ArrayCount(string key) {
+            var array = GetArray(key);
+            if (array == null) return -1;
+            return array.Length;
+        }
+
+        public bool ArrayAppend(string key, string value, bool force = false) {
+            if (force && !IsArray(key)) Set(key, Array.Empty<string>());
+            var l = GetArray(key).ToList();
+            if (l.Contains(value)) return false;
+            l.Add(value);
+            Set(key, l);
+            return true;
+        }
+
+        public bool ArrayRemove(string key, string value) {
+            if (!IsArray(key)) return false; // If the key is not an array, return false (no changes made)
+            var l = GetArray(key).ToList();
+            if (!l.Contains(value)) return false;
+            l.Remove(value);
+            Set(key, l);
+            return true;
         }
 
         public void Set(string key, IEnumerable<string> data) {
@@ -407,13 +483,13 @@ namespace ETS2SaveAutoEditor {
             return Game.Entity(UnitTypeSelector.Of(type, Target.LastFoundEnd));
         }
 
-        public UnitIdSelector InsertAfter(string unitType, string unitId) {
+        public UnitEntity InsertAfter(string unitType, string unitId) {
             var insertAt = ResolvedUnit.end + 2;
             Game.Lines.Insert(insertAt++, unitType + " : " + unitId + " {");
             Game.Lines.Insert(insertAt++, "}");
             Game.Lines.Insert(insertAt++, "");
 
-            return UnitIdSelector.Of(unitId);
+            return EntityIdAround(unitId);
         }
 
         public string GetFullString() {
@@ -440,6 +516,163 @@ namespace ETS2SaveAutoEditor {
         public void SetActiveTrailer(string id) {
             e.Set("my_trailer", id);
             e.Set("assigned_trailer", id);
+        }
+    }
+
+    // This class is used to serialize and deserialize units. Note that this class doesn't handle the file format itself nor check the file format version. You should handle it before using this class. It is recommended to store and check the format version using the comment(+) at the top of the file.
+    public class UnitSerializer {
+        public static string SerializeUnit(UnitEntity root, HashSet<string> knownPtrItems) {
+            var builder = new StringBuilder();
+
+            Dictionary<string, int> unitIdMapping = new();
+            Stack<Tuple<UnitEntity, int>> serializationQueue = new();
+            serializationQueue.Push(new(root, 0));
+            unitIdMapping[root.Id] = 0;
+
+            while (serializationQueue.Count > 0) {
+                var it = serializationQueue.Pop();
+                var unit = it.Item1;
+                int serializedId = it.Item2;
+                builder.Append($"UNIT {serializedId:D6} {unit.Type}\n");
+
+                Stack<Tuple<UnitEntity, int>> nextQueue = new();
+                int serializeSubunit(string id) {
+                    int ptrId;
+                    if (unitIdMapping.ContainsKey(id)) {
+                        ptrId = unitIdMapping[id];
+                    } else {
+                        ptrId = unitIdMapping.Count;
+                        unitIdMapping[id] = ptrId;
+                        nextQueue.Push(new(unit.EntityIdAround(id), ptrId));
+                    }
+
+                    return ptrId;
+                }
+
+                foreach (var entries in unit.Read()) {
+                    var key = entries.Item1;
+                    var value = entries.Item2;
+                    var isArray = value.array != null;
+                    var isPointer = knownPtrItems.Contains($"{unit.Type}:{entries.Item1}"); // This is pointer. Serialize the unit with value of this entry if the value starts with "_"
+
+                    if (isArray) {
+                        builder.Append($"LIST {key}\n");
+
+                        for (int i = 0; i < value.array.Length; i++) {
+                            var v = value.array[i];
+                            if (isPointer && v.StartsWith("_")) {
+                                builder.Append($"PTR {serializeSubunit(v):D6}\n");
+                            } else {
+                                builder.Append($"VAL {v}\n");
+                            }
+                        }
+                    } else {
+                        builder.Append($"ITEM {key}\n");
+
+                        var v = value.value;
+                        if (isPointer && v.StartsWith("_")) {
+                            builder.Append($"PTR {serializeSubunit(v):D6}\n");
+                        } else {
+                            builder.Append($"VAL {v}\n");
+                        }
+                    }
+                }
+
+                // Add all nextQueue items to serializationQueue
+                while (nextQueue.Count > 0) {
+                    serializationQueue.Push(nextQueue.Pop());
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        public static UnitEntity[] DeserializeUnit(UnitEntity after, string data) {
+            var lines = data.Split('\n');
+            if (lines.Length < 2) {
+                throw new Exception("Invalid file format");
+            }
+
+            var save = after.Game;
+            var player = save.EntityType("player");
+
+            // Begin importing
+            // First of all, let's assign unique IDs to all units in the file
+            Random rnd = new();
+            var idPrefix = $"_nameless.ase{rnd.NextInt64() % 65536:x4}.{DateTime.Now.Ticks / 65536 / 65536 % 65536:x4}";
+            Dictionary<int, string> idMapping = new();
+            try {
+                for (int i = 0; i < lines.Length; i++) {
+                    var words = lines[i].Trim().Split(' ');
+                    var cmd = words[0];
+                    if (cmd != "UNIT") continue;
+                    int unitId = int.Parse(lines[i].Split(" ")[1]);
+                    idMapping[unitId] = $"{idPrefix}.{unitId:x4}";
+                }
+            } catch {
+                throw new Exception("Failed to iterate the units to import. (Error code 1)\n\nAre you trying to import a modified file?");
+            }
+
+            List<UnitEntity> deserializedUnits = new();
+
+            UnitEntity currentUnit = null;
+            List<string> currentArray = null;
+            string currentKey = null;
+            // Beging adding units
+            for (int i = 0; i < lines.Length; i++) {
+                var line = lines[i].Trim();
+                var words = line.Trim().Split(' ');
+                var cmd = words[0];
+
+                if (cmd == "+") continue; // Comment
+                if ((cmd == "LIST" || cmd == "ITEM" || cmd == "UNIT") && currentArray != null) { // End of array elements
+                    // Insert the array to the current unit
+                    if (currentKey == null)
+                        throw new Exception($"This can't happen! If you see this message, please handle the file you're importing to dev! Line number {i + 1}. (Error code 4)");
+                    currentUnit.Set(currentKey, currentArray.ToArray());
+                    currentArray = null;
+                }
+                if (cmd == "UNIT") {
+                    var unitId = int.Parse(words[1]);
+                    var unitType = words[2];
+                    var generatedId = idMapping[unitId];
+                    currentUnit = (currentUnit ?? player).InsertAfter(unitType, generatedId); // This makes sure the units are inserted in the correct order
+                    deserializedUnits.Add(currentUnit);
+                    continue;
+                }
+                if (cmd == "LIST") {
+                    currentArray = new();
+                    currentKey = words[1];
+                    continue;
+                }
+                if (cmd == "ITEM") {
+                    currentArray = null;
+                    currentKey = words[1];
+                    continue;
+                }
+                if (cmd == "VAL") {
+                    if (currentKey == null)
+                        throw new Exception($"Value specified before the key at line {i + 1}. (Error code 2)\n\nAre you trying to import a modified file?");
+                    if (currentArray != null) {
+                        currentArray.Add(line.Substring(4));
+                    } else {
+                        currentUnit.Set(currentKey, line.Substring(4));
+                    }
+                    continue;
+                }
+                if (cmd == "PTR") {
+                    if (currentKey == null)
+                        throw new Exception($"Value specified before the key at line {i + 1}. (Error code 3)\n\nAre you trying to import a modified file?");
+                    if (currentArray != null) {
+                        currentArray.Add(idMapping[int.Parse(words[1])]);
+                    } else {
+                        currentUnit.Set(currentKey, idMapping[int.Parse(words[1])]);
+                    }
+                    continue;
+                }
+            }
+
+            return deserializedUnits.ToArray();
         }
     }
 }

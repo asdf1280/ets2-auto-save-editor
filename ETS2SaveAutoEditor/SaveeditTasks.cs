@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.Intrinsics.X86;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -110,8 +111,10 @@ namespace ETS2SaveAutoEditor {
                         return;
                     }
 
-                    var engineNames = new string[] { "Scania new 730", "Scania old 730", "Volvo new 750", "Volvo old 750", "Renault Premium 380", "Iveco 310(...)" };
+                    var engineNames = new string[] { "Scania Electric 450kW", "Renault Electric 490kW", "Scania new 730", "Scania old 730", "Volvo new 750", "Volvo old 750", "Renault Premium 380", "Iveco 310(...)" };
                     var enginePaths = new string[] {
+                        "/def/vehicle/truck/scania.s_2024e/engine/450kw.sii",
+                        "/def/vehicle/truck/renault.etech_t/engine/490kw.sii",
                         "/def/vehicle/truck/scania.s_2016/engine/dc16_730.sii",
                         "/def/vehicle/truck/scania.streamline/engine/dc16_730_2.sii",
                         "/def/vehicle/truck/volvo.fh16_2012/engine/d16g750.sii",
@@ -379,6 +382,165 @@ namespace ETS2SaveAutoEditor {
             };
         }
 
+        public SaveEditTask VehicleSharingTool(Trucksim game) {
+            const string AseVehicleFormat = "1";
+            var run = new Action(() => {
+                while (true) {
+                    var choice = ListInputBox.Show("Vehicle Sharing", "WARNING: Importing an imcompatible vehicle (DLC, MOD, or incompatible version) will break your save. Click 'Cancel' to close this window.", new string[] { "Share Truck", "Share Trailer", "Import Vehicle" });
+                    if (choice == -1) break;
+
+                    if (choice == 0) { // Export truck
+                        var player = saveGame.EntityType("player");
+
+                        var assignedTruck = player.GetPointer("assigned_truck");
+                        if (assignedTruck == null) {
+                            MessageBox.Show("You don't have any truck assigned.", "Error");
+                            continue;
+                        }
+
+                        string headerStr;
+                        {
+                            var builder = new StringBuilder();
+                            builder.Append("+ ASE Shared Vehicle\n");
+                            builder.Append($"+ {game} TRUCK V{AseVehicleFormat}\n");
+                            builder.Append("+ It isn't recommended to edit this data manually. No support will be provided for modified files.\n");
+                            builder.Append("+\n");
+                            headerStr = builder.ToString();
+                        }
+                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTruck, new HashSet<string> { "vehicle:accessories" });
+
+                        var d = new SaveFileDialog() {
+                            Title = "Save Truck",
+                            Filter = "ASE Vehicle Data (*.asv)|*.asv|All files (*.*)|*.*",
+                            FilterIndex = 0,
+                        };
+                        if (d.ShowDialog() != true) continue;
+
+                        File.WriteAllText(d.FileName, headerStr + vehicleStr, Encoding.UTF8);
+                    }
+                    if (choice == 1) { // Export trailer
+                        var player = saveGame.EntityType("player");
+
+                        var assignedTrailer = player.GetPointer("assigned_trailer");
+                        if (assignedTrailer == null) {
+                            MessageBox.Show("You don't have any trailer assigned.", "Error");
+                            continue;
+                        }
+
+                        string headerStr;
+                        {
+                            var builder = new StringBuilder();
+                            builder.Append("+ ASE Shared Vehicle\n");
+                            builder.Append($"+ {game} TRAILER V{AseVehicleFormat}\n");
+                            builder.Append("+ It isn't recommended to edit this data manually. No support will be provided for modified files.\n");
+                            builder.Append("+\n");
+                            headerStr = builder.ToString();
+                        }
+                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTrailer, new HashSet<string> { "trailer:trailer_definition", "trailer:accessories" });
+
+                        var d = new SaveFileDialog() {
+                            Title = "Save Trailer",
+                            Filter = "ASE Vehicle Data (*.asv)|*.asv|All files (*.*)|*.*",
+                            FilterIndex = 0,
+                        };
+                        if (d.ShowDialog() != true) continue;
+
+                        File.WriteAllText(d.FileName, vehicleStr, Encoding.UTF8);
+                    }
+                    if (choice == 2) { // Import
+                        var d = new OpenFileDialog() {
+                            Title = "Open Vehicle",
+                            Filter = "ASE Vehicle data (*.asv)|*.asv|All files (*.*)|*.*",
+                            FilterIndex = 0,
+                        };
+                        if (d.ShowDialog() != true) continue;
+
+                        var text = File.ReadAllText(d.FileName, Encoding.UTF8);
+                        var lines = text.Split('\n');
+
+                        bool isTruck = false;
+                        try {
+                            if (lines.Length < 5) {
+                                throw new Exception("Invalid file format");
+                            }
+                            var header = lines[1].Trim().Split(' ');
+                            if (lines[0].Trim() != "+ ASE Shared Vehicle" || header.Length != 4) {
+                                throw new Exception("Invalid file format");
+                            }
+                            if (header[3] != $"V{AseVehicleFormat}") {
+                                throw new Exception($"Incompatible file version.\n\nSupported: V{AseVehicleFormat}\nThis file: {header[3]}");
+                            }
+                            if (header[1] != game.ToString()) {
+                                throw new Exception($"Incompatible game.\n\nExpected: {game}\nThis file: {header[1]}");
+                            }
+
+                            if (header[2] == "TRUCK") isTruck = true;
+                            else if (header[2] != "TRAILER") {
+                                throw new Exception($"Invalid vehicle type.\n\nExpected: TRUCK or TRAILER\nThis file: {header[2]}");
+                            }
+                        } catch (Exception e) {
+                            MessageBox.Show($"{e.Message}", "Error");
+                            continue;
+                        }
+
+                        var player = saveGame.EntityType("player");
+                        var entities = UnitSerializer.DeserializeUnit(player, text);
+
+                        // Finish up necessary things to prevent crash
+                        if(isTruck) {
+                            // Add vehicle to truck list
+                            // Add empty profit log entry
+                            // Remind the user to assign it to a garage to prevent bugs that are confirmed to exist
+
+                            if (entities[0].Type != "vehicle") {
+                                MessageBox.Show($"Unexpected root node. Expected 'vehicle' got '{entities[0].Type}'.", "Error");
+                                continue;
+                            }
+
+                            string truckId = entities[0].Id;
+                            string profitLogId = entities[0].Id + "0";
+                            player.ArrayAppend("trucks", truckId, true);
+
+                            var newLog = player.InsertAfter("profit_log", profitLogId);
+                            newLog.Set("stats_data", "0");
+                            newLog.Set("acc_distance_free", "0");
+                            newLog.Set("acc_distance_on_job", "0");
+                            newLog.Set("history_age", "nil");
+                            player.ArrayAppend("truck_profit_logs", profitLogId, true);
+
+                            MessageBox.Show("Successfully imported the truck!\n\nPlease assign the truck to a garage to prevent bugs that are confirmed to exist.", "Complete!");
+                        } else {
+                            // Add vehicle to trailer list
+                            // If 'entities' contains a trailer definition, add it to the list of trailer definitions
+                            // Remind the user to assign it to a garage to prevent possible bugs
+
+                            if (entities[0].Type != "trailer") {
+                                MessageBox.Show($"Unexpected root node. Expected 'trailer' got '{entities[0].Type}'.", "Error");
+                                continue;
+                            }
+
+                            string trailerId = entities[0].Id;
+                            string trailerDefId = entities[0].GetValue("trailer_definition");
+
+                            player.ArrayAppend("trailers", trailerId, true);
+                            if(trailerDefId.StartsWith("_")) {
+                                player.ArrayAppend("trailer_defs", trailerDefId, true);
+                            }
+
+                            MessageBox.Show("Successfully imported the trailer!\n\nPlease assign the trailer to a garage to prevent possible bugs.", "Complete!");
+                        }
+
+                        saveFile.Save(saveGame.ToString());
+                    }
+                }
+            });
+            return new SaveEditTask {
+                name = "[NEW] Vehicle Sharing",
+                run = run,
+                description = "You can use this tool to easily share and import trucks and trailers without worrying about collisions and errors."
+            };
+        }
+
         class ASEVehicle {
             public string[] Keys;
             public string Data;
@@ -508,6 +670,7 @@ END
                         };
                         if (d.ShowDialog() != true) return;
 
+                        // Decoding the CC data
                         var content = File.ReadAllBytes(d.FileName);
                         var checksum = new byte[32];
                         var data = new byte[content.Length - 32];
@@ -525,7 +688,7 @@ END
                         var zs = new DeflateStream(ms, CompressionMode.Decompress);
                         var r = new BinaryReader(zs);
 
-                        // Adding CC to profile with job running will cause crash
+                        // Applying CC data to profile where a job is running will cause crash
                         var srcPlayer = saveGame.EntityType("player");
                         if (srcPlayer.Get("current_job").value != "null") {
                             MessageBox.Show("You can't run this action with an active job in your save.");
@@ -605,12 +768,7 @@ END
                                 player.Set("my_truck", vehicleData.Keys[0]);
 
                                 // Prevent game CTD bug
-                                var truckProfitLogs = player.Get("truck_profit_logs").array ?? (new string[] { });
-                                {
-                                    var t = truckProfitLogs.ToList();
-                                    t.Add($"{namelessIdent}.aaaa.bbbb.000");
-                                    player.Set("truck_profit_logs", t.ToArray());
-                                }
+                                player.ArrayAppend("truck_profit_logs", $"{namelessIdent}.aaaa.bbbb.000");
                             }
 
                             if (vehicleData.Keys.Length >= 2) { // Add the vehicle to trailer list
@@ -663,8 +821,7 @@ END
                             // Append profit log entry
                             {
                                 var kk = player.InsertAfter("profit_log", $"{namelessIdent}.aaaa.bbbb.000");
-                                var newLog = saveGame.Entity(kk);
-                                saveFile.Save(saveGame.ToString());
+                                var newLog = kk;
                                 newLog.Set("stats_data", "0");
                                 newLog.Set("acc_distance_free", "0");
                                 newLog.Set("acc_distance_on_job", "0");
@@ -681,6 +838,10 @@ END
                         MessageBox.Show("Success!");
                         return;
                     } else if (res == 2) { // Delete all CC saves in this profile
+                        if (File.Exists(saveFile.fullPath + @"\ETS2ASE_CC")) {
+                            MessageBox.Show("Please select a directory that wasn't generated by this tool!");
+                            return;
+                        }
                         foreach (var dir in Directory.EnumerateDirectories(saveFile.fullPath + @"\..\")) {
                             if (File.Exists(dir + @"\ETS2ASE_CC")) {
                                 Directory.Delete(dir, true);
@@ -897,27 +1058,14 @@ END
                         var profitLogId = currentTruckId + "01";
 
                         // Append profit log entry
-                        var i = player.InsertAfter("profit_log", profitLogId);
-                        var newLog = saveGame.Entity(i);
-                        saveFile.Save(saveGame.ToString());
+                        var newLog = player.InsertAfter("profit_log", profitLogId);
                         newLog.Set("stats_data", "0");
                         newLog.Set("acc_distance_free", "0");
                         newLog.Set("acc_distance_on_job", "0");
                         newLog.Set("history_age", "nil");
 
-                        {
-                            var trucks = player.Get("trucks").array ?? (Array.Empty<string>());
-                            var t = trucks.ToList();
-                            t.Add(currentTruckId);
-                            player.Set("trucks", t.ToArray());
-                        }
-
-                        {
-                            var truckProfitLogs = player.Get("truck_profit_logs").array ?? (Array.Empty<string>());
-                            var t = truckProfitLogs.ToList();
-                            t.Add(profitLogId);
-                            player.Set("truck_profit_logs", t.ToArray());
-                        }
+                        player.ArrayAppend("trucks", currentTruckId, true);
+                        player.ArrayAppend("truck_profit_logs", profitLogId, true);
                     } else if (isCurrentTruckStealable) { // Delete unused job truck
                         var s = UnitIdSelector.Of(currentTruckId);
                         var l = new List<string>();

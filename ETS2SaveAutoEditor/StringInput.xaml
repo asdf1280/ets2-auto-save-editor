@@ -7,18 +7,18 @@
         mc:Ignorable="d"
         Title="Title" Height="370" Width="600" WindowStartupLocation="CenterScreen">
     <Grid>
-        <DockPanel Background="#756653">
-            <StatusBar DockPanel.Dock="Bottom" Background="#FF512D00">
+        <DockPanel Background="#787878">
+            <StatusBar DockPanel.Dock="Bottom" Background="#363636">
                 <StatusBarItem Content="Please enter the text and press OK.." Foreground="White"/>
             </StatusBar>
-            <StackPanel DockPanel.Dock="Bottom" Background="#5e3604">
+            <StackPanel DockPanel.Dock="Bottom" Background="#595959">
                 <DockPanel>
                     <Label Foreground="White" Content="Enter"></Label>
                     <TextBox x:Name="Input" Margin="5,5,5,0" Background="#FF444444" BorderBrush="White" Foreground="White"></TextBox>
                 </DockPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Button Content="OK" Padding="15,5" Margin="5" Background="#402709" Foreground="White" BorderBrush="White" Click="Button_Click_1"/>
-                    <Button Content="Cancel" Padding="15,5" Margin="0,5,5,5" Foreground="White" Background="#402709" BorderBrush="White" Click="Button_Click"/>
+                    <Button Content="OK" Padding="15,5" Margin="5" Background="#1f1f1f" Foreground="White" BorderBrush="White" Click="Button_Click_1"/>
+                    <Button Content="Cancel" Padding="15,5" Margin="0,5,5,5" Foreground="White" Background="#1f1f1f" BorderBrush="White" Click="Button_Click"/>
                 </StackPanel>
             </StackPanel>
             <TextBlock x:Name="Description" TextWrapping="Wrap" Foreground="White" Padding="10"/>

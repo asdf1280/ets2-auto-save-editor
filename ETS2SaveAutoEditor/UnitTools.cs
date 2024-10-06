@@ -556,27 +556,29 @@ namespace ETS2SaveAutoEditor {
                     var isPointer = knownPtrItems.Contains($"{unit.Type}:{entries.Item1}"); // This is pointer. Serialize the unit with value of this entry if the value starts with "_"
 
                     if (isArray) {
-                        builder.Append($"LIST {key}\n");
+                        builder.Append($"  LIST {key}\n");
 
                         for (int i = 0; i < value.array.Length; i++) {
                             var v = value.array[i];
                             if (isPointer && v.StartsWith("_")) {
-                                builder.Append($"PTR {serializeSubunit(v):D6}\n");
+                                builder.Append($"    PTR {serializeSubunit(v):D6}\n");
                             } else {
-                                builder.Append($"VAL {v}\n");
+                                builder.Append($"    VAL {v}\n");
                             }
                         }
                     } else {
-                        builder.Append($"ITEM {key}\n");
+                        builder.Append($"  ITEM {key}\n");
 
                         var v = value.value;
                         if (isPointer && v.StartsWith("_")) {
-                            builder.Append($"PTR {serializeSubunit(v):D6}\n");
+                            builder.Append($"    PTR {serializeSubunit(v):D6}\n");
                         } else {
-                            builder.Append($"VAL {v}\n");
+                            builder.Append($"    VAL {v}\n");
                         }
                     }
                 }
+
+                builder.Append($"\n");
 
                 // Add all nextQueue items to serializationQueue
                 while (nextQueue.Count > 0) {

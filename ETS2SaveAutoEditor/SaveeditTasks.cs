@@ -445,7 +445,7 @@ namespace ETS2SaveAutoEditor {
                         };
                         if (d.ShowDialog() != true) continue;
 
-                        File.WriteAllText(d.FileName, vehicleStr, Encoding.UTF8);
+                        File.WriteAllText(d.FileName, headerStr + vehicleStr, Encoding.UTF8);
                     }
                     if (choice == 2) { // Import
                         var d = new OpenFileDialog() {

@@ -436,7 +436,7 @@ namespace ETS2SaveAutoEditor {
                             builder.Append("+\n");
                             headerStr = builder.ToString();
                         }
-                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTrailer, new HashSet<string> { "trailer:trailer_definition", "trailer:accessories" });
+                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTrailer, new HashSet<string> { "trailer:trailer_definition", "trailer:slave_trailer", "trailer:accessories" });
 
                         var d = new SaveFileDialog() {
                             Title = "Save Trailer",

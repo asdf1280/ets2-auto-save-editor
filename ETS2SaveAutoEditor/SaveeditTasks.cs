@@ -342,11 +342,21 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask DecodePosition() {
             var run = new Action(() => {
                 try {
-                    var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
+                    var code = Clipboard.GetText().Trim();
+                    var positionData = PositionCodeEncoder.DecodePositionCode(code);
                     var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeDecimalPosition(a)).ToArray();
 
-                    Clipboard.SetText(string.Join("\n", decoded) + "\ntrailer_connected: " + (positionData.TrailerConnected ? "1" : "0"));
-                    MessageBox.Show($"The decoded position data was copied to clipboard!\nNumber of vehicles in the code: {decoded.Length}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
+                    // xyz and quaternion
+                    string res = "(x, y, z) (q1, q2, q3, q4)\nThe position is written as XYZ in meters, and rotation as quaternion.\n\n";
+                    for (int i=0; i<decoded.Length; i++) {
+                        if (i == 0) res += "Truck placement: ";
+                        else res += $"Trailer {i} placement: ";
+                        res += decoded[i] + "\n";
+                    }
+
+                    res += "\nConnected to trailer: " + (positionData.TrailerConnected ? "Yes" : "No") + "\nPosition code:\n\n" + code;
+                    Clipboard.SetText(res);
+                    MessageBox.Show($"The decoded position data was copied to clipboard!\n\n" + res, "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");

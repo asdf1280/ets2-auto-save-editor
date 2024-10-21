@@ -17,7 +17,13 @@ namespace ETS2SaveAutoEditor {
     public class UnitRange : IUnitResolvable {
         public string type;
         public string id;
+        /// <summary>
+        /// The line number containing the unit's type.
+        /// </summary>
         public int start;
+        /// <summary>
+        /// The line number containing '}' that closes the unit.
+        /// </summary>
         public int end;
     }
 
@@ -274,7 +280,7 @@ namespace ETS2SaveAutoEditor {
 
             string headerData = null;
             List<string> array = new List<string>();
-            for (int i = unit.start + 1; i < unit.end - 1; i++) {
+            for (int i = unit.start + 1; i < unit.end; i++) {
                 string line = lines[i];
                 var ma1 = Regex.Match(line, $"^\\s+{name}: (.*)$");
                 var ma2 = Regex.Match(line, $"^\\s+{name}\\[\\d*\\]: (.*)$");

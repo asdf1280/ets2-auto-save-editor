@@ -1158,7 +1158,7 @@ END
 
                         var newUnitId = currentTrailerId + "02";
                         var newUnit = trailer.InsertAfter("vehicle_accessory", newUnitId);
-                        newUnit.Set("data_path", "/def/vehicle/trailer_owned/scs.box/data.sii");
+                        newUnit.Set("data_path", "\"/def/vehicle/trailer_owned/scs.box/data.sii\"");
                         int refund = new Random().Next() % 2 == 0 ? 299792458 : 602214076;
                         newUnit.Set("refund", (refund - refundSum).ToString());
 

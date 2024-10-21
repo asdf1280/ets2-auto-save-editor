@@ -1079,16 +1079,16 @@ END
                     var job = player.EntityIdAround(currentJobId);
 
                     // Job truck
-                    var currentTruckId = player.Get("assigned_truck").value;
-                    var isCurrentTruckStealable = job.Get("company_truck").value == currentTruckId;
+                    var currentTruckId = player.GetValue("assigned_truck");
+                    var isCurrentTruckStealable = job.GetValue("company_truck") == currentTruckId;
                     if (currentTruckId == "null") {
                         MessageBox.Show("You don't have a truck active.", "Error");
                         return;
                     }
 
                     // Job trailer
-                    var currentTrailerId = player.Get("assigned_trailer").value;
-                    var isCurrentTrailerStealable = job.Get("company_trailer").value == currentTrailerId;
+                    var currentTrailerId = player.GetValue("assigned_trailer");
+                    var isCurrentTrailerStealable = job.GetValue("company_trailer") == currentTrailerId;
                     if (currentTrailerId == "null") {
                         MessageBox.Show("You don't have a trailer connected.", "Error");
                         return;
@@ -1142,11 +1142,28 @@ END
                         stealTrailer = MessageBox.Show("Do you want to steal the trailer?", "Own Job Vehicle", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
 
                     if (stealTrailer) { // Trailer steal logic
-                        var trailers = player.Get("trailers").array ?? (Array.Empty<string>());
-                        var t = trailers.ToList();
-                        t.Add(currentTrailerId);
-                        player.Set("trailers", t.ToArray());
-                    } else if (isCurrentTrailerStealable) { // Delete unused job trailer
+                        player.ArrayAppend("trailers", currentTrailerId, true);
+
+                        // Adding a dummy accessory with path to "/def/vehicle/trailer_owned/scs.box/data.sii" fixes N/A in trailer listings
+                        var trailer = player.EntityIdAround(currentTrailerId);
+
+                        int refundSum = 0;
+                        foreach (var item in trailer.GetAllPointers("accessories"))
+                        {
+                            var red = item.Read();
+                            if (int.TryParse(item.Get("refund").value, out int a)) {
+                                refundSum += a;
+                            }
+                        }
+
+                        var newUnitId = currentTrailerId + "02";
+                        var newUnit = trailer.InsertAfter("vehicle_accessory", newUnitId);
+                        newUnit.Set("data_path", "/def/vehicle/trailer_owned/scs.box/data.sii");
+                        int refund = new Random().Next() % 2 == 0 ? 299792458 : 602214076;
+                        newUnit.Set("refund", (refund - refundSum).ToString());
+
+                        trailer.ArrayAppend("accessories", newUnitId, true);
+                    } else if (isCurrentTrailerStealable) { // The user decided to only steal the truck and abandon the trailer. Delete the unused job trailer.
                         var s = UnitIdSelector.Of(currentTrailerId);
                         var l = new List<string>();
 

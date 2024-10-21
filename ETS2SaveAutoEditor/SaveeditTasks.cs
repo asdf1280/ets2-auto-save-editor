@@ -1128,8 +1128,15 @@ END
 
                     // Return to last position of owned truck, if exists
                     player.Set("assigned_truck", player.Get("my_truck").value);
-                    if (player.Get("my_truck_placement_valid").value == "true")
-                        player.Set("truck_placement", player.Get("my_truck_placement").value);
+                    if (player.Get("my_truck_placement_valid").value == "true") {
+                        player.Set("truck_placement", player.GetValue("my_truck_placement"));
+                        if(player.Contains("my_trailer_placement")) {
+                            player.Set("trailer_placement", player.GetValue("my_trailer_placement"));
+                        }
+                        if(player.Contains("my_slave_trailer_placements")) {
+                            player.Set("slave_trailer_placements", player.GetArray("my_slave_trailer_placements"));
+                        }
+                    }
 
                     if (stealTruck && stealTrailer)
                         stealTrailer = MessageBox.Show("Do you want to steal the trailer?", "Own Job Vehicle", MessageBoxButton.YesNo) == MessageBoxResult.Yes;

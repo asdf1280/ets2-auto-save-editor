@@ -81,6 +81,19 @@ namespace ETS2SaveAutoEditor {
         public string[] array;
     }
 
+    /// <summary>
+    /// The primary class for managing SII files, offering functionality to read, modify, and write these files. 
+    /// The class supports operations at both the file and unit levels, with 'entities' serving as a higher-level abstraction 
+    /// to handle individual units. These 'entities' allow for comprehensive manipulation of units and their properties.
+    ///
+    /// Most methods within this class handle low-level operations. For more advanced manipulation, 
+    /// utilize the 'Entity' or 'EntityType' method to obtain an 'entity' object that provides a more streamlined experience.
+    /// 
+    /// The purpose of the UnitEntity is to facilitate all required modifications to the save game file, 
+    /// thereby minimizing the need to directly interact with the SiiSaveGame class. The SiiSaveGame class 
+    /// is fully functional and operates effectively in the background. Thus, <b>the recommended approach is to 
+    /// primarily work with the UnitEntity class for any modifications.</b>
+    /// </summary>
     public class SiiSaveGame {
         private static readonly string unitIdPattern = "[_\\-\\.a-zA-Z0-9]+";
 
@@ -91,6 +104,10 @@ namespace ETS2SaveAutoEditor {
             }
         }
 
+        /// <summary>
+        /// This is one of two functions you'll be using to manipulate SII files. The other one is 'Entity'.
+        /// </summary>
+        /// <param name="lines">List of savegame lines in SII text format.</param>
         public SiiSaveGame(List<string> lines) {
             this.lines = lines;
 
@@ -98,6 +115,10 @@ namespace ETS2SaveAutoEditor {
             NormaliseSiiLists();
         }
 
+        /// <summary>
+        /// This is one of two functions you'll be using to manipulate SII files. The other one is 'Entity'.
+        /// </summary>
+        /// <param name="lines">Savegame string in SII text format.</param>
         public SiiSaveGame(string saveGame) : this(saveGame.Replace("\r\n", "\n").Split('\n').ToList()) {
 
         }
@@ -427,7 +448,9 @@ namespace ETS2SaveAutoEditor {
         }
 
         public UnitEntity[] GetAllPointers(string key) {
-            return (from item in GetArray(key) select Game.Entity(UnitIdSelector.Of(item, Target.LastFoundEnd))).ToArray();
+            var arr = GetArray(key);
+            if(arr == null) return Array.Empty<UnitEntity>();
+            return (from item in arr select Game.Entity(UnitIdSelector.Of(item, Target.LastFoundEnd))).ToArray();
         }
 
         // Shortcut methods for array manipulation
@@ -519,8 +542,27 @@ namespace ETS2SaveAutoEditor {
         }
     }
 
-    // This class is used to serialize and deserialize units. Note that this class doesn't handle the file format itself nor check the file format version. You should handle it before using this class. It is recommended to store and check the format version using the comment(+) at the top of the file.
+    /// <summary>
+    /// Provides methods for serializing and deserializing unit entities.
+    /// Note that this class does not handle the file format itself or check the file format version.
+    /// You should manage this externally, and it is recommended to store and verify the format version
+    /// using a comment (+) at the top of the file.
+    /// Serialized units are no longer tied to '_nameless' identifiers; new identifiers are generated upon deserialization.
+    /// The simple syntax of this format allows for easy manual editing.
+    /// </summary>
     public class UnitSerializer {
+        /// <summary>
+        /// Serializes a unit and its referenced subunits into a string representation.
+        /// </summary>
+        /// <param name="root">The root <see cref="UnitEntity"/> to serialize.</param>
+        /// <param name="knownPtrItems">
+        /// A set of known pointer items in the format "{unitType}:{key}".
+        /// This must be specified to serialize nested units; otherwise, they will be omitted.
+        /// For example, "economy:player" indicates that the 'player' unit should also be serialized.
+        /// 
+        /// There's one exception. If you pass knownPtrItems only with exactly 'AUTO', it will try to find pointers automatically by checking if the value starts with "_". But this is not recommended as it may cause issues.
+        /// </param>
+        /// <returns>A serialized string representing the unit and its subunits.</returns>
         public static string SerializeUnit(UnitEntity root, HashSet<string> knownPtrItems) {
             var builder = new StringBuilder();
 
@@ -528,6 +570,8 @@ namespace ETS2SaveAutoEditor {
             Stack<Tuple<UnitEntity, int>> serializationQueue = new();
             serializationQueue.Push(new(root, 0));
             unitIdMapping[root.Id] = 0;
+
+            var findPointers = knownPtrItems.Count == 1 && knownPtrItems.Contains("AUTO");
 
             while (serializationQueue.Count > 0) {
                 var it = serializationQueue.Pop();
@@ -560,7 +604,7 @@ namespace ETS2SaveAutoEditor {
 
                         for (int i = 0; i < value.array.Length; i++) {
                             var v = value.array[i];
-                            if (isPointer && v.StartsWith("_")) {
+                            if ((isPointer || findPointers) && v.StartsWith("_")) {
                                 builder.Append($"    PTR {serializeSubunit(v):D6}\n");
                             } else {
                                 builder.Append($"    VAL {v}\n");
@@ -570,7 +614,7 @@ namespace ETS2SaveAutoEditor {
                         builder.Append($"  ITEM {key}\n");
 
                         var v = value.value;
-                        if (isPointer && v.StartsWith("_")) {
+                        if ((isPointer || findPointers) && v.StartsWith("_")) {
                             builder.Append($"    PTR {serializeSubunit(v):D6}\n");
                         } else {
                             builder.Append($"    VAL {v}\n");
@@ -589,6 +633,15 @@ namespace ETS2SaveAutoEditor {
             return builder.ToString();
         }
 
+        /// <summary>
+        /// Deserializes unit data from a string and inserts the units into the game after a specified unit.
+        /// </summary>
+        /// <param name="after">The <see cref="UnitEntity"/> after which the new units will be inserted.</param>
+        /// <param name="data">The serialized data string representing units to be deserialized.</param>
+        /// <returns>An array of <see cref="UnitEntity"/> objects that were deserialized and inserted.</returns>
+        /// <exception cref="Exception">
+        /// Thrown when the data format is invalid or an error occurs during deserialization.
+        /// </exception>
         public static UnitEntity[] DeserializeUnit(UnitEntity after, string data) {
             var lines = data.Split('\n');
             if (lines.Length < 2) {

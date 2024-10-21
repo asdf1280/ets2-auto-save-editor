@@ -23,7 +23,7 @@ namespace ETS2SaveAutoEditor {
     }
 
     public class PositionCodeEncoder {
-        private static readonly int POSITION_DATA_VERSION = 2;
+        private static readonly int POSITION_DATA_VERSION = 3;
 
         public static string EncodePositionCode(PositionData data) {
             MemoryStream ms1 = new MemoryStream();
@@ -60,6 +60,7 @@ namespace ETS2SaveAutoEditor {
 
             // Compatibility layer
             int version = bs1.ReadInt32();
+            bool forceReverseFloat = false;
             if (version != POSITION_DATA_VERSION && version != 1) {
                 //if (version == 3 || version == 4) {
                 //    return DecodePositionCodeV3V4(encoded);
@@ -71,6 +72,10 @@ namespace ETS2SaveAutoEditor {
                 //        Positions = v2Positions
                 //    };
                 //}
+                if(version == 2) {
+                    // This version is known to have wrong-endian encoding. So we'll reverse the float.
+                    forceReverseFloat = true;
+                }
                 throw new IOException("incompatible version");
             }
 
@@ -84,7 +89,15 @@ namespace ETS2SaveAutoEditor {
             float[] receivePlacement() {
                 float[] result = new float[7];
                 for (int i = 0; i < 7; i++) {
-                    result[i] = bs2.ReadSingle();
+                    if(forceReverseFloat) {
+                        // Read 4 bytes, reverse, convert to float
+                        byte[] bytes = bs2.ReadBytes(4);
+                        if (BitConverter.IsLittleEndian) // Bytes are stored in big-endian format hex string.
+                            bytes = bytes.Reverse().ToArray();
+                        result[i] = BitConverter.ToSingle(bytes, 0);
+                    } else {
+                        result[i] = bs2.ReadSingle();
+                    }
                 }
                 return result;
             }
@@ -109,6 +122,8 @@ namespace ETS2SaveAutoEditor {
                 for (int i = 0; i < 4; i++) {
                     bytes[i] = byte.Parse(data.Substring(i * 2 + 1, 2), System.Globalization.NumberStyles.HexNumber);
                 }
+                if (BitConverter.IsLittleEndian) // Bytes are stored in big-endian format hex string.
+                    bytes = bytes.Reverse().ToArray();
                 return BitConverter.ToSingle(bytes, 0);
             } else {
                 return float.Parse(data);
@@ -117,6 +132,8 @@ namespace ETS2SaveAutoEditor {
 
         public static string EncodeScsFloat(float value) {
             byte[] bytes = BitConverter.GetBytes(value);
+            if(BitConverter.IsLittleEndian) // Bytes should be stored in big-endian format hex string.
+                bytes = bytes.Reverse().ToArray();
             string hexString = BitConverter.ToString(bytes).Replace("-", "").ToLower();
             return "&" + hexString;
         }
@@ -130,6 +147,17 @@ namespace ETS2SaveAutoEditor {
         public static string EncodeSCSPosition(float[] data) {
             var data0 = (from d in data select EncodeScsFloat(d)).ToArray();
             return $"({data0[0]}, {data0[1]}, {data0[2]}) ({data0[3]}; {data0[4]}, {data0[5]}, {data0[6]})";
+        }
+
+        public static string EncodeDecimalPosition(float[] data) {
+            if (data.Length != 7) {
+                throw new ArgumentException("Invalid data length");
+            }
+
+            // The float data is decoded in the wrong endian format, due to my mistake in the initial implementation. Therefore, the data must be reversed.
+            var data0 = (from d in data select BitConverter.GetBytes(d).Reverse()).SelectMany(d => d).ToArray();
+
+            return $"({data[0]}, {data[1]}, {data[2]}) ({data[3]}; {data[4]}, {data[5]}, {data[6]})";
         }
     }
 

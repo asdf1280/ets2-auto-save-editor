@@ -49,7 +49,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.28.2";
+        public static string Version = "1.28.4";
 
         private SaveeditTasks tasks;
 
@@ -69,6 +69,7 @@ namespace ETS2SaveAutoEditor {
             addAction(tasks.SharePosition());
             addAction(tasks.ImportPosition());
             addAction(tasks.ReducePosition());
+            addAction(tasks.DecodePosition());
             addAction(tasks.ConnectTrailerInstantly());
             addAction(tasks.VehicleSharingTool(currentGame));
             addAction(tasks.SpecialCCTask());

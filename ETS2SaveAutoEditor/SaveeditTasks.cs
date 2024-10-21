@@ -223,12 +223,12 @@ namespace ETS2SaveAutoEditor {
 
                     List<float[]> positions = new List<float[]>();
 
-                    string truckPlacement = player.Get("truck_placement").value;
+                    string truckPlacement = player.GetValue("truck_placement");
                     positions.Add(SCSSpecialString.DecodeSCSPosition(truckPlacement));
 
-                    var trailerAssigned = player.Get("assigned_trailer").value != "null";
+                    var trailerAssigned = player.GetValue("assigned_trailer") != "null";
                     if (trailerAssigned) {
-                        string trailerPlacement = player.Get("trailer_placement").value;
+                        string trailerPlacement = player.GetValue("trailer_placement");
                         positions.Add(SCSSpecialString.DecodeSCSPosition(trailerPlacement));
                     }
 
@@ -239,7 +239,7 @@ namespace ETS2SaveAutoEditor {
                         }
                     }
 
-                    var trailerConnected = player.Get("assigned_trailer_connected").value == "true";
+                    var trailerConnected = player.GetValue("assigned_trailer_connected") == "true";
                     if (positions.Count == 1) trailerConnected = true;
 
                     string encodedData = PositionCodeEncoder.EncodePositionCode(new PositionData {
@@ -339,6 +339,30 @@ namespace ETS2SaveAutoEditor {
             };
         }
 
+        public SaveEditTask DecodePosition() {
+            var run = new Action(() => {
+                try {
+                    var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
+                    var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeDecimalPosition(a)).ToArray();
+
+                    Clipboard.SetText(string.Join("\n", decoded) + "\ntrailer_connected: " + (positionData.TrailerConnected ? "1" : "0"));
+                    MessageBox.Show($"The decoded position data was copied to clipboard!\nNumber of vehicles in the code: {decoded.Length}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
+                } catch (Exception e) {
+                    if (e.Message == "incompatible version") {
+                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                    } else {
+                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                    }
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask {
+                name = "Decode Player Position",
+                run = run,
+                description = "Decodes the shared player position data in the current clipboard to a human-readable decimal format. Units are in meters."
+            };
+        }
+
         public SaveEditTask ConnectTrailerInstantly() {
             var run = new Action(() => {
                 try {
@@ -386,9 +410,22 @@ namespace ETS2SaveAutoEditor {
             const string AseVehicleFormat = "1";
             var run = new Action(() => {
                 while (true) {
-                    var choice = ListInputBox.Show("Vehicle Sharing", "WARNING: Importing an imcompatible vehicle (DLC, MOD, or incompatible version) will break your save. Click 'Cancel' to close this window.", new string[] { "Share Truck", "Share Trailer", "Import Vehicle" });
+                    var choice = ListInputBox.Show("Vehicle Sharing", "WARNING: Importing an imcompatible vehicle (DLC, MOD, or incompatible version) will break your save. Click 'Cancel' to close this window.", new string[] { "Share Truck", "Share Trailer", "Import Vehicle"/*, "Don't use this"*/ });
                     if (choice == -1) break;
 
+                    if (choice == 3) { // Export the whole save. For testing only.
+                        var economy = saveGame.EntityType("economy");
+                        var vehicleStr = UnitSerializer.SerializeUnit(economy, new HashSet<string> { "AUTO" });
+
+                        var d = new SaveFileDialog() {
+                            Title = "Save Economy",
+                            Filter = "ASE Unit Data (*.asu)|*.asu|All files (*.*)|*.*",
+                            FilterIndex = 0,
+                        };
+                        if (d.ShowDialog() != true) continue;
+
+                        File.WriteAllText(d.FileName, vehicleStr, Encoding.UTF8);
+                    }
                     if (choice == 0) { // Export truck
                         var player = saveGame.EntityType("player");
 

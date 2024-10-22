@@ -531,23 +531,6 @@ namespace ETS2SaveAutoEditor {
         }
     }
 
-    public class UnitEntityWrapper {
-        protected readonly UnitEntity e;
-        public UnitEntityWrapper(UnitEntity e) {
-            this.e = e;
-        }
-    }
-
-    public class UnitPlayerWrapper : UnitEntityWrapper {
-        public UnitPlayerWrapper(UnitEntity e) : base(e) {
-        }
-
-        public void SetActiveTrailer(string id) {
-            e.Set("my_trailer", id);
-            e.Set("assigned_trailer", id);
-        }
-    }
-
     /// <summary>
     /// Provides methods for serializing and deserializing unit entities.
     /// Note that this class does not handle the file format itself or check the file format version.

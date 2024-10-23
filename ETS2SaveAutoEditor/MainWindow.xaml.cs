@@ -67,10 +67,9 @@ namespace ETS2SaveAutoEditor {
     public partial class MainWindow : Window {
         public static string Version = "1.29";
 
-        private SaveeditTasks tasks;
+        private SaveeditTasks tasks = new();
 
         private void LoadTasks() {
-            tasks = new SaveeditTasks();
             TaskList.Items.Clear();
 
             var addAction = new Action<SaveEditTask>((t) => {
@@ -235,10 +234,10 @@ namespace ETS2SaveAutoEditor {
         }
 
         private void LoadSaveFile(string path) {
-            var onEnd = new Action<string>((string str) => {
-                var save = (ProfileSave)SaveList.SelectedItem;
+            var save = (ProfileSave)SaveList.SelectedItem;
+            var onEnd = new Action<string?>((string? str) => {
+                if (str is null) return;
                 save.content = str;
-                tasks.SetSaveFile(save);
 
                 ShowTasks(true);
                 EnableAll();
@@ -261,12 +260,16 @@ namespace ETS2SaveAutoEditor {
                 var saveFile = File.ReadAllText(gameSiiPath, Encoding.UTF8).Replace("\r", "");
 
                 if (!saveFile.StartsWith("SiiNunit")) {
-                    MessageBox.Show("The savegame is corrupted.", "Load failure");
-                    Dispatcher.Invoke(onEnd);
+                    Dispatcher.Invoke(() => {
+                        MessageBox.Show("The savegame is corrupted.", "Load failure");
+                        Dispatcher.Invoke(onEnd, null);
+                    });
                     return;
                 }
 
                 Dispatcher.Invoke(onEnd, saveFile);
+
+                tasks.SetSaveFile(save);
             }).Start();
         }
 
@@ -374,10 +377,10 @@ namespace ETS2SaveAutoEditor {
 
             DisableAll();
             ProfileChanged(true);
-            var newItem = e.AddedItems[0].ToString();
+            var newItem = e.AddedItems[0]!.ToString()!;
             if (pNameAndPaths.ContainsKey(newItem)) {
                 if (Directory.Exists(currentGamePath + @"\" + pNameAndPaths[newItem])) {
-                    if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString())) {
+                    if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString()!)) {
                         LoadSaves(currentGamePath + @"\" + pNameAndPaths[newItem] + @"\save");
                     }
                     return;
@@ -387,10 +390,10 @@ namespace ETS2SaveAutoEditor {
 
         private void RefreshSavegamesButtonPressed(object sender, RoutedEventArgs e) {
             ProfileChanged(true);
-            var newItem = ProfileList.SelectedItem.ToString();
+            var newItem = ProfileList.SelectedItem.ToString()!;
             if (pNameAndPaths.ContainsKey(newItem)) {
                 if (Directory.Exists(currentGamePath + @"\" + pNameAndPaths[newItem])) {
-                    if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString())) {
+                    if (pNameAndPaths.ContainsKey(ProfileList.SelectedItem.ToString()!)) {
                         LoadSaves(currentGamePath + @"\" + pNameAndPaths[newItem] + @"\save");
                     }
                     return;
@@ -446,7 +449,7 @@ namespace ETS2SaveAutoEditor {
                     AccelerationRatio = 0.5,
                     DecelerationRatio = 0.5
                 };
-                anim.Completed += (object s, EventArgs a) => displayAnim();
+                anim.Completed += (object? s, EventArgs a) => displayAnim();
                 if (TaskDescription.Text == "") {
                     displayAnim();
                 } else {
@@ -461,18 +464,18 @@ namespace ETS2SaveAutoEditor {
             SavegameChanged(true);
             DisableAll();
             var ps = (ProfileSave)SaveList.SelectedItem;
-            LoadSaveFile(currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
+            LoadSaveFile(currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()!] + @"\save" + "\\" + ps.directory);
         }
 
         private void OpenFolder_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) {
             var ps = (ProfileSave)SaveList.SelectedItem;
-            Process.Start("explorer.exe", currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
+            Process.Start("explorer.exe", currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()!] + @"\save" + "\\" + ps.directory);
         }
 
         private void StartTaskButton_Click(object sender, RoutedEventArgs e) {
             ((SaveEditTask)TaskList.SelectedItem).run();
             var ps = (ProfileSave)SaveList.SelectedItem;
-            LoadSaveFile(currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()] + @"\save" + "\\" + ps.directory);
+            LoadSaveFile(currentGamePath + @"\" + pNameAndPaths[ProfileList.SelectedItem.ToString()!] + @"\save" + "\\" + ps.directory);
         }
 
         private void GameChanged(bool animate) {
@@ -481,7 +484,7 @@ namespace ETS2SaveAutoEditor {
                 var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.1))) {
                     AccelerationRatio = 1
                 };
-                anim.Completed += (object sender, EventArgs e) => {
+                anim.Completed += (object? sender, EventArgs e) => {
                     ProfileList.Visibility = Visibility.Hidden;
                 };
                 ProfileList.BeginAnimation(OpacityProperty, anim);
@@ -498,7 +501,7 @@ namespace ETS2SaveAutoEditor {
                 var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.1))) {
                     AccelerationRatio = 1
                 };
-                anim.Completed += (object sender, EventArgs e) => {
+                anim.Completed += (object? sender, EventArgs e) => {
                     SaveListPanel.Visibility = Visibility.Hidden;
                     SaveInfo.Visibility = Visibility.Collapsed;
                 };
@@ -517,7 +520,7 @@ namespace ETS2SaveAutoEditor {
                 var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.1))) {
                     AccelerationRatio = 1
                 };
-                anim.Completed += (object sender, EventArgs e) => {
+                anim.Completed += (object? sender, EventArgs e) => {
                     TaskListPanel.Visibility = Visibility.Hidden;
                     ExecuteButton.Visibility = Visibility.Hidden;
                 };
@@ -550,7 +553,7 @@ namespace ETS2SaveAutoEditor {
                 var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5))) {
                     DecelerationRatio = 1
                 };
-                anim0.Completed += (object sender, EventArgs e) => {
+                anim0.Completed += (object? sender, EventArgs e) => {
                     ProfileList.Effect = null;
                 };
                 blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
@@ -576,7 +579,7 @@ namespace ETS2SaveAutoEditor {
                 var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5))) {
                     DecelerationRatio = 1
                 };
-                anim0.Completed += (object sender, EventArgs e) => {
+                anim0.Completed += (object? sender, EventArgs e) => {
                     SaveListPanel.Effect = null;
                 };
                 blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
@@ -602,7 +605,7 @@ namespace ETS2SaveAutoEditor {
                 var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5))) {
                     DecelerationRatio = 1
                 };
-                anim0.Completed += (object sender, EventArgs e) => {
+                anim0.Completed += (object? sender, EventArgs e) => {
                     SaveListPanel.Effect = null;
                 };
                 blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);

@@ -12,6 +12,8 @@ namespace ETS2SaveAutoEditor.Utils {
             LinkedList<Entity2> queue = new();
             queue.AddLast(unit);
 
+            var game = unit.Unit.Parent;
+
             bool findPointers = knownPtrItems.Count == 1 && knownPtrItems.Contains("AUTO");
 
             while (queue.Count > 0) {
@@ -26,13 +28,13 @@ namespace ETS2SaveAutoEditor.Utils {
                         for (int i = 0; i < arr.Count; i++) {
                             var v = arr[i];
                             if ((isPointer || findPointers) && v.StartsWith("_")) {
-                                queue.AddLast(new Entity2(unit.Unit.Parent[v]));
+                                queue.AddLast(new Entity2(game[v]));
                             }
                         }
                     } else {
                         var v = entity.GetValue(key);
                         if ((isPointer || findPointers) && v.StartsWith("_")) {
-                            queue.AddLast(new Entity2(unit.Unit.Parent[v]));
+                            queue.AddLast(new Entity2(game[v]));
                         }
                     }
                 }

@@ -1068,13 +1068,11 @@ END
                     var economy = saveGame.EntityType("economy")!;
                     var player = saveGame.EntityType("player")!;
 
-                    var currentJobId = player.GetValue("current_job");
-                    if (currentJobId == "null") {
+                    // Current job unit
+                    if(!player.TryGetPointer("current_job", out Entity2? job)) {
                         MessageBox.Show("You don't have any job now.", "Error");
                         return;
                     }
-                    // Current job unit
-                    var job = saveGame[currentJobId];
 
                     // Job truck
                     var currentTruckId = player.GetValue("assigned_truck");
@@ -1161,6 +1159,7 @@ END
                     }
 
                     // Delete the job and reset navigation
+                    CommonEdits.DeleteUnitRecursively(job, []);
                     player.Set("current_job", "null");
                     DestroyNavigationData(economy);
 

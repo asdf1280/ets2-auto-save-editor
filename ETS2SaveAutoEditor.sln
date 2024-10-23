@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ETS2SaveAutoEditor", "ETS2SaveAutoEditor\ETS2SaveAutoEditor.csproj", "{398A428C-0E9A-4AB6-9D4B-D39C3FD5A46C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASE", "ETS2SaveAutoEditor\ASE.csproj", "{398A428C-0E9A-4AB6-9D4B-D39C3FD5A46C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

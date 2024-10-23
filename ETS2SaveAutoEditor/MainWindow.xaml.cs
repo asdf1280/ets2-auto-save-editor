@@ -114,7 +114,7 @@ namespace ETS2SaveAutoEditor {
             }
 
             void InstallSII(string message) {
-                var res = MessageBox.Show(message, "Installing requirements", MessageBoxButton.YesNo);
+                var res = MessageBox.Show(message, "Install the dependencies!", MessageBoxButton.YesNo);
                 if (res == MessageBoxResult.Yes) {
                     File.WriteAllBytes("SII_Decrypt.exe", Properties.Resources.SII_Decrypt);
                 } else {

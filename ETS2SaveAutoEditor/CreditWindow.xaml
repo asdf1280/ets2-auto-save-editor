@@ -11,11 +11,14 @@
         <RichTextBox VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" FontSize="18" IsDocumentEnabled="True" IsReadOnly="True">
             <FlowDocument>
                 <Section>
-                    <Paragraph FontSize="25" FontWeight="Bold" TextAlignment="Center">Truck Simulator Auto Save Editor</Paragraph>
-                    <Paragraph>© 2021 - 2023 K (Discord km0000) All rights reserved.
+                    <Paragraph FontSize="25" FontWeight="Bold" TextAlignment="Center">Truck Simulator Automatic Save Editor</Paragraph>
+                    <Paragraph>© 2021 - 2024 K (Discord km0000) All rights reserved.
                         <Bold>Please do not distribute!</Bold>
                         <LineBreak/>
                         <LineBreak/> The software is provided as is, and you're granted a limited, non-exclusive, non-transferable, and revocable license to use the software solely for its intended purpose. Any modification, redistribution, reverse engineering, or any other use not explicitly permitted in writing by the copyright holder is strictly prohibited. This license does not grant you any rights to sublicense, resell, or distribute the software in any form. Unauthorized use will result in the immediate termination of this license.
+                        <LineBreak/>
+                        <LineBreak/> Automatic Save Editor (ASE) is an open-source software. You can view the source code
+                        <Hyperlink NavigateUri="https://github.com/asdf1280/ets2-auto-save-editor" RequestNavigate="Hyperlink_RequestNavigate">here</Hyperlink> . However, ASE is distributed as proprietary software, and publishing any modifications requires special authorization from the author.
                         <LineBreak/>
                         <LineBreak/>
                         <Bold>Report of unauthorized distribution or violation of license</Bold>

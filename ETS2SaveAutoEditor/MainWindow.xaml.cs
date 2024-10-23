@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Linq;
+using ETS2SaveAutoEditor.Utils;
 
 namespace ETS2SaveAutoEditor {
 

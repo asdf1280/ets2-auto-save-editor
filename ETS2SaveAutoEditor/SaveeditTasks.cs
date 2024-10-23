@@ -1,6 +1,8 @@
-﻿using Microsoft.Win32;
+﻿using ETS2SaveAutoEditor.Utils;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -420,21 +422,40 @@ namespace ETS2SaveAutoEditor {
             const string AseVehicleFormat = "1";
             var run = new Action(() => {
                 while (true) {
-                    var choice = ListInputBox.Show("Vehicle Sharing", "WARNING: Importing an imcompatible vehicle (DLC, MOD, or incompatible version) will break your save. Click 'Cancel' to close this window.", new string[] { "Share Truck", "Share Trailer", "Import Vehicle"/*, "Don't use this"*/ });
+                    var choice = ListInputBox.Show("Vehicle Sharing", "WARNING: Importing an imcompatible vehicle (DLC, MOD, or incompatible version) will break your save. Click 'Cancel' to close this window.", new string[] { "Share Truck", "Share Trailer", "Import Vehicle", "Don't use this" });
                     if (choice == -1) break;
 
-                    if (choice == 3) { // Export the whole save. For testing only.
-                        var economy = saveGame.EntityType("economy");
-                        var vehicleStr = UnitSerializer.SerializeUnit(economy, new HashSet<string> { "AUTO" });
+                    if (choice == 3) { // SII2 reader test
+                        // Measure the execution time
+                        var sw = new Stopwatch();
+                        sw.Start();
 
-                        var d = new SaveFileDialog() {
-                            Title = "Save Economy",
-                            Filter = "ASE Unit Data (*.asu)|*.asu|All files (*.*)|*.*",
-                            FilterIndex = 0,
-                        };
-                        if (d.ShowDialog() != true) continue;
+                        SII2 reader = new(saveFile.content);
 
-                        File.WriteAllText(d.FileName, vehicleStr, Encoding.UTF8);
+                        sw.Stop();
+
+                        Console.WriteLine("Total entities: " + reader.Count);
+                        Console.WriteLine("First 5 units:");
+                        for (int i = 0; i < Math.Min(reader.Count, 5); i++) {
+                            var unit = reader[i];
+                            Console.WriteLine($"[{i}] {unit.Type} : {unit.Id} ({unit.Count} entries) {{");
+                            for (int j = 0; j < Math.Min(unit.Count, 5); j++) {
+                                Console.WriteLine($"  [{j}] {unit[j]}: {unit[unit[j]]}");
+                            }
+                            Console.WriteLine("}\n");
+                        }
+
+                        Console.WriteLine("SII2 Parsing complete. Elapsed: " + sw.ElapsedMilliseconds + "ms");
+                        Console.WriteLine("Trying to export the parsed SII to output.sii");
+
+                        sw.Restart();
+
+                        FileStream sr = new("output.sii", FileMode.Create);
+                        StreamWriter swr = new(sr, Encoding.UTF8);
+                        reader.WriteTo(swr);
+                        swr.Close();
+
+                        Console.WriteLine("Writing complete. Elapsed: " + sw.ElapsedMilliseconds + "ms");
                     }
                     if (choice == 0) { // Export truck
                         var player = saveGame.EntityType("player");

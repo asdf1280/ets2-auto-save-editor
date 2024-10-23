@@ -162,10 +162,30 @@ namespace ETS2SaveAutoEditor.Utils {
         }
     }
 
+    public class Compressor {
+        public static byte[] Compress(byte[] original) {
+            var ms = new MemoryStream();
+            var zs = new DeflateStream(ms, CompressionLevel.SmallestSize, false);
+            zs.Write(original, 0, original.Length);
+            zs.Close();
+            return ms.ToArray();
+        }
+
+        public static byte[] Decompress(byte[] encoded) {
+            var ms = new MemoryStream(encoded);
+            var zs = new DeflateStream(ms, CompressionMode.Decompress);
+            var ms2 = new MemoryStream();
+            zs.CopyTo(ms2);
+            zs.Close();
+            ms.Close();
+            return ms2.ToArray();
+        }
+    }
+
     internal class AESEncoder {
-        public static AESEncoder InstanceA = new AESEncoder("A42Twypl*H03FV9XFVrjLJATCyxrc2bsE2qUFFvII@&l5WIFmy", "6Jvp0*1a2#ROBzQ1B5L3vIWK4F#spys$Lmcv7q8p!L8zcRfL!p");
-        public static AESEncoder InstanceB = new AESEncoder("iU9SVr1mhkH%#I9LaZo4jjIBSl8X5u*cc2O0Ol%tjj4ahTwXr&", "7AaG#ZcoPJ@rF*eaLT!*@S2Zxc357W!6DcUYX63Wo*vRo44cdy");
-        public static AESEncoder InstanceC = new AESEncoder("Q1*ZlH1k%42^8KzhC*t2yN7NE&ZVGjufTEw3@6wu#%&YUi1i9R", "000000112");
+        public static AESEncoder InstanceA = new("A42Twypl*H03FV9XFVrjLJATCyxrc2bsE2qUFFvII@&l5WIFmy", "6Jvp0*1a2#ROBzQ1B5L3vIWK4F#spys$Lmcv7q8p!L8zcRfL!p");
+        public static AESEncoder InstanceB = new("iU9SVr1mhkH%#I9LaZo4jjIBSl8X5u*cc2O0Ol%tjj4ahTwXr&", "7AaG#ZcoPJ@rF*eaLT!*@S2Zxc357W!6DcUYX63Wo*vRo44cdy");
+        public static AESEncoder InstanceC = new("Q1*ZlH1k%42^8KzhC*t2yN7NE&ZVGjufTEw3@6wu#%&YUi1i9R", "000000112");
 
         private static byte[] GenerateLength(string rawString, int bytes) {
             var data = Encoding.UTF8.GetBytes(rawString);
@@ -203,51 +223,37 @@ namespace ETS2SaveAutoEditor.Utils {
             AES.Padding = PaddingMode.PKCS7;
         }
 
-        public string Encode(string original) {
+        public byte[] Encode(byte[] original) {
             var encryptor = AES.CreateEncryptor();
             var ms = new MemoryStream();
             var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
-            var zs = new DeflateStream(cs, CompressionLevel.Optimal, false);
-            var w = new StreamWriter(zs, Encoding.UTF8);
-            w.Write(original);
-            w.Close(); // Deflatestream must be closed to compress the data
-            zs.Close();
+            var zs = new DeflateStream(cs, CompressionLevel.Optimal);
+            zs.Write(original);
+            zs.Close(); // Deflatestream must be closed to compress the data
             cs.Close();
 
-            var data = HexEncoder.ByteArrayToHexString(ms.ToArray());
-            return data;
-        }
-
-        public string Decode(string hex) {
-            var array = HexEncoder.HexStringToByteArray(hex);
-
-            var decryptor = AES.CreateDecryptor();
-            var ms = new MemoryStream(array);
-            var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-            var zs = new DeflateStream(cs, CompressionMode.Decompress);
-            var data = new StreamReader(zs, Encoding.UTF8).ReadToEnd();
-            zs.Close();
-            cs.Close();
-            ms.Close();
-            return data;
-        }
-
-        public byte[] BEncode(byte[] original) {
-            var ms = new MemoryStream();
-            var zs = new DeflateStream(ms, CompressionLevel.Optimal, false);
-            zs.Write(original, 0, original.Length);
-            zs.Close();
             return ms.ToArray();
         }
 
-        public byte[] BDecode(byte[] encoded) {
+        public string Encode(string original) {
+            return HexEncoder.ByteArrayToHexString(Encode(Encoding.UTF8.GetBytes(original)));
+        }
+
+        public byte[] Decode(byte[] encoded) {
+            var decryptor = AES.CreateDecryptor();
             var ms = new MemoryStream(encoded);
-            var zs = new DeflateStream(ms, CompressionMode.Decompress);
+            var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
+            var zs = new DeflateStream(cs, CompressionMode.Decompress);
+
             var ms2 = new MemoryStream();
             zs.CopyTo(ms2);
+
             zs.Close();
-            ms.Close();
             return ms2.ToArray();
+        }
+
+        public string Decode(string encoded) {
+            return Encoding.UTF8.GetString(Decode(HexEncoder.HexStringToByteArray(encoded)));
         }
     }
 }

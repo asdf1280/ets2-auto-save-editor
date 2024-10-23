@@ -1,4 +1,5 @@
-﻿using ETS2SaveAutoEditor.Utils;
+﻿using ETS2SaveAutoEditor.SII2Parser;
+using ETS2SaveAutoEditor.Utils;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -6,37 +7,37 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Runtime.Intrinsics.X86;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace ETS2SaveAutoEditor {
     public class SaveeditTasks {
         public void SetSaveFile(ProfileSave file) {
             saveFile = file;
-            saveGame = new SiiSaveGame(file.content);
-            saveFile.Save(saveGame.ToString());
+            saveGame = new(new SII2(saveFile.content));
         }
+
+#pragma warning disable CS8618
         private ProfileSave saveFile;
-        private SiiSaveGame saveGame;
+        private Game2 saveGame;
+#pragma warning restore CS8618
 
         public SaveEditTask MoneySet() {
             var run = new Action(() => {
                 try {
-                    var bank = saveGame.EntityType("bank");
-                    var currentBank = bank.Get("money_account").value;
+                    var bank = saveGame.EntityType("bank")!;
+                    var currentBank = bank.GetValue("money_account");
 
-                    var specifiedCash = NumberInputBox.Show("Specify cash", "Please specify the new cash.\nCurrent cash: " + currentBank + "\nCaution: Too high value may crash the game. Please be careful.");
+                    var specifiedCash = NumberInputBox.Show("Specify cash", "Please specify the new cash.\nCurrent balance: " + currentBank + "\nCaution: Too high value may crash the game. Please be careful.");
 
                     if (specifiedCash == -1) {
                         return;
                     }
 
                     bank.Set("money_account", specifiedCash.ToString());
-                    saveFile.Save(saveGame.MergeResult());
+                    saveFile.Save(saveGame);
                     MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An error occured.", "Error");
@@ -53,8 +54,8 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ExpSet() {
             var run = new Action(() => {
                 try {
-                    var economy = saveGame.EntityType("economy");
-                    var currentExp = economy.Get("experience_points").value;
+                    var economy = saveGame.EntityType("economy")!;
+                    var currentExp = economy.GetValue("experience_points");
 
                     var specifiedExp = NumberInputBox.Show("Specify EXP", "Please specify the new exps.\nCurrent exps: " + currentExp + "\nCaution: Too high value may crash the game. Please be careful.");
 
@@ -63,7 +64,7 @@ namespace ETS2SaveAutoEditor {
                     }
 
                     economy.Set("experience_points", specifiedExp.ToString());
-                    saveFile.Save(saveGame.MergeResult());
+                    saveFile.Save(saveGame);
                     MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
@@ -80,7 +81,7 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask UnlockScreens() {
             var run = new Action(() => {
                 try {
-                    var economy = saveGame.EntityType("economy");
+                    var economy = saveGame.EntityType("economy")!;
 
                     var msgBoxRes = MessageBox.Show("Unlock GUIs such as skills. This can even unlock some items which is supposed to be disabled. Would you like to proceed?", "Unlock", MessageBoxButton.OKCancel);
                     if (msgBoxRes == MessageBoxResult.Cancel) {
@@ -88,7 +89,7 @@ namespace ETS2SaveAutoEditor {
                     }
 
                     economy.Set("screen_access_list", "0");
-                    saveFile.Save(saveGame.ToString());
+                    saveFile.Save(saveGame);
                     MessageBox.Show("Done!", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
@@ -105,8 +106,8 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask TruckEngineSet() {
             var run = new Action(() => {
                 try {
-                    var player = saveGame.EntityType("player");
-                    var assignedTruckId = player.Get("assigned_truck").value;
+                    var player = saveGame.EntityType("player")!;
+                    var assignedTruckId = player.GetValue("assigned_truck");
 
                     if (assignedTruckId == "null") {
                         MessageBox.Show("You're not driving a truck now.", "Error");
@@ -134,15 +135,15 @@ namespace ETS2SaveAutoEditor {
                         enginePath = enginePaths[res];
                     }
 
-                    var truck = player.EntityIdAround(assignedTruckId);
+                    var truck = saveGame[assignedTruckId];
                     var accessories = truck.GetAllPointers("accessories");
                     foreach (var accessory in accessories) {
-                        if (Regex.IsMatch(accessory.Get("data_path").value, @"""\/def\/vehicle\/truck\/[^/]+?\/engine\/")) {
+                        if (Regex.IsMatch(accessory.GetValue("data_path"), @"""\/def\/vehicle\/truck\/[^/]+?\/engine\/")) {
                             accessory.Set("data_path", $"\"{enginePath}\"");
                         }
                     }
 
-                    saveFile.Save(saveGame.ToString());
+                    saveFile.Save(saveGame);
                     MessageBox.Show("Successfully changed!", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unexpected error occured.", "Error");
@@ -159,15 +160,17 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask Refuel() {
             var run = new Action(() => {
                 try {
-                    var player = saveGame.EntityType("player");
-                    if (player.Get("assigned_truck").value == "null") {
+                    var player = saveGame.EntityType("player")!;
+
+                    Entity2 assignedTruck;
+                    if (!player.TryGetPointer("assigned_truck", out assignedTruck!)) {
                         MessageBox.Show("You don't have any truck assigned.", "Done");
+                        return;
                     }
 
-                    var assignedTruckObj = player.GetPointer("assigned_truck");
-                    assignedTruckObj.Set("fuel_relative", "1");
+                    assignedTruck.Set("fuel_relative", "1");
 
-                    saveFile.Save(saveGame.ToString());
+                    saveFile.Save(saveGame);
                     MessageBox.Show("Done", "Done");
                 } catch (Exception e) {
                     MessageBox.Show("An unknown error occured.", "Error");
@@ -221,9 +224,9 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask SharePosition() {
             var run = new Action(() => {
                 try {
-                    var player = saveGame.EntityType("player");
+                    var player = saveGame.EntityType("player")!;
 
-                    List<float[]> positions = new List<float[]>();
+                    List<float[]> positions = [];
 
                     string truckPlacement = player.GetValue("truck_placement");
                     positions.Add(SCSSpecialString.DecodeSCSPosition(truckPlacement));
@@ -234,9 +237,8 @@ namespace ETS2SaveAutoEditor {
                         positions.Add(SCSSpecialString.DecodeSCSPosition(trailerPlacement));
                     }
 
-                    var slaveTrailers = player.Get("slave_trailer_placements");
-                    if (slaveTrailers.array != null) {
-                        foreach (var slave in slaveTrailers.array) {
+                    if (player.TryGetArray("slave_trailer_placements", out var slaveTrailers)) {
+                        foreach (var slave in slaveTrailers) {
                             positions.Add(SCSSpecialString.DecodeSCSPosition(slave));
                         }
                     }
@@ -272,7 +274,7 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ImportPosition() {
             var run = new Action(() => {
                 try {
-                    var player = saveGame.EntityType("player");
+                    var player = saveGame.EntityType("player")!;
 
                     var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
                     var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeSCSPosition(a)).ToArray();
@@ -292,9 +294,9 @@ namespace ETS2SaveAutoEditor {
 
                     player.Set("assigned_trailer_connected", positionData.TrailerConnected ? "true" : "false");
 
-                    DestroyNavigationData(saveGame.EntityType("economy"));
+                    DestroyNavigationData(saveGame.EntityType("economy")!);
 
-                    saveFile.Save(saveGame.ToString());
+                    saveFile.Save(saveGame);
                     MessageBox.Show($"Successfully imported the position code!\nNumber of vehicles in the code: {decoded.Count()}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
@@ -350,7 +352,7 @@ namespace ETS2SaveAutoEditor {
 
                     // xyz and quaternion
                     string res = "(x, y, z) (q1, q2, q3, q4)\nThe position is written as XYZ in meters, and rotation as quaternion.\n\n";
-                    for (int i=0; i<decoded.Length; i++) {
+                    for (int i = 0; i < decoded.Length; i++) {
                         if (i == 0) res += "Truck placement: ";
                         else res += $"Trailer {i} placement: ";
                         res += decoded[i] + "\n";
@@ -378,19 +380,19 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask ConnectTrailerInstantly() {
             var run = new Action(() => {
                 try {
-                    var economy = saveGame.EntityType("economy");
-                    var player = saveGame.EntityType("player");
+                    var economy = saveGame.EntityType("economy")!;
+                    var player = saveGame.EntityType("player")!;
 
-                    var truckPlacement = player.Get("truck_placement").value;
+                    var truckPlacement = player.GetValue("truck_placement");
                     player.Set("trailer_placement", truckPlacement);
                     player.Set("slave_trailer_placements", "0");
                     player.Set("assigned_trailer_connected", "true");
 
                     foreach (var item in economy.GetAllPointers("stored_gps_behind_waypoints")) {
-                        item.Delete();
+                        item.DeleteSelf();
                     }
                     foreach (var item in economy.GetAllPointers("stored_gps_ahead_waypoints")) {
-                        item.Delete();
+                        item.DeleteSelf();
                     }
                     economy.Set("stored_gps_behind_waypoints", "0");
                     economy.Set("stored_gps_ahead_waypoints", "0");
@@ -400,7 +402,7 @@ namespace ETS2SaveAutoEditor {
                     regData[0] = "0";
                     registry.Set("data", regData);
 
-                    saveFile.Save(saveGame.ToString());
+                    saveFile.Save(saveGame);
                     MessageBox.Show($"Success!", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
@@ -458,7 +460,11 @@ namespace ETS2SaveAutoEditor {
                         Console.WriteLine("Writing complete. Elapsed: " + sw.ElapsedMilliseconds + "ms");
                     }
                     if (choice == 0) { // Export truck
-                        var player = saveGame.EntityType("player");
+                        Stopwatch sw = new();
+                        sw.Start();
+                        Console.WriteLine($"[{sw.Elapsed.TotalNanoseconds}ns] Sharing truck...");
+
+                        var player = saveGame.EntityType("player")!;
 
                         var assignedTruck = player.GetPointer("assigned_truck");
                         if (assignedTruck == null) {
@@ -475,7 +481,10 @@ namespace ETS2SaveAutoEditor {
                             builder.Append("+\n");
                             headerStr = builder.ToString();
                         }
-                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTruck, new HashSet<string> { "vehicle:accessories" });
+                        Console.WriteLine($"[{sw.Elapsed.TotalNanoseconds}ns] Wrote the header");
+                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTruck, UnitSerializer.KNOWN_PTR_ITEMS_TRUCK);
+
+                        Console.WriteLine($"[{sw.Elapsed.TotalNanoseconds}ns] Serialized the truck. Opening the dialog...");
 
                         var d = new SaveFileDialog() {
                             Title = "Save Truck",
@@ -487,7 +496,7 @@ namespace ETS2SaveAutoEditor {
                         File.WriteAllText(d.FileName, headerStr + vehicleStr, Encoding.UTF8);
                     }
                     if (choice == 1) { // Export trailer
-                        var player = saveGame.EntityType("player");
+                        var player = saveGame.EntityType("player")!;
 
                         var assignedTrailer = player.GetPointer("assigned_trailer");
                         if (assignedTrailer == null) {
@@ -504,7 +513,7 @@ namespace ETS2SaveAutoEditor {
                             builder.Append("+\n");
                             headerStr = builder.ToString();
                         }
-                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTrailer, new HashSet<string> { "trailer:trailer_definition", "trailer:slave_trailer", "trailer:accessories" });
+                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTrailer, UnitSerializer.KNOWN_PTR_ITEMS_TRAILER);
 
                         var d = new SaveFileDialog() {
                             Title = "Save Trailer",
@@ -551,25 +560,30 @@ namespace ETS2SaveAutoEditor {
                             continue;
                         }
 
-                        var player = saveGame.EntityType("player");
-                        var entities = UnitSerializer.DeserializeUnit(player, text);
+                        var player = saveGame.EntityType("player")!;
+                        var entities = UnitSerializer.DeserializeUnit(text, saveGame);
+
+                        // Add entities to the savegame
+                        foreach (var entity in entities) {
+                            saveGame.Add(entity);
+                        }
 
                         // Finish up necessary things to prevent crash
-                        if(isTruck) {
+                        if (isTruck) {
                             // Add vehicle to truck list
                             // Add empty profit log entry
                             // Remind the user to assign it to a garage to prevent bugs that are confirmed to exist
 
-                            if (entities[0].Type != "vehicle") {
-                                MessageBox.Show($"Unexpected root node. Expected 'vehicle' got '{entities[0].Type}'.", "Error");
+                            if (entities[0].Unit.Type != "vehicle") {
+                                MessageBox.Show($"Unexpected root node. Expected 'vehicle' but got '{entities[0].Unit.Type}'.", "Error");
                                 continue;
                             }
 
-                            string truckId = entities[0].Id;
-                            string profitLogId = entities[0].Id + "0";
+                            string truckId = entities[0].Unit.Id;
+                            string profitLogId = entities[0].Unit.Id + "0";
                             player.ArrayAppend("trucks", truckId, true);
 
-                            var newLog = player.InsertAfter("profit_log", profitLogId);
+                            var newLog = saveGame.CreateNewUnit("profit_log", profitLogId);
                             newLog.Set("stats_data", "0");
                             newLog.Set("acc_distance_free", "0");
                             newLog.Set("acc_distance_on_job", "0");
@@ -582,23 +596,23 @@ namespace ETS2SaveAutoEditor {
                             // If 'entities' contains a trailer definition, add it to the list of trailer definitions
                             // Remind the user to assign it to a garage to prevent possible bugs
 
-                            if (entities[0].Type != "trailer") {
-                                MessageBox.Show($"Unexpected root node. Expected 'trailer' got '{entities[0].Type}'.", "Error");
+                            if (entities[0].Unit.Type != "trailer") {
+                                MessageBox.Show($"Unexpected root node. Expected 'trailer' but got '{entities[0].Unit.Type}'.", "Error");
                                 continue;
                             }
 
-                            string trailerId = entities[0].Id;
+                            string trailerId = entities[0].Unit.Id;
                             string trailerDefId = entities[0].GetValue("trailer_definition");
 
                             player.ArrayAppend("trailers", trailerId, true);
-                            if(trailerDefId.StartsWith("_")) {
+                            if (trailerDefId.StartsWith("_")) {
                                 player.ArrayAppend("trailer_defs", trailerDefId, true);
                             }
 
                             MessageBox.Show("Successfully imported the trailer!\n\nPlease assign the trailer to a garage to prevent possible bugs.", "Complete!");
                         }
 
-                        saveFile.Save(saveGame.ToString());
+                        saveFile.Save(saveGame);
                     }
                 }
             });
@@ -607,11 +621,6 @@ namespace ETS2SaveAutoEditor {
                 run = run,
                 description = "You can use this tool to easily share and import trucks and trailers without worrying about collisions and errors."
             };
-        }
-
-        class ASEVehicle {
-            public string[] Keys;
-            public string Data;
         }
 
         public SaveEditTask SpecialCCTask() {
@@ -662,64 +671,42 @@ END
                     if (res == -1) return;
                     if (res == 4) { // Export active vehicle
                         try {
-                            var economy = saveGame.EntityType("economy");
-                            var player = saveGame.EntityType("player");
+                            var economy = saveGame.EntityType("economy")!;
+                            var player = saveGame.EntityType("player")!;
 
                             var sb = new StringBuilder();
+                            sb.Append("ASE_VEHICLE\n");
 
-                            var assignedTruck = player.Get("assigned_truck").value;
-                            if (assignedTruck == "null") {
-                                MessageBox.Show("No truck is active.");
+                            Entity2 assignedTruck;
+                            if (!player.TryGetPointer("assigned_truck", out assignedTruck!)) {
+                                MessageBox.Show("You need to have an assigned truck.");
                                 return;
                             }
 
-                            var trailersToProcess = new List<string>();
-                            var nextTrailer = player.Get("assigned_trailer").value;
-                            while (nextTrailer != "null") {
-                                trailersToProcess.Add(nextTrailer);
-                                nextTrailer = player.EntityIdAround(nextTrailer).Get("slave_trailer").value;
+                            player.TryGetPointer("assigned_trailer", out Entity2? assignedTrailer);
+
+                            // Encode the vehicle into binary data
+                            MemoryStream memory = new();
+                            memory.WriteByte((byte)(assignedTrailer is not null ? 1 : 0));
+
+                            // Encode truck
+                            var vehicleStr = UnitSerializer.SerializeUnit(assignedTruck, UnitSerializer.KNOWN_PTR_ITEMS_TRUCK);
+                            byte[] buf = Encoding.UTF8.GetBytes(vehicleStr);
+                            memory.Write(ByteEncoder.EncodeUInt32((uint)buf.Length, ByteOrder.BigEndian));
+                            memory.Write(buf);
+
+                            // Encode trailer
+                            if (assignedTrailer is not null) {
+                                var trailerStr = UnitSerializer.SerializeUnit(assignedTrailer, UnitSerializer.KNOWN_PTR_ITEMS_TRAILER);
+                                buf = Encoding.UTF8.GetBytes(trailerStr);
+                                memory.Write(ByteEncoder.EncodeUInt32((uint)buf.Length, ByteOrder.BigEndian));
+                                memory.Write(buf);
                             }
 
-                            sb.AppendLine($"ASE_VEHICLE");
-
-                            var sb0 = new StringBuilder();
-                            sb0.AppendLine(trailersToProcess.Count + 1 + "");
-                            sb0.AppendLine(assignedTruck);
-                            foreach (var trailer in trailersToProcess) {
-                                sb0.AppendLine(trailer);
-                            }
-
-                            void recurseUnit(UnitEntity e) {
-                                sb0.AppendLine(e.GetFullString());
-
-                                var queue = new List<string>();
-                                if (e.Type == "vehicle") {
-                                    queue.AddRange(e.Get("accessories").array);
-                                } else if (e.Type == "trailer") {
-                                    string p = e.Get("trailer_definition").value;
-                                    if (p.StartsWith("_")) {
-                                        queue.Add(p);
-                                    }
-
-                                    queue.AddRange(e.Get("accessories").array);
-                                }
-
-                                queue.ForEach((v) => {
-                                    recurseUnit(e.EntityIdAround(v));
-                                });
-                            }
-
-                            recurseUnit(player.EntityIdAround(assignedTruck));
-
-                            foreach (var trailer in trailersToProcess) {
-                                recurseUnit(player.EntityIdAround(trailer));
-                            }
-
-                            {
-                                var aseVehicleData = AESEncoder.InstanceA.Encode(sb0.ToString());
-                                sb.Append(HexEncoder.ByteArrayToHexString(AESEncoder.GetDataChecksum(aseVehicleData)).Substring(0, 6));
-                                sb.AppendLine(aseVehicleData);
-                            }
+                            // Encode the data
+                            var finalData = AESEncoder.InstanceA.Encode(memory.ToArray());
+                            sb.Append(HexEncoder.ByteArrayToHexString(AESEncoder.GetDataChecksum(finalData))[0..6]);
+                            sb.AppendLine(HexEncoder.ByteArrayToHexString(finalData));
 
                             Clipboard.SetText(sb.ToString());
                         } catch (Exception e) {
@@ -757,37 +744,43 @@ END
                         var r = new BinaryReader(zs);
 
                         // Applying CC data to profile where a job is running will cause crash
-                        var srcPlayer = saveGame.EntityType("player");
-                        if (srcPlayer.Get("current_job").value != "null") {
+                        var srcPlayer = saveGame.EntityType("player")!;
+                        if (srcPlayer.GetValue("current_job") != "null") {
                             MessageBox.Show("You can't run this action with an active job in your save.");
                             return;
                         }
-
-                        // Injecting data into new saves
-                        var namelessIdent = $"_nameless.{DateTime.Now.Ticks % 100000:x}";
 
                         var vehicleCount = r.ReadInt32();
 
                         // Parsing data
                         // 1. vehicle data
-                        var vehicles = new List<ASEVehicle>();
+                        var vehicles = new List<(string[] keys, Entity2[] units)>();
                         for (int k = 0; k < vehicleCount; k++) {
-                            var vehicleData = AESEncoder.InstanceA.Decode(r.ReadString()).Replace("_nameless.", namelessIdent + k + ".");
-                            var vehicleLines = new List<string>(vehicleData.Split('\n'));
+                            // Decode the vehicle data
+                            var toRead = r.ReadUInt32();
+                            var buf = new byte[toRead];
+                            while (toRead > 0) {
+                                toRead -= (uint)r.Read(buf, 0, (int)toRead);
+                            }
+                            var r2 = new MemoryStream(AESEncoder.InstanceA.Decode(buf));
+                            bool hasTrailer = r.ReadByte() > 0;
 
-                            var obj = new ASEVehicle();
-                            var cnt = int.Parse(vehicleLines[0]);
-                            vehicleLines.RemoveAt(0);
+                            List<Entity2> units = [];
+                            string[] keys = new string[hasTrailer ? 2 : 1];
 
-                            var ids = new List<string>();
-                            for (int j = 0; j < cnt; j++) {
-                                ids.Add(vehicleLines[0].Trim());
-                                vehicleLines.RemoveAt(0);
+                            for (int i = 0; i < (hasTrailer ? 2 : 1); i++) {
+                                buf = new byte[4];
+                                r2.Read(buf, 0, 4);
+                                int len = (int)ByteEncoder.DecodeUInt32(buf, ByteOrder.BigEndian);
+
+                                buf = new byte[len];
+                                r2.Read(buf, 0, len);
+                                var a = UnitSerializer.DeserializeUnit(Encoding.UTF8.GetString(buf));
+                                units.AddRange(a);
+                                keys[i] = a[0].Unit.Id;
                             }
 
-                            obj.Keys = ids.ToArray();
-                            obj.Data = string.Join("\n", vehicleLines);
-                            vehicles.Add(obj);
+                            vehicles.Add((keys, [.. units]));
                         }
 
                         // 2. position data - inject as progresses
@@ -798,7 +791,8 @@ END
                         // loading info.sii too
                         var infoSiiPath = saveFile.fullPath + @"\info.sii";
                         var infoContent = File.ReadAllText(infoSiiPath);
-                        var infoGame = new SiiSaveGame(infoContent);
+                        var reader = new SII2(infoContent);
+                        var infoGame = new Game2(reader);
 
                         var startTime = DateTime.Now;
                         for (int k = 0; k < positionCount; k++) {
@@ -814,50 +808,44 @@ END
                             Directory.CreateDirectory(newPath);
 
                             // info.sii
-                            infoGame.EntityType("save_container").Set("name", $@"""{SCSSaveHexEncodingSupport.GetEscapedSaveName(saveName)}""");
+                            infoGame.EntityType("save_container")!.Set("name", $@"""{SCSSaveHexEncodingSupport.GetEscapedSaveName(saveName)}""");
                             File.WriteAllText(newPath + @"\info.sii", infoGame.ToString());
                             File.SetLastWriteTime(newPath + @"\info.sii", targetEditedDate);
 
                             // game.sii
-                            var cloned = new SiiSaveGame(saveToClone);
+                            SII2 clonedReader = new(saveToClone);
+                            Game2 cloned = new(clonedReader);
 
-                            var player = cloned.EntityType("player");
+                            cloned.AddAll(vehicleData.units);
+
+                            Entity2 player = cloned.EntityType("player")!;
 
                             // Add the vehicle to truck list
-                            {
-                                var trucks = player.Get("trucks").array ?? (new string[] { });
-                                {
-                                    var t = trucks.ToList();
-                                    t.Add(vehicleData.Keys[0]);
-                                    player.Set("trucks", t.ToArray());
-                                }
+                            player.ArrayAppend("trucks", vehicleData.keys[0]);
 
-                                player.Set("assigned_truck", vehicleData.Keys[0]);
-                                player.Set("my_truck", vehicleData.Keys[0]);
+                            // Activate the truck
+                            player.Set("assigned_truck", vehicleData.keys[0]);
+                            player.Set("my_truck", vehicleData.keys[0]);
 
-                                // Prevent game CTD bug
-                                player.ArrayAppend("truck_profit_logs", $"{namelessIdent}.aaaa.bbbb.000");
-                            }
+                            // Prevent game CTD bug
+                            string dummyPfLogId = cloned.GenerateNewID();
+                            player.ArrayAppend("truck_profit_logs", dummyPfLogId);
+                            var u = cloned.CreateNewUnit("profit_log", dummyPfLogId);
+                            u.Set("stats_data", "0");
+                            u.Set("acc_distance_free", "0");
+                            u.Set("acc_distance_on_job", "0");
+                            u.Set("history_age", "nil");
 
-                            if (vehicleData.Keys.Length >= 2) { // Add the vehicle to trailer list
-                                var trailers = player.Get("trailers").array ?? (new string[] { });
-                                {
-                                    var t = trailers.ToList();
-                                    t.Add(vehicleData.Keys[1]);
-                                    player.Set("trailers", t.ToArray());
-                                }
+                            if (vehicleData.keys.Length == 2) { // Add the vehicle to trailer list
+                                player.ArrayAppend("trailers", vehicleData.keys[1], true);
 
-                                player.Set("assigned_trailer", vehicleData.Keys[1]);
-                                player.Set("my_trailer", vehicleData.Keys[1]);
+                                player.Set("assigned_trailer", vehicleData.keys[1]);
+                                player.Set("my_trailer", vehicleData.keys[1]);
 
-                                var p = new Regex(@"trailer_definition: (.+?)\r?\n");
-                                if (p.Matches(vehicleData.Data)[0].Groups[1].Value.StartsWith("_nameless")) {
-                                    var trailerDefs = player.Get("trailer_defs").array ?? (new string[] { });
-                                    {
-                                        var t = trailerDefs.ToList();
-                                        t.Add(p.Matches(vehicleData.Data)[0].Groups[1].Value);
-                                        player.Set("trailer_defs", t.ToArray());
-                                    }
+                                string trailerDefId = (from a in vehicleData.units where a.Unit.Id == vehicleData.keys[1] select a).First().GetValue("trailer_definition");
+
+                                if (trailerDefId.StartsWith('_')) {
+                                    player.ArrayAppend("trailer_defs", trailerDefId, true);
                                 }
                             } else {
                                 player.Set("assigned_trailer", "null");
@@ -882,18 +870,6 @@ END
                                 }
 
                                 player.Set("assigned_trailer_connected", positionData.TrailerConnected ? "true" : "false");
-                            }
-
-                            cloned.Lines.Insert(player.ResolvedUnit.end + 1, vehicleData.Data);
-                            // Prevent game CTD bug - dummy profit log
-                            // Append profit log entry
-                            {
-                                var kk = player.InsertAfter("profit_log", $"{namelessIdent}.aaaa.bbbb.000");
-                                var newLog = kk;
-                                newLog.Set("stats_data", "0");
-                                newLog.Set("acc_distance_free", "0");
-                                newLog.Set("acc_distance_on_job", "0");
-                                newLog.Set("history_age", "nil");
                             }
 
                             File.WriteAllText(newPath + @"\game.sii", cloned.ToString());
@@ -948,7 +924,7 @@ END
                                 MessageBox.Show($"Compile error: {message}\n\n{trace}\nAborting!", "Compile error!", MessageBoxButton.OK);
                             }
 
-                            var vehicles = new List<string>();
+                            var vehicles = new List<byte[]>();
                             var positions = new List<CCDataPosition>();
 
                             try {
@@ -975,14 +951,14 @@ END
                                     }
 
                                     // Next line - Checksum and vehicle data
-                                    var cs = lines[i].Substring(0, 6);
-                                    var vdHex = lines[i].Substring(6);
-                                    if (HexEncoder.ByteArrayToHexString(AESEncoder.GetDataChecksum(vdHex)).Substring(0, 6) != cs) {
+                                    var checksum = lines[i][0..6];
+                                    var vehicleDataHex = lines[i][6..];
+                                    if (HexEncoder.ByteArrayToHexString(AESEncoder.GetDataChecksum(HexEncoder.HexStringToByteArray(vehicleDataHex)))[0..6] != checksum) {
                                         WrongFormat("Corrupted vehicle data. Checksum failed.");
                                         return;
                                     }
 
-                                    vehicles.Add(vdHex);
+                                    vehicles.Add(HexEncoder.HexStringToByteArray(vehicleDataHex)); // Exclude the checksum because there will be one for the whole data
 
                                     i++;
                                 }
@@ -1036,10 +1012,11 @@ END
                                 var ms = new MemoryStream();
                                 var cs = new CryptoStream(ms, AESEncoder.InstanceB.AES.CreateEncryptor(), CryptoStreamMode.Write);
                                 var zs = new DeflateStream(ms, CompressionLevel.Optimal);
-                                var w = new BinaryWriter(zs);
+                                var w = new BinaryWriter(zs, Encoding.UTF8);
 
                                 w.Write(vehicles.Count);
                                 for (int k = 0; k < vehicles.Count; k++) {
+                                    w.Write((uint)vehicles[k].Length);
                                     w.Write(vehicles[k]);
                                 }
 
@@ -1088,16 +1065,16 @@ END
         public SaveEditTask StealCompanyTrailer() {
             var run = new Action(() => {
                 try {
-                    var economy = saveGame.EntityType("economy");
-                    var player = saveGame.EntityType("player", economy.Target.LastFoundStart);
+                    var economy = saveGame.EntityType("economy")!;
+                    var player = saveGame.EntityType("player")!;
 
-                    var currentJobId = player.Get("current_job").value;
+                    var currentJobId = player.GetValue("current_job");
                     if (currentJobId == "null") {
                         MessageBox.Show("You don't have any job now.", "Error");
                         return;
                     }
                     // Current job unit
-                    var job = player.EntityIdAround(currentJobId);
+                    var job = saveGame[currentJobId];
 
                     // Job truck
                     var currentTruckId = player.GetValue("assigned_truck");
@@ -1122,39 +1099,29 @@ END
                         stealTruck = MessageBox.Show("Do you want to steal the truck?", "Own Job Vehicle", MessageBoxButton.YesNo) == MessageBoxResult.Yes;
 
                     if (stealTruck) { // Truck steal logic
-                        // Create new profit log entry
-                        var profitLogId = currentTruckId + "01";
-
                         // Append profit log entry
-                        var newLog = player.InsertAfter("profit_log", profitLogId);
+                        var newLog = saveGame.CreateNewUnit("profit_log");
                         newLog.Set("stats_data", "0");
                         newLog.Set("acc_distance_free", "0");
                         newLog.Set("acc_distance_on_job", "0");
                         newLog.Set("history_age", "nil");
 
                         player.ArrayAppend("trucks", currentTruckId, true);
-                        player.ArrayAppend("truck_profit_logs", profitLogId, true);
+                        player.ArrayAppend("truck_profit_logs", newLog.Unit.Id, true);
                     } else if (isCurrentTruckStealable) { // Delete unused job truck
-                        var s = UnitIdSelector.Of(currentTruckId);
-                        var l = new List<string>();
+                        var s = saveGame[currentTruckId];
 
-                        l.AddRange(saveGame.GetUnitItem(s, "accessories").array);
-
-                        l.ForEach((v) => {
-                            saveGame.DeleteUnit(UnitIdSelector.Of(v));
-                        });
-
-                        saveGame.DeleteUnit(s);
+                        CommonEdits.DeleteUnitRecursively(s, UnitSerializer.KNOWN_PTR_ITEMS_TRUCK);
                     }
 
                     // Return to last position of owned truck, if exists
-                    player.Set("assigned_truck", player.Get("my_truck").value);
-                    if (player.Get("my_truck_placement_valid").value == "true") {
+                    player.Set("assigned_truck", player.GetValue("my_truck"));
+                    if (player.GetValue("my_truck_placement_valid") == "true") {
                         player.Set("truck_placement", player.GetValue("my_truck_placement"));
-                        if(player.Contains("my_trailer_placement")) {
+                        if (player.Contains("my_trailer_placement")) {
                             player.Set("trailer_placement", player.GetValue("my_trailer_placement"));
                         }
-                        if(player.Contains("my_slave_trailer_placements")) {
+                        if (player.Contains("my_slave_trailer_placements")) {
                             player.Set("slave_trailer_placements", player.GetArray("my_slave_trailer_placements"));
                         }
                     }
@@ -1166,39 +1133,20 @@ END
                         player.ArrayAppend("trailers", currentTrailerId, true);
 
                         // Adding a dummy accessory with path to "/def/vehicle/trailer_owned/scs.box/data.sii" fixes N/A in trailer listings
-                        var trailer = player.EntityIdAround(currentTrailerId);
+                        var trailer = saveGame[currentTrailerId];
 
-                        int refundSum = 0;
-                        foreach (var item in trailer.GetAllPointers("accessories"))
-                        {
-                            var red = item.Read();
-                            if (int.TryParse(item.Get("refund").value, out int a)) {
-                                refundSum += a;
-                            }
-                        }
-
-                        var newUnitId = currentTrailerId + "02";
-                        var newUnit = trailer.InsertAfter("vehicle_accessory", newUnitId);
+                        var newUnit = saveGame.CreateNewUnit("vehicle_accessory");
                         newUnit.Set("data_path", "\"/def/vehicle/trailer_owned/scs.box/data.sii\"");
-                        int refund = new Random().Next() % 2 == 0 ? 299792458 : 602214076;
-                        newUnit.Set("refund", (refund - refundSum).ToString());
 
-                        trailer.ArrayAppend("accessories", newUnitId, true);
+                        trailer.ArrayAppend("accessories", newUnit.Unit.Id, true);
                     } else if (isCurrentTrailerStealable) { // The user decided to only steal the truck and abandon the trailer. Delete the unused job trailer.
-                        var s = UnitIdSelector.Of(currentTrailerId);
-                        var l = new List<string>();
+                        var s = saveGame[currentTrailerId];
 
-                        l.AddRange(saveGame.GetUnitItem(s, "accessories").array);
-
-                        l.ForEach((v) => {
-                            saveGame.DeleteUnit(UnitIdSelector.Of(v));
-                        });
-
-                        saveGame.DeleteUnit(s);
+                        CommonEdits.DeleteUnitRecursively(s, UnitSerializer.KNOWN_PTR_ITEMS_TRAILER);
                     }
 
-                    if (player.Get("my_trailer_attached").value == "true") {
-                        player.Set("assigned_trailer", player.Get("my_trailer").value);
+                    if (player.GetValue("my_trailer_attached") == "true") {
+                        player.Set("assigned_trailer", player.GetValue("my_trailer"));
                         player.Set("assigned_trailer_connected", "true");
                     } else {
                         player.Set("assigned_trailer", "null");
@@ -1206,36 +1154,17 @@ END
                     }
 
                     // Special transport
-                    {
-                        var special = job.Get("special").value;
-                        if (special != "null") { // Special transport - we need to delete some more units
-                            job.EntityIdAround(special).Delete();
-
-                            var specialSave = economy.GetPointer("stored_special_job");
-                            var l = new List<string>();
-
-                            var i1 = specialSave.Get("trajectory_orders");
-                            if (i1.array != null)
-                                l.AddRange(i1.array);
-                            var i2 = specialSave.Get("active_blocks_rules");
-                            if (i2.array != null)
-                                l.AddRange(i2.array);
-
-                            l.ForEach((v) => {
-                                saveGame.DeleteUnit(UnitIdSelector.Of(v));
-                            });
-
-                            specialSave.Delete();
-                            economy.Set("stored_special_job", "null");
-                        }
+                    if(job.TryGetPointer("special", out Entity2? special)) {
+                        CommonEdits.DeleteUnitRecursively(economy.GetPointer("stored_special_job"), ["AUTO"]);
+                        economy.Set("stored_special_job", "null");
+                        special.DeleteSelf();
                     }
 
                     // Delete the job and reset navigation
                     player.Set("current_job", "null");
-                    job.Delete();
                     DestroyNavigationData(economy);
 
-                    saveFile.Save(saveGame.ToString());
+                    saveFile.Save(saveGame);
                     if (stealTruck && stealTrailer) {
                         MessageBox.Show("The truck and trailer are yours now. You can relocate them as needed.\n\nWARNING: The game will buggy until you reloate the new truck to any garage slot!", "Done!");
                     } else if (stealTrailer) {
@@ -1258,25 +1187,25 @@ END
             };
         }
 
-        private void DestroyNavigationData(UnitEntity economy) {
+        private void DestroyNavigationData(Entity2 economy) {
             var i = economy.GetAllPointers("stored_gps_ahead_waypoints");
             foreach (var t in i) {
-                t.Delete();
+                t.DeleteSelf();
             }
             economy.Set("stored_gps_ahead_waypoints", "0");
 
-            var registry = economy.GetPointer("registry");
+            var registry = economy.GetPointer("registry")!;
             var regData = registry.GetArray("data");
-            if (regData.Length >= 3) regData[0] = "0";
+            if (regData.Count >= 3) regData[0] = "0";
             registry.Set("data", regData);
         }
 
         public SaveEditTask ChangeCargoMass() {
             var run = new Action(() => {
                 try {
-                    var player = saveGame.EntityType("player");
+                    var player = saveGame.EntityType("player")!;
 
-                    var assignedTrailerId = player.Get("assigned_trailer").value;
+                    var assignedTrailerId = player.GetValue("assigned_trailer");
                     if (assignedTrailerId == "null") {
                         MessageBox.Show("You don't have an assigned trailer.", "Error");
                         return;
@@ -1288,10 +1217,10 @@ END
                         return;
                     }
 
-                    var trailer = player.EntityIdAround(assignedTrailerId);
+                    var trailer = saveGame[assignedTrailerId];
                     trailer.Set("cargo_mass", $"{specifiedMass}");
 
-                    saveFile.Save(saveGame.ToString());
+                    saveFile.Save(saveGame);
                     MessageBox.Show("Changed the trailer cargo mass!", "Done");
                     return;
                 } catch (Exception e) {

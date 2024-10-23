@@ -13,19 +13,20 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Linq;
 using ETS2SaveAutoEditor.Utils;
+using ETS2SaveAutoEditor.SII2Parser;
 
 namespace ETS2SaveAutoEditor {
 
     public enum Trucksim {
         ETS2, ATS
     }
-    public struct ProfileSave {
-        public string savename;
-        public string directory;
+    public class ProfileSave {
+        public string savename = "";
+        public string directory = "";
         public long time;
-        public string formattedtime;
-        public string fullPath;
-        public string content;
+        public string formattedtime = "";
+        public string fullPath = "";
+        public string content = "";
 
         public override string ToString() {
             return savename;
@@ -36,6 +37,20 @@ namespace ETS2SaveAutoEditor {
         public void Save(string newcontent) {
             content = newcontent;
             File.WriteAllText(fullPath + @"\game.sii", newcontent, Encoding.UTF8);
+        }
+
+        public void Save(SII2 instance) {
+            var w = GetWriter();
+            instance.WriteTo(w);
+            w.Close();
+        }
+
+        public void Save(Game2 instance) {
+            Save(instance.Reader);
+        }
+
+        public StreamWriter GetWriter() {
+            return new StreamWriter(new BufferedStream(new FileStream(fullPath + @"\game.sii", FileMode.Create)), Encoding.UTF8);
         }
     }
     public struct SaveEditTask {
@@ -50,7 +65,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.28.4";
+        public static string Version = "1.29";
 
         private SaveeditTasks tasks;
 
@@ -78,7 +93,7 @@ namespace ETS2SaveAutoEditor {
             addAction(tasks.ChangeCargoMass());
         }
 
-        public static DateTime FuckUnixTime(long unixtime) {
+        public static DateTime UnixToDateTime(long unixtime) {
             DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddMilliseconds(unixtime).ToLocalTime();
             return dtDateTime;
@@ -318,7 +333,7 @@ namespace ETS2SaveAutoEditor {
                         var result = Regex.Match(content, fileTimePattern);
                         long resultLong = long.Parse(result.Groups[1].Value + "000");
                         dateResult = resultLong;
-                        var dateTime = FuckUnixTime(dateResult);
+                        var dateTime = UnixToDateTime(dateResult);
                         dateFormatResult = dateTime.ToString("yyyy-MM-ddTHH\\:mm\\:ss");
                     }
 

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -11,7 +13,7 @@ using System.Windows.Shapes;
 using System.Xml.Linq;
 using Windows.Foundation.Metadata;
 
-namespace ETS2SaveAutoEditor.Utils {
+namespace ETS2SaveAutoEditor.SII2Parser {
     /// <summary>
     /// A next-generation SII file parser. The key difference is that this parser decodes the whole file to the memory, unlike the old parser which kept the data line by line in SII string.
     /// </summary>
@@ -48,80 +50,112 @@ namespace ETS2SaveAutoEditor.Utils {
             string? currentKey = null;
             Value2? currentValue = null;
 
-            var p = new Regex(@"^([a-z_]+) : ([_\-\.a-zA-Z0-9]+) {$", RegexOptions.Compiled);
-            var p1 = new Regex(@"^(.*?)(\[\d*\])?: (.*)", RegexOptions.Compiled); // Regex.Match(line, $"^\\s+{name}\\[\\d*\\]: (.*)$");
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
+            //var p = new Regex(@"^([a-z_]+) : ([_\-\.a-zA-Z0-9]+) {$", RegexOptions.Compiled);
+            //var p1 = new Regex(@"^(.*?)(\[\d*\])?: (.*)", RegexOptions.Compiled); // Regex.Match(line, $"^\\s+{name}\\[\\d*\\]: (.*)$");
 
             int ln = 0;
-            foreach (string line in lines) {
+            foreach (string s in from a in lines select a.Trim() into b where b.Length > 0 select b) {
                 ++ln;
-                var s = line.Trim();
-                if (s.Length == 0) continue;
-                if (siiOpenStage == SIIOpenStage.NotOpened) {
-                    if (s != "SiiNunit") {
-                        throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
-                    }
-                    siiOpenStage = SIIOpenStage.MagicNumberRead;
-                    continue;
-                } else if (siiOpenStage == SIIOpenStage.MagicNumberRead) {
-                    if (s != "{") {
-                        throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
-                    }
-                    siiOpenStage = SIIOpenStage.Ready;
-                    continue;
-                } else if (siiOpenStage == SIIOpenStage.Ready) {
-                    if (s == "}") {
-                        siiOpenStage = SIIOpenStage.Finished;
-                        break;
-                    }
-                    var match = p.Match(s);
-                    if (!match.Success) {
-                        throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
-                    }
-                    currentUnit = new(match.Groups[1].Value, match.Groups[2].Value);
-                    currentKey = null;
-                    currentValue = null;
-                    siiOpenStage = SIIOpenStage.Unit;
-                } else if (siiOpenStage == SIIOpenStage.Unit) {
-                    if (s == "}") { // The unit is closed.
-                        // Save previous entry into the currentUnit
-                        if (currentKey is not null) // Empty unit
-                            currentUnit![currentKey] = currentValue!;
-
-                        currentUnit!.Attach(this);
-                        siiOpenStage = SIIOpenStage.Ready;
-                        continue;
-                    }
-                    var match = p1.Match(s);
-                    if (!match.Success) {
-                        throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
-                    }
-                    string key = match.Groups[1].Value;
-                    bool isArrayElement = match.Groups[2].Value.Length > 0;
-                    string value = match.Groups[3].Value;
-
-                    if (key != currentKey) {
-                        // Save previous entry into the currentUnit
-                        if (currentKey is not null)
-                            currentUnit![currentKey] = currentValue!;
-
-                        // Create a new entry
-                        currentKey = key;
-                        if (isArrayElement)
-                            currentValue = new RawDataArrayValue2([value]);
-                        else
-                            currentValue = new RawDataValue2(value);
-                    } else if (isArrayElement) {
-                        if (key == currentKey) { // Append to the current array. Throw if the key doesn't match
-                            if (currentValue is not RawDataArrayValue2) // Current value is size of the array.
-                                currentValue = new RawDataArrayValue2();
-
-                            ((RawDataArrayValue2)currentValue).TypedValue.Add(value); // Append to the array.
+                switch (siiOpenStage) {
+                    case SIIOpenStage.NotOpened:
+                        if (s != "SiiNunit") {
+                            throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
                         }
-                    } else { // Throw. Multiple non-array elements with the same key.
-                        throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
-                    }
+                        siiOpenStage = SIIOpenStage.MagicNumberRead;
+                        break;
+                    case SIIOpenStage.MagicNumberRead:
+                        if (s != "{") {
+                            throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
+                        }
+                        siiOpenStage = SIIOpenStage.Ready;
+                        break;
+                    case SIIOpenStage.Ready:
+                        if (s == "}") {
+                            siiOpenStage = SIIOpenStage.Finished;
+                            break;
+                        }
+                        //var match = p.Match(s);
+                        //if (!match.Success) {
+                        //    throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
+                        //}
+                        // ^^ While regex is perfect for parsing, it's not the best for performance. We need to use the old-school way of parsing.
+
+                        string type;
+                        string id; {
+                            int sepIndex = s.IndexOf(" : ");
+                            int braceIndex = s.IndexOf(" {");
+                            if (sepIndex == -1 || braceIndex == -1) throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
+                            type = s[..sepIndex];
+                            id = s[(sepIndex + 3)..braceIndex];
+                        }
+
+                        currentUnit = new(type, id);
+                        currentKey = null;
+                        currentValue = null;
+                        siiOpenStage = SIIOpenStage.Unit;
+                        break;
+                    case SIIOpenStage.Unit:
+                        if (s == "}") { // The unit is closed.
+                                        // Save previous entry into the currentUnit
+                            if (currentKey is not null) // Empty unit
+                                currentUnit![currentKey] = currentValue!;
+
+                            unsafeAdd(currentUnit!); // Quick add without ID duplication check. This can save 90% of time by reducing the number of checks. We assume that the SII file is valid.
+                            siiOpenStage = SIIOpenStage.Ready;
+                            break;
+                        }
+                        //var match = p1.Match(s);
+                        //if (!match.Success) {
+                        //    throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
+                        //}
+                        //string key = match.Groups[1].Value;
+                        //bool isArrayElement = match.Groups[2].Value.Length > 0;
+                        //string value = match.Groups[3].Value;
+                        // ^^ While regex is perfect for parsing, it's not the best for performance. We need to use the old-school way of parsing.
+                        string key;
+                        bool isArrayElement = false;
+                        string value; {
+                            int i = s.IndexOf(':');
+                            if (i == -1) {
+                                throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
+                            }
+                            key = s[..i];
+                            if (key.EndsWith(']')) {
+                                isArrayElement = true;
+                                key = key[..key.IndexOf('[')];
+                            }
+                            value = s[(i + 1)..].Trim();
+                        }
+
+                        if (key != currentKey) {
+                            // Save previous entry into the currentUnit
+                            if (currentKey is not null)
+                                currentUnit![currentKey] = currentValue!;
+
+                            // Create a new entry
+                            currentKey = key;
+                            if (isArrayElement)
+                                currentValue = new RawDataArrayValue2([value]);
+                            else
+                                currentValue = new RawDataValue2(value);
+                        } else if (isArrayElement) {
+                            if (key == currentKey) { // Append to the current array. Throw if the key doesn't match
+                                if (currentValue is not RawDataArrayValue2) // Current value is size of the array.
+                                    currentValue = new RawDataArrayValue2();
+
+                                ((RawDataArrayValue2)currentValue).TypedValue.Add(value); // Append to the array.
+                            }
+                        } else { // Throw. Multiple non-array elements with the same key.
+                            throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
+                        }
+                        break;
                 }
             }
+
+            Console.WriteLine($"[SII2] Parsed SII with {Count} units. Elapsed time: {stopwatch.ElapsedMilliseconds} ms");
         }
 
         public SII2(string fullText) : this(fullText.Split('\n')) { }
@@ -143,14 +177,8 @@ namespace ETS2SaveAutoEditor.Utils {
             }
         }
 
-        Unit2 IReadOnlyDictionary<string, Unit2>.this[string key] {
-            get {
-                if (unitMap.TryGetValue(key, out Unit2? value)) {
-                    return value;
-                } else {
-                    throw new KeyNotFoundException();
-                }
-            }
+        public Unit2 this[string key] { // Doesn't support set by key because the key is determined by the unit itself.
+            get => unitMap[key]; // will throw KeyNotFoundException if the key doesn't exist.
         }
 
         public int Count => units.Count;
@@ -163,14 +191,27 @@ namespace ETS2SaveAutoEditor.Utils {
 
         int IReadOnlyCollection<KeyValuePair<string, Unit2>>.Count => throw new NotImplementedException();
 
-        public void Add(Unit2 item) {
-            units.Add(item);
-            unitMap[item.Id] = item;
+        public void Add(Unit2 unit) {
+            if (!unit.IsDetached) {
+                throw new InvalidOperationException("The unit is already attached to a SII2 instance.");
+            }
+            if (ContainsKey(unit.Id)) {
+                throw new ArgumentException("An item with the same key has already been added.");
+            }
+            units.Add(unit);
+            unitMap[unit.Id] = unit; // BUGGY. This can cause a serious issue on duplicate keys.
+            unit.___attach_do_not_use(this);
+        }
+
+        private void unsafeAdd(Unit2 unit) {
+            units.Add(unit);
+            unitMap[unit.Id] = unit; // BUGGY. This can cause a serious issue on duplicate keys.
+            unit.___attach_do_not_use(this);
         }
 
         public void Clear() {
             foreach (var unit in units) {
-                unit.Detach();
+                unit.___detach_do_not_use();
             }
             units.Clear();
             unitMap.Clear();
@@ -178,6 +219,10 @@ namespace ETS2SaveAutoEditor.Utils {
 
         public bool Contains(Unit2 item) {
             return unitMap.ContainsValue(item);
+        }
+
+        public bool ContainsKey(string key) {
+            return unitMap.ContainsKey(key);
         }
 
         public void CopyTo(Unit2[] array, int arrayIndex) {
@@ -193,21 +238,27 @@ namespace ETS2SaveAutoEditor.Utils {
         }
 
         public void Insert(int index, Unit2 item) {
+            if (!item.IsDetached) {
+                throw new InvalidOperationException("The unit is already attached to a SII2 instance.");
+            }
+            if (ContainsKey(item.Id)) {
+                throw new ArgumentException("An item with the same key has already been added.");
+            }
             units.Insert(index, item);
-            unitMap[item.Id] = item;
+            unitMap[item.Id] = item; // BUGGY. This can cause a serious issue on duplicate keys.
+            item.___attach_do_not_use(this);
         }
 
         public bool Remove(Unit2 item) {
             if (!units.Contains(item)) {
                 return false;
             }
-            item.Detach();
+            item.___detach_do_not_use();
             return units.Remove(item) || unitMap.Remove(item.Id);
         }
 
         public void RemoveAt(int index) {
-            var item = units[index];
-            Remove(item);
+            Remove(units[index]);
         }
 
         bool IReadOnlyDictionary<string, Unit2>.ContainsKey(string key) {
@@ -227,15 +278,26 @@ namespace ETS2SaveAutoEditor.Utils {
         }
         #endregion
 
-        public void WriteTo(StreamWriter writer) {
+        public void WriteTo(TextWriter writer) {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
             writer.Write("SiiNunit\n{\n");
 
-            foreach(var unit in units) {
+            foreach (var unit in units) {
                 unit.WriteTo(writer);
                 writer.Write("\n"); // extra line between units
             }
 
             writer.Write("}\n");
+
+            Console.WriteLine($"[SII2] Saved SII with {Count} units. Elapsed time: {stopwatch.ElapsedMilliseconds} ms");
+        }
+
+        public override string ToString() {
+            StringWriter writer = new();
+            WriteTo(writer);
+            return writer.ToString();
         }
     }
 
@@ -244,7 +306,7 @@ namespace ETS2SaveAutoEditor.Utils {
         RawArray
     }
 
-    public class Unit2 : IReadOnlyList<string>, IDictionary<string, Value2> {
+    public class Unit2 : IReadOnlyList<string>, IDictionary<string, Value2>, ICloneable {
         private SII2? parent = null;
         private string type;
         private string id;
@@ -257,17 +319,22 @@ namespace ETS2SaveAutoEditor.Utils {
             this.id = id;
         }
 
-        internal void Detach() {
+        internal void ___detach_do_not_use() {
             parent = null;
         }
 
-        public void Attach(SII2 parent) {
+        /// <summary>
+        /// Attaches this unit to the parent SII2 instance. This method is called by the parent SII2 instance. Note that it should be added to the parent SII2 instance first before running this method.
+        /// 
+        /// InvalidOperationException is thrown if this unit is already attached to a SII2 instance.
+        /// </summary>
+        /// <param name="parent"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        internal void ___attach_do_not_use(SII2 parent) {
             if (this.parent != null) {
                 throw new InvalidOperationException("This unit is already attached to a SII2 instance.");
             }
-
             this.parent = parent;
-            parent.Add(this);
         }
 
         #region IReadOnlyList<string> and IDictionary<string, Value2<object>> implementation
@@ -373,6 +440,13 @@ namespace ETS2SaveAutoEditor.Utils {
             }
         }
 
+        public SII2 Parent {
+            get {
+                if (IsDetached) throw new InvalidOperationException("This unit is detached.");
+                return parent!;
+            }
+        }
+
         public string Type {
             get {
                 return type;
@@ -389,15 +463,15 @@ namespace ETS2SaveAutoEditor.Utils {
                 return id;
             }
             set {
-                if (parent != null)
+                if (parent != null) {
                     parent.unitMap.Remove(id);
+                    parent.unitMap[value] = this;
+                }
                 id = value;
-                if (parent != null)
-                    parent.unitMap[id] = this;
             }
         }
 
-        public void WriteTo(StreamWriter writer) {
+        public void WriteTo(TextWriter writer) {
             writer.Write(type + " : " + id + " {\n");
 
             var keysInMap = valueMap.Keys.ToHashSet();
@@ -416,10 +490,15 @@ namespace ETS2SaveAutoEditor.Utils {
 
             writer.Write("}\n");
         }
+
+        public object Clone() {
+            throw new NotImplementedException();
+        }
     }
 
-    public abstract class Value2 {
-        public abstract void WriteTo(StreamWriter writer, string key);
+    public abstract class Value2 : ICloneable {
+        public abstract void WriteTo(TextWriter writer, string key);
+        public abstract object Clone();
 
         public abstract object Value { get; }
     }
@@ -452,12 +531,16 @@ namespace ETS2SaveAutoEditor.Utils {
             rawstr = value;
         }
 
-        public override void WriteTo(StreamWriter writer, string key) {
+        public override void WriteTo(TextWriter writer, string key) {
             writer.Write(SII2.Indent + key + ": " + rawstr + "\n");
         }
 
         public override string ToString() {
             return rawstr;
+        }
+
+        public override object Clone() {
+            return new RawDataValue2(rawstr);
         }
     }
 
@@ -484,7 +567,7 @@ namespace ETS2SaveAutoEditor.Utils {
 
         public RawDataArrayValue2(ValueArray2<object> d) : this((Value2)d) { }
 
-        public override void WriteTo(StreamWriter writer, string key) {
+        public override void WriteTo(TextWriter writer, string key) {
             if (SII2.CountArrays) {
                 writer.Write(SII2.Indent + key + ": " + data.Count + "\n");
             }
@@ -503,6 +586,11 @@ namespace ETS2SaveAutoEditor.Utils {
                 sb.Append("\n\t" + d);
             }
             return sb.ToString();
+        }
+
+        public override object Clone() {
+            // clone the list then return a new RawDataArrayValue2
+            return new RawDataArrayValue2(new List<string>(data));
         }
     }
 }

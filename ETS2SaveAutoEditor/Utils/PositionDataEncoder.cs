@@ -44,7 +44,7 @@ namespace ETS2SaveAutoEditor.Utils {
 
             bs2.Close();
 
-            bs1.Write(AESEncoder.InstanceC.BEncode(ms2.ToArray()));
+            bs1.Write(Compressor.Compress(ms2.ToArray()));
             bs1.Close();
 
             string encoded = Base32768.EncodeBase32768(ms1.ToArray());
@@ -88,7 +88,7 @@ namespace ETS2SaveAutoEditor.Utils {
             ms1.CopyTo(tempBuf); // Copy remaining data to a temporary buffer. (without version header)
 
             // Decrypt if it's using the latest key.
-            MemoryStream ms2 = new(AESEncoder.InstanceC.BDecode(tempBuf.ToArray()));
+            MemoryStream ms2 = new(Compressor.Decompress(tempBuf.ToArray()));
             BinaryReader bs2 = new(ms2);
 
             // Data exchange

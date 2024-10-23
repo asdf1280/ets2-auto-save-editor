@@ -15,7 +15,7 @@ namespace ETS2SaveAutoEditor.Utils {
         private readonly BitArray _bitArray;
         private readonly int _hashFunctionCount;
 
-        public BloomFilter(int size, int hashFunctionCount) {
+        public BloomFilter(int size = 10000, int hashFunctionCount = 8) {
             if (size <= 0)
                 throw new ArgumentOutOfRangeException(nameof(size), "Size must be positive.");
             if (hashFunctionCount <= 0)
@@ -27,8 +27,8 @@ namespace ETS2SaveAutoEditor.Utils {
         }
 
         private IEnumerable<int> GetHashes(T item) {
-            byte[] bytes = ObjectToByteArray(item);
-            uint hash1 = Fnv1aHash(bytes);
+            byte[] bytes = BloomFilter<T>.ObjectToByteArray(item);
+            uint hash1 = BloomFilter<T>.Fnv1aHash(bytes);
             uint hash2 = MurmurHash3(bytes);
 
             for (int i = 0; i < _hashFunctionCount; i++) {
@@ -51,14 +51,14 @@ namespace ETS2SaveAutoEditor.Utils {
             return true;
         }
 
-        private byte[] ObjectToByteArray(T obj) {
-            if (obj == null)
-                return Array.Empty<byte>();
-
-            return Encoding.UTF8.GetBytes(obj.ToString());
+        private static byte[] ObjectToByteArray(T obj) {
+            if (obj is null) return [];
+            var s = obj.ToString();
+            if (s is null) return BitConverter.GetBytes(obj.GetHashCode());
+            else return Encoding.UTF8.GetBytes(s);
         }
 
-        private uint Fnv1aHash(byte[] data) {
+        private static uint Fnv1aHash(byte[] data) {
             const uint fnvOffsetBasis = 2166136261;
             const uint fnvPrime = 16777619;
 
@@ -71,7 +71,7 @@ namespace ETS2SaveAutoEditor.Utils {
         }
 
         private uint MurmurHash3(byte[] data) {
-            const uint seed = 144;
+            const uint seed = 43247;
             const uint c1 = 0xcc9e2d51;
             const uint c2 = 0x1b873593;
 

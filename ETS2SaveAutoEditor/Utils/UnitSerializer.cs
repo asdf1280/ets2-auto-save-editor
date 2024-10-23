@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ETS2SaveAutoEditor.Utils {
+namespace ETS2SaveAutoEditor.SII2Parser {
     /// <summary>
     /// Provides methods for serializing and deserializing unit entities.
     /// Note that this class does not handle the file format itself or check the file format version.
@@ -14,6 +15,9 @@ namespace ETS2SaveAutoEditor.Utils {
     /// The simple syntax of this format allows for easy manual editing.
     /// </summary>
     public class UnitSerializer {
+        public static readonly string[] KNOWN_PTR_ITEMS_TRUCK = ["vehicle:accessories"];
+        public static readonly string[] KNOWN_PTR_ITEMS_TRAILER = ["trailer:trailer_definition", "trailer:slave_trailer", "trailer:accessories"];
+
         /// <summary>
         /// Serializes a unit and its referenced subunits into a string representation.
         /// </summary>
@@ -23,26 +27,27 @@ namespace ETS2SaveAutoEditor.Utils {
         /// This must be specified to serialize nested units; otherwise, they will be omitted.
         /// For example, "economy:player" indicates that the 'player' unit should also be serialized.
         /// 
-        /// There's one exception. If you pass knownPtrItems only with exactly 'AUTO', it will try to find pointers automatically by checking if the value starts with "_". But this is not recommended as it may cause issues.
+        /// There's one exception. If you pass knownPtrItems only with exactly 'AUTO', it will try to find pointers automatically by checking if the value starts with "_". But this is not recommended because it will also delete units linked with link_ptr instead of owner_ptr. This will cause errors when loading the save.
         /// </param>
         /// <returns>A serialized string representing the unit and its subunits.</returns>
-        public static string SerializeUnit(UnitEntity root, HashSet<string> knownPtrItems) {
+        public static string SerializeUnit(Entity2 root, IEnumerable<string> knownPtrItemsE) {
             var builder = new StringBuilder();
+            var knownPtrItems = new HashSet<string>(knownPtrItemsE);
 
-            Dictionary<string, int> unitIdMapping = new();
-            Stack<Tuple<UnitEntity, int>> serializationQueue = new();
+            Dictionary<string, int> unitIdMapping = [];
+            Stack<(Entity2, int)> serializationQueue = new();
             serializationQueue.Push(new(root, 0));
-            unitIdMapping[root.Id] = 0;
+            unitIdMapping[root.Unit.Id] = 0;
 
             var findPointers = knownPtrItems.Count == 1 && knownPtrItems.Contains("AUTO");
 
             while (serializationQueue.Count > 0) {
                 var it = serializationQueue.Pop();
-                var unit = it.Item1;
+                var entity = it.Item1;
                 int serializedId = it.Item2;
-                builder.Append($"UNIT {serializedId:D6} {unit.Type}\n");
+                builder.Append($"UNIT {serializedId:D6} {entity.Unit.Type}\n");
 
-                Stack<Tuple<UnitEntity, int>> nextQueue = new();
+                Stack<(Entity2, int)> nextQueue = new();
                 int serializeSubunit(string id) {
                     int ptrId;
                     if (unitIdMapping.ContainsKey(id)) {
@@ -50,23 +55,22 @@ namespace ETS2SaveAutoEditor.Utils {
                     } else {
                         ptrId = unitIdMapping.Count;
                         unitIdMapping[id] = ptrId;
-                        nextQueue.Push(new(unit.EntityIdAround(id), ptrId));
+                        nextQueue.Push(new(new Entity2(entity.Unit.Parent[id]), ptrId));
                     }
 
                     return ptrId;
                 }
 
-                foreach (var entries in unit.Read()) {
-                    var key = entries.Item1;
-                    var value = entries.Item2;
-                    var isArray = value.array != null;
-                    var isPointer = knownPtrItems.Contains($"{unit.Type}:{entries.Item1}"); // This is pointer. Serialize the unit with value of this entry if the value starts with "_"
+                foreach (string key in entity.Unit) {
+                    var isArray = entity.IsArray(key);
+                    bool isPointer = knownPtrItems.Contains($"{entity.Unit.Type}:{key}") || knownPtrItems.Contains($":{key}"); // This is pointer. Serialize the unit with value of this entry if the value starts with "_"
 
                     if (isArray) {
                         builder.Append($"  LIST {key}\n");
 
-                        for (int i = 0; i < value.array.Length; i++) {
-                            var v = value.array[i];
+                        var arr = entity.GetArray(key);
+                        for (int i = 0; i < arr.Count; i++) {
+                            var v = arr[i];
                             if ((isPointer || findPointers) && v.StartsWith("_")) {
                                 builder.Append($"    PTR {serializeSubunit(v):D6}\n");
                             } else {
@@ -76,7 +80,7 @@ namespace ETS2SaveAutoEditor.Utils {
                     } else {
                         builder.Append($"  ITEM {key}\n");
 
-                        var v = value.value;
+                        var v = entity.GetValue(key);
                         if ((isPointer || findPointers) && v.StartsWith("_")) {
                             builder.Append($"    PTR {serializeSubunit(v):D6}\n");
                         } else {
@@ -97,7 +101,7 @@ namespace ETS2SaveAutoEditor.Utils {
         }
 
         /// <summary>
-        /// Deserializes unit data from a string and inserts the units into the game after a specified unit.
+        /// Deserializes units from a string. You need to insert the deserialized units to file manually.
         /// </summary>
         /// <param name="after">The <see cref="UnitEntity"/> after which the new units will be inserted.</param>
         /// <param name="data">The serialized data string representing units to be deserialized.</param>
@@ -105,14 +109,11 @@ namespace ETS2SaveAutoEditor.Utils {
         /// <exception cref="Exception">
         /// Thrown when the data format is invalid or an error occurs during deserialization.
         /// </exception>
-        public static UnitEntity[] DeserializeUnit(UnitEntity after, string data) {
+        public static Entity2[] DeserializeUnit(string data, [Optional] Game2? idChecker) {
             var lines = data.Split('\n');
             if (lines.Length < 2) {
                 throw new Exception("Invalid file format");
             }
-
-            var save = after.Game;
-            var player = save.EntityType("player");
 
             // Begin importing
             // First of all, let's assign unique IDs to all units in the file
@@ -125,17 +126,21 @@ namespace ETS2SaveAutoEditor.Utils {
                     var cmd = words[0];
                     if (cmd != "UNIT") continue;
                     int unitId = int.Parse(lines[i].Split(" ")[1]);
-                    idMapping[unitId] = $"{idPrefix}.{unitId:x4}";
+                    if (idChecker is null) {
+                        idMapping[unitId] = $"{idPrefix}.{unitId:x4}";
+                    } else {
+                        idMapping[unitId] = idChecker.GenerateNewID();
+                    }
                 }
             } catch {
                 throw new Exception("Failed to iterate the units to import. (Error code 1)\n\nAre you trying to import a modified file?");
             }
 
-            List<UnitEntity> deserializedUnits = new();
+            List<Entity2> deserializedUnits = [];
 
-            UnitEntity currentUnit = null;
-            List<string> currentArray = null;
-            string currentKey = null;
+            Entity2? currentUnit = null;
+            List<string>? currentArray = null;
+            string? currentKey = null;
             // Beging adding units
             for (int i = 0; i < lines.Length; i++) {
                 var line = lines[i].Trim();
@@ -147,15 +152,15 @@ namespace ETS2SaveAutoEditor.Utils {
                     // Insert the array to the current unit
                     if (currentKey == null)
                         throw new Exception($"This can't happen! If you see this message, please handle the file you're importing to dev! Line number {i + 1}. (Error code 4)");
-                    currentUnit.Set(currentKey, currentArray.ToArray());
+                    currentUnit!.Set(currentKey, currentArray.ToArray());
                     currentArray = null;
                 }
                 if (cmd == "UNIT") {
                     var unitId = int.Parse(words[1]);
                     var unitType = words[2];
                     var generatedId = idMapping[unitId];
-                    currentUnit = (currentUnit ?? player).InsertAfter(unitType, generatedId); // This makes sure the units are inserted in the correct order
-                    deserializedUnits.Add(currentUnit);
+                    currentUnit = new Entity2(new Unit2(unitType, generatedId));
+                    deserializedUnits.Add(currentUnit!);
                     continue;
                 }
                 if (cmd == "LIST") {
@@ -174,7 +179,7 @@ namespace ETS2SaveAutoEditor.Utils {
                     if (currentArray != null) {
                         currentArray.Add(line.Substring(4));
                     } else {
-                        currentUnit.Set(currentKey, line.Substring(4));
+                        currentUnit!.Set(currentKey, line.Substring(4));
                     }
                     continue;
                 }
@@ -184,7 +189,7 @@ namespace ETS2SaveAutoEditor.Utils {
                     if (currentArray != null) {
                         currentArray.Add(idMapping[int.Parse(words[1])]);
                     } else {
-                        currentUnit.Set(currentKey, idMapping[int.Parse(words[1])]);
+                        currentUnit!.Set(currentKey, idMapping[int.Parse(words[1])]);
                     }
                     continue;
                 }

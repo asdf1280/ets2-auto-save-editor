@@ -222,7 +222,9 @@ namespace ETS2SaveAutoEditor.SII2Parser {
             }
             if (type == 0x03) { // encoded string
                 ulong value = ByteEncoder.DecodeUInt64(ReadN(8));
-                unit.Set(field.name, GetEncodedString(value));
+                var s = GetEncodedString(value);
+                if(s == "") s = "\"\""; // Empty string should be '""'
+                unit.Set(field.name, s);
                 return;
             }
             if (type == 0x04) { // encoded string[]
@@ -231,6 +233,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 for (int i = 0; i < count; i++) {
                     ulong value = ByteEncoder.DecodeUInt64(ReadN(8));
                     strings[i] = GetEncodedString(value);
+                    if(strings[i] == "") strings[i] = "\"\""; // Empty string should be '""'
                 }
                 unit.Set(field.name, strings);
                 return;

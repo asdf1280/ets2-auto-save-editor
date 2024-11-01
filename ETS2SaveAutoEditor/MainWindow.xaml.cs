@@ -66,7 +66,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.29.2";
+        public static string Version = "1.30";
 
         private SaveeditTasks tasks = new();
 
@@ -206,13 +206,13 @@ namespace ETS2SaveAutoEditor {
 
             new Thread(() => {
                 if (animate) // Prevent animation duplication
-                    Thread.Sleep(250);
+                    Thread.Sleep(50);
                 Dispatcher.Invoke(onEnd);
             }).Start();
         }
 
         private void RefreshProfilesButtonPressed(object sender, RoutedEventArgs e) {
-            GameChanged(true);
+            GameChanged(false);
             LoadProfiles(true);
         }
 
@@ -249,10 +249,8 @@ namespace ETS2SaveAutoEditor {
 
         private void LoadSaves(string path) {
             new Thread(() => {
-                Dispatcher.Invoke(() => {
-                    SaveList.Items.Clear();
-                });
-                Thread.Sleep(250);
+                Thread.Sleep(50);
+                List<ProfileSave> saves = [];
                 foreach (var save in Directory.GetDirectories(path)) {
                     var fpath = save + @"\info.sii";
 
@@ -296,30 +294,24 @@ namespace ETS2SaveAutoEditor {
                         dateFormatResult = dateTime.ToString("yyyy-MM-ddTHH\\:mm\\:ss");
                     }
 
-                    Dispatcher.Invoke(() => {
-                        ProfileSave psave = new ProfileSave {
-                            savename = nameResult,
-                            directory = directoryName,
-                            time = dateResult,
-                            formattedtime = dateFormatResult,
-                            fullPath = save
-                        };
-
-                        SaveList.Items.Add(psave);
-                    });
+                    ProfileSave psave = new ProfileSave {
+                        savename = nameResult,
+                        directory = directoryName,
+                        time = dateResult,
+                        formattedtime = dateFormatResult,
+                        fullPath = save
+                    };
+                    saves.Add(psave);
                 }
+                saves.Sort(new Comparison<ProfileSave>((ProfileSave a, ProfileSave b) => {
+                    if (a.time > b.time) return -1;
+                    if (a.time < b.time) return 1;
+                    return 0;
+                }));
+
                 Dispatcher.Invoke(() => {
-                    var l = new List<ProfileSave>();
-                    foreach (var item in SaveList.Items) {
-                        l.Add((ProfileSave)item);
-                    }
                     SaveList.Items.Clear();
-                    l.Sort(new Comparison<ProfileSave>((ProfileSave a, ProfileSave b) => {
-                        if (a.time > b.time) return -1;
-                        if (a.time < b.time) return 1;
-                        return 0;
-                    }));
-                    foreach (var item in l) {
+                    foreach (var item in saves) {
                         SaveList.Items.Add(item);
                     }
                     ShowSavegames(true);
@@ -332,7 +324,7 @@ namespace ETS2SaveAutoEditor {
             if (e.AddedItems.Count == 0) return;
 
             DisableAll();
-            ProfileChanged(true);
+            ProfileChanged(false);
             var newItem = e.AddedItems[0]!.ToString()!;
             if (pNameAndPaths.ContainsKey(newItem)) {
                 if (Directory.Exists(currentGamePath + @"\" + pNameAndPaths[newItem])) {
@@ -345,7 +337,7 @@ namespace ETS2SaveAutoEditor {
         }
 
         private void RefreshSavegamesButtonPressed(object sender, RoutedEventArgs e) {
-            ProfileChanged(true);
+            ProfileChanged(false);
             var newItem = ProfileList.SelectedItem.ToString()!;
             if (pNameAndPaths.ContainsKey(newItem)) {
                 if (Directory.Exists(currentGamePath + @"\" + pNameAndPaths[newItem])) {
@@ -359,7 +351,7 @@ namespace ETS2SaveAutoEditor {
 
         private void GameSwitchButtonPressed(object sender, RoutedEventArgs e) {
             LoadGame(GetNextAvailableGame(currentGame), true);
-            GameChanged(true);
+            GameChanged(false);
         }
 
         private void SaveList_SelectionChanged(object sender, SelectionChangedEventArgs e) {
@@ -472,7 +464,7 @@ namespace ETS2SaveAutoEditor {
 
         private void SavegameChanged(bool animate) {
             if (animate && TaskListPanel.Visibility == Visibility.Visible) {
-                TaskListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
+                TaskListPanel.BeginAnimation(OpacityProperty, null);
                 var anim = new DoubleAnimation(1, 0, new Duration(TimeSpan.FromSeconds(0.1))) {
                     AccelerationRatio = 1
                 };
@@ -494,51 +486,21 @@ namespace ETS2SaveAutoEditor {
             ProfileList.Visibility = Visibility.Visible;
             if (animate) {
                 ProfileList.BeginAnimation(OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.1))) {
+                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.25))) {
                     DecelerationRatio = 1
                 };
                 ProfileList.BeginAnimation(OpacityProperty, anim);
-
-                var blur = new BlurEffect {
-                    RenderingBias = RenderingBias.Quality,
-                    Radius = 30
-                };
-
-                ProfileList.Effect = blur;
-
-                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5))) {
-                    DecelerationRatio = 1
-                };
-                anim0.Completed += (object? sender, EventArgs e) => {
-                    ProfileList.Effect = null;
-                };
-                blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
             }
         }
 
         private void ShowSavegames(bool animate) {
             SaveListPanel.Visibility = Visibility.Visible;
             if (animate) {
-                SaveListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.1))) {
+                SaveListPanel.BeginAnimation(OpacityProperty, null);
+                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.25))) {
                     DecelerationRatio = 1
                 };
-                SaveListPanel.BeginAnimation(DockPanel.OpacityProperty, anim);
-
-                var blur = new BlurEffect {
-                    RenderingBias = RenderingBias.Quality,
-                    Radius = 30
-                };
-
-                SaveListPanel.Effect = blur;
-
-                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5))) {
-                    DecelerationRatio = 1
-                };
-                anim0.Completed += (object? sender, EventArgs e) => {
-                    SaveListPanel.Effect = null;
-                };
-                blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
+                SaveListPanel.BeginAnimation(OpacityProperty, anim);
             }
         }
 
@@ -546,25 +508,10 @@ namespace ETS2SaveAutoEditor {
             ShowSavegames(false);
             if (animate && TaskListPanel.Visibility == Visibility.Hidden) {
                 TaskListPanel.BeginAnimation(DockPanel.OpacityProperty, null);
-                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.1))) {
+                var anim = new DoubleAnimation(0, 2, new Duration(TimeSpan.FromSeconds(0.25))) {
                     DecelerationRatio = 1
                 };
                 TaskListPanel.BeginAnimation(DockPanel.OpacityProperty, anim);
-
-                var blur = new BlurEffect {
-                    RenderingBias = RenderingBias.Quality,
-                    Radius = 30
-                };
-
-                TaskListPanel.Effect = blur;
-
-                var anim0 = new DoubleAnimation(10, 0, new Duration(TimeSpan.FromSeconds(0.5))) {
-                    DecelerationRatio = 1
-                };
-                anim0.Completed += (object? sender, EventArgs e) => {
-                    SaveListPanel.Effect = null;
-                };
-                blur.BeginAnimation(BlurEffect.RadiusProperty, anim0);
             }
             TaskListPanel.Visibility = Visibility.Visible;
         }

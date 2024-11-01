@@ -449,7 +449,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
         public RawDataArrayValue2(ValueArray2<object> d) : this((Value2)d) { }
 
         public override void WriteTo(TextWriter writer, string key) {
-            if (SII2.CountArrays) {
+            if (SII2.CountArrays || data.Count == 0) {
                 writer.Write(SII2.Indent + key + ": " + data.Count + "\n");
             }
             for (int i = 0; i < data.Count; i++) {

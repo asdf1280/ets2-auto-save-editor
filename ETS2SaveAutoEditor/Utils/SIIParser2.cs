@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Web;
@@ -198,7 +199,8 @@ namespace ETS2SaveAutoEditor.SII2Parser {
         }
 
         private string JsonEncodeString(string s) {
-            return JsonSerializer.Serialize(s);
+
+            return "\"" + JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(s) + "\"";
         }
 
         private string EncodeFloat(float f) {

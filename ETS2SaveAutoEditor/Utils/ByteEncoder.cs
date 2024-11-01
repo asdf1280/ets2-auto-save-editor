@@ -155,5 +155,35 @@ namespace ETS2SaveAutoEditor.Utils {
             }
             return result;
         }
+
+        public static byte[] EncodeFloat(float a, ByteOrder endian = ByteOrder.LittleEndian) {
+            var buf = BitConverter.GetBytes(a);
+            if (BitConverter.IsLittleEndian != (endian == ByteOrder.LittleEndian)) {
+                Array.Reverse(buf);
+            }
+            return buf;
+        }
+
+        public static byte[] EncodeDouble(double a, ByteOrder endian = ByteOrder.LittleEndian) {
+            var buf = BitConverter.GetBytes(a);
+            if (BitConverter.IsLittleEndian != (endian == ByteOrder.LittleEndian)) {
+                Array.Reverse(buf);
+            }
+            return buf;
+        }
+
+        public static float DecodeFloat(byte[] buf, ByteOrder endian = ByteOrder.LittleEndian) {
+            if (BitConverter.IsLittleEndian != (endian == ByteOrder.LittleEndian)) {
+                buf = buf.Reverse().ToArray();
+            }
+            return BitConverter.ToSingle(buf);
+        }
+
+        public static double DecodeDouble(byte[] buf, ByteOrder endian = ByteOrder.LittleEndian) {
+            if (BitConverter.IsLittleEndian != (endian == ByteOrder.LittleEndian)) {
+                buf = buf.Reverse().ToArray();
+            }
+            return BitConverter.ToDouble(buf);
+        }
     }
 }

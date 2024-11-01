@@ -14,6 +14,7 @@ using System.Windows.Media.Effects;
 using System.Linq;
 using ETS2SaveAutoEditor.Utils;
 using ETS2SaveAutoEditor.SII2Parser;
+using ASE.Utils;
 
 namespace ETS2SaveAutoEditor {
 
@@ -26,17 +27,17 @@ namespace ETS2SaveAutoEditor {
         public long time;
         public string formattedtime = "";
         public string fullPath = "";
-        public string content = "";
+        public byte[] content = [];
 
         public override string ToString() {
             return savename;
         }
-        public string Load() {
-            return File.ReadAllText(fullPath + @"\game.sii", Encoding.UTF8).Replace("\r", "");
+        public byte[] Load() {
+            return File.ReadAllBytes(fullPath + @"\game.sii");
         }
         public void Save(string newcontent) {
-            content = newcontent;
-            File.WriteAllText(fullPath + @"\game.sii", newcontent, Encoding.UTF8);
+            content = Encoding.UTF8.GetBytes(newcontent);
+            File.WriteAllBytes(fullPath + @"\game.sii", content);
         }
 
         public void Save(SII2 instance) {
@@ -50,7 +51,7 @@ namespace ETS2SaveAutoEditor {
         }
 
         public StreamWriter GetWriter() {
-            return new StreamWriter(new BufferedStream(new FileStream(fullPath + @"\game.sii", FileMode.Create)), Encoding.UTF8);
+            return new StreamWriter(new BufferedStream(new FileStream(fullPath + @"\game.sii", FileMode.Create)), BetterThanStupidMS.UTF8);
         }
     }
     public struct SaveEditTask {
@@ -65,7 +66,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.29.1";
+        public static string Version = "1.29.2";
 
         private SaveeditTasks tasks = new();
 
@@ -93,7 +94,7 @@ namespace ETS2SaveAutoEditor {
         }
 
         public static DateTime UnixToDateTime(long unixtime) {
-            DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            DateTime dtDateTime = new(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddMilliseconds(unixtime).ToLocalTime();
             return dtDateTime;
         }
@@ -103,24 +104,6 @@ namespace ETS2SaveAutoEditor {
         private Trucksim currentGame = Trucksim.ETS2;
 
         public MainWindow() {
-            if (!File.Exists("SII_Decrypt.exe")) {
-                InstallSII("Cannot locate SII_Decrypt. Would you like to install it?");
-            } else {
-                byte[] currentSII = File.ReadAllBytes("SII_Decrypt.exe");
-                byte[] resourceSII = Properties.Resources.SII_Decrypt;
-                if (!currentSII.SequenceEqual(resourceSII)) {
-                    InstallSII("Outdated SII_Decrypt. Would you like to update it?");
-                }
-            }
-
-            void InstallSII(string message) {
-                var res = MessageBox.Show(message, "Install the dependencies!", MessageBoxButton.YesNo);
-                if (res == MessageBoxResult.Yes) {
-                    File.WriteAllBytes("SII_Decrypt.exe", Properties.Resources.SII_Decrypt);
-                } else {
-                    Application.Current.Shutdown(0);
-                }
-            }
 
             InitializeComponent();
             Title += " " + Version;
@@ -235,9 +218,12 @@ namespace ETS2SaveAutoEditor {
 
         private void LoadSaveFile(string path) {
             var save = (ProfileSave)SaveList.SelectedItem;
-            var onEnd = new Action<string?>((string? str) => {
-                if (str is null) return;
-                save.content = str;
+            var onEnd = new Action<byte[]?>((byte[]? data) => {
+                if (data is null) {
+                    EnableAll();
+                    return;
+                }
+                save.content = data;
 
                 ShowTasks(true);
                 EnableAll();
@@ -245,29 +231,17 @@ namespace ETS2SaveAutoEditor {
 
             new Thread(() => {
                 var gameSiiPath = path + @"\game.sii";
+                var saveData = File.ReadAllBytes(gameSiiPath);
 
-                var psi = new ProcessStartInfo("SII_Decrypt.exe") {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    Arguments = "\"" + gameSiiPath + "\""
-                };
-                var proc = new Process {
-                    StartInfo = psi
-                };
-                proc.Start();
-                proc.WaitForExit();
-
-                var saveFile = File.ReadAllText(gameSiiPath, Encoding.UTF8).Replace("\r", "");
-
-                if (!saveFile.StartsWith("SiiNunit")) {
+                if (!SIIParser2.IsSupported(saveData)) {
                     Dispatcher.Invoke(() => {
                         MessageBox.Show("The savegame is corrupted.", "Load failure");
-                        Dispatcher.Invoke(onEnd, null);
+                        onEnd(null);
                     });
                     return;
                 }
 
-                Dispatcher.Invoke(onEnd, saveFile);
+                Dispatcher.Invoke(onEnd, saveData);
 
                 tasks.SetSaveFile(save);
             }).Start();
@@ -281,60 +255,42 @@ namespace ETS2SaveAutoEditor {
                 Thread.Sleep(250);
                 foreach (var save in Directory.GetDirectories(path)) {
                     var fpath = save + @"\info.sii";
-                    Console.WriteLine(fpath);
+
                     // File does not exist
                     if (!File.Exists(fpath)) {
                         continue;
                     }
-                    if (File.ReadLines(fpath).First().StartsWith("SiiNunit")) {
-                        Console.WriteLine("Skipping decryption");
-                    } else {
-                        Console.WriteLine("Decrypting");
-                        if (!File.Exists(fpath)) continue; // Not a save file.
-                        var psi = new ProcessStartInfo("SII_Decrypt.exe") {
-                            UseShellExecute = false,
-                            CreateNoWindow = true,
-                            Arguments = "\"" + fpath + "\""
-                        };
-                        var proc = new Process {
-                            StartInfo = psi
-                        };
-                        proc.Start();
-                        proc.WaitForExit();
-                    }
-                    var content = File.ReadAllText(fpath);
+
+                    var content = File.ReadAllBytes(fpath);
                     var directoryName = new DirectoryInfo(save).Name;
 
-                    if (content.StartsWith("ScsC")) // decrypt fail
-                    {
-                        MessageBox.Show("Could not decrypt a savegame. Removing from list.\n" + new DirectoryInfo(save).Name, "Decrypt failure");
-                        continue;
-                    }
-                    if (!content.StartsWith("SiiNunit")) // corrupted file
-                    {
+                    if (!SIIParser2.IsSupported(content)) {
+                        MessageBox.Show("Unsupported save. Removing from list.\n" + new DirectoryInfo(save).Name, "Unsupported save");
                         continue;
                     }
 
-                    string namePattern = "name: (.*)";
-                    string fileTimePattern = @"file_time: \b(\d+)\b";
+                    SII2 infoSii = SIIParser2.Parse(content);
+                    Game2 info = new(infoSii);
 
-                    if (!Regex.IsMatch(content, namePattern)) continue;
+                    Entity2? unit = info.EntityType("save_container");
+                    if (unit is null) {
+                        MessageBox.Show("Unsupported save. Removing from list.\n" + new DirectoryInfo(save).Name, "Unsupported save");
+                        continue;
+                    }
+
                     var nameResult = "N/A";
                     {
-                        var result = Regex.Match(content, namePattern);
-                        nameResult = result.Groups[1].Value.Trim();
+                        nameResult = unit.GetValue("name");
                         if (nameResult.StartsWith("\"") && nameResult.EndsWith("\"")) {
                             nameResult = nameResult.Substring(1, nameResult.Length - 2);
                         }
                         nameResult = SCSSaveHexEncodingSupport.GetUnescapedSaveName(nameResult);
                     }
 
-                    if (!Regex.IsMatch(content, fileTimePattern)) continue;
                     long dateResult = 0;
                     string dateFormatResult = "N/A";
                     {
-                        var result = Regex.Match(content, fileTimePattern);
-                        long resultLong = long.Parse(result.Groups[1].Value + "000");
+                        long resultLong = long.Parse(unit.GetValue("file_time") + "000");
                         dateResult = resultLong;
                         var dateTime = UnixToDateTime(dateResult);
                         dateFormatResult = dateTime.ToString("yyyy-MM-ddTHH\\:mm\\:ss");

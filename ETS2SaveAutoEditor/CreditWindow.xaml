@@ -28,14 +28,9 @@
                 </Section>
                 <Paragraph FontWeight="Bold">SII_Decrypt</Paragraph>
                 <Section>
-                    <Paragraph>SII Decrypt program 1.5.3 (c) 2016-2023 Frantisek Milt</Paragraph>
-                    <Paragraph>You can get actual copy and source code of SII Decrypt project on the following git repository:
+                    <Paragraph>Special thanks to Frantisek Milt for providing documentations of binary SII files.</Paragraph>
+                    <Paragraph>
                         <Hyperlink NavigateUri="https://github.com/TheLazyTomcat/SII_Decrypt" RequestNavigate="Hyperlink_RequestNavigate">https://github.com/TheLazyTomcat/SII_Decrypt</Hyperlink>
-                    </Paragraph>
-                    <Paragraph>SII_Decrypt is
-licensed under Mozilla Public License Version 2.0. You can find full text of
-this license in the repository or on web page
-                        <Hyperlink NavigateUri="https://www.mozilla.org/MPL/2.0/" RequestNavigate="Hyperlink_RequestNavigate">https://www.mozilla.org/MPL/2.0/</Hyperlink> .
                     </Paragraph>
                 </Section>
             </FlowDocument>

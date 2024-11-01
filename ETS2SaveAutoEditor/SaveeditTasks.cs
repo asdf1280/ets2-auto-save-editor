@@ -1,4 +1,5 @@
-﻿using ETS2SaveAutoEditor.SII2Parser;
+﻿using ASE.Utils;
+using ETS2SaveAutoEditor.SII2Parser;
 using ETS2SaveAutoEditor.Utils;
 using Microsoft.Win32;
 using System;
@@ -16,7 +17,9 @@ namespace ETS2SaveAutoEditor {
     public class SaveeditTasks {
         public void SetSaveFile(ProfileSave file) {
             saveFile = file;
-            saveGame = new(new SII2(saveFile.content));
+            saveGame = new(SIIParser2.Parse(saveFile.content));
+
+            saveFile.Save(saveGame);
         }
 
 #pragma warning disable CS8618
@@ -184,35 +187,45 @@ namespace ETS2SaveAutoEditor {
                 description = "Set the fuel(or battery) level of current truck to maximum."
             };
         }
-        public SaveEditTask FixEverything() {
+        public SaveEditTask FixEverything() { // Needs rework due to binary sii support
             var run = new Action(() => {
-                try {
-                    var lines = saveFile.content.Split('\n');
-                    var fs = new FileStream(saveFile.fullPath + @"\game.sii", FileMode.OpenOrCreate);
-                    var sw = new StreamWriter(fs, Encoding.UTF8);
-
-                    var p = new Regex(@"(([a-z_]*_wear(?:_unfixable)?(?:\[\d*\])?|integrity_odometer(?:_float_part)?):) (.*)\b", RegexOptions.Compiled);
-                    for (int i = 0; i < lines.Length; i++) {
-                        var str = lines[i];
-
-                        if (str.Contains("disco") || str.Contains("unlock") || str.Contains("{") || str.Contains("}") || (!str.Contains("wear") && !str.Contains("integrity_odometer")) || !p.IsMatch(str)) {
-                            sw.Write(str);
-                            sw.Write('\n');
-                            continue;
+                foreach (var e in saveGame.Reader) {
+                    foreach (var f in e) {
+                        if (f.Contains("_wear") || f.Contains("integrity_odometer")) {
+                            e[f] = new RawDataValue2("0");
                         }
-
-                        sw.Write(p.Replace(str, "$1 0"));
-                        sw.Write('\n');
                     }
-                    sw.Close();
-                    fs.Close();
-
-                    MessageBox.Show("Repaired all truck/trailers.", "Done");
-                } catch (Exception e) {
-                    MessageBox.Show("An unknown error occured.", "Error");
-                    Console.WriteLine(e);
-                    throw;
                 }
+                saveFile.Save(saveGame);
+                MessageBox.Show("Repaired all truck/trailers.", "Done");
+                // Old code
+                //try {
+                //    var lines = saveFile.content.Split('\n');
+                //    var fs = new FileStream(saveFile.fullPath + @"\game.sii", FileMode.OpenOrCreate);
+                //    var sw = new StreamWriter(fs, Encoding.UTF8);
+
+                //    var p = new Regex(@"(([a-z_]*_wear(?:_unfixable)?(?:\[\d*\])?|integrity_odometer(?:_float_part)?):) (.*)\b", RegexOptions.Compiled);
+                //    for (int i = 0; i < lines.Length; i++) {
+                //        var str = lines[i];
+
+                //        if (str.Contains("disco") || str.Contains("unlock") || str.Contains("{") || str.Contains("}") || (!str.Contains("wear") && !str.Contains("integrity_odometer")) || !p.IsMatch(str)) {
+                //            sw.Write(str);
+                //            sw.Write('\n');
+                //            continue;
+                //        }
+
+                //        sw.Write(p.Replace(str, "$1 0"));
+                //        sw.Write('\n');
+                //    }
+                //    sw.Close();
+                //    fs.Close();
+
+                //    MessageBox.Show("Repaired all truck/trailers.", "Done");
+                //} catch (Exception e) {
+                //    MessageBox.Show("An unknown error occured.", "Error");
+                //    Console.WriteLine(e);
+                //    throw;
+                //}
             });
             return new SaveEditTask {
                 name = "Repair All",
@@ -432,7 +445,7 @@ namespace ETS2SaveAutoEditor {
                         var sw = new Stopwatch();
                         sw.Start();
 
-                        SII2 reader = new(saveFile.content);
+                        SII2 reader = SIIParser2.Parse(saveFile.content);
 
                         sw.Stop();
 
@@ -453,7 +466,7 @@ namespace ETS2SaveAutoEditor {
                         sw.Restart();
 
                         FileStream sr = new("output.sii", FileMode.Create);
-                        StreamWriter swr = new(sr, Encoding.UTF8);
+                        StreamWriter swr = new(sr, BetterThanStupidMS.UTF8);
                         reader.WriteTo(swr);
                         swr.Close();
 
@@ -790,8 +803,8 @@ END
                         var saveToClone = saveGame.ToString();
                         // loading info.sii too
                         var infoSiiPath = saveFile.fullPath + @"\info.sii";
-                        var infoContent = File.ReadAllText(infoSiiPath);
-                        var reader = new SII2(infoContent);
+                        var infoContent = File.ReadAllBytes(infoSiiPath);
+                        var reader = SIIParser2.Parse(infoContent);
                         var infoGame = new Game2(reader);
 
                         var startTime = DateTime.Now;
@@ -813,7 +826,7 @@ END
                             File.SetLastWriteTime(newPath + @"\info.sii", targetEditedDate);
 
                             // game.sii
-                            SII2 clonedReader = new(saveToClone);
+                            SII2 clonedReader = SII2SiiNDecoder.Decode(saveToClone);
                             Game2 cloned = new(clonedReader);
 
                             cloned.AddAll(vehicleData.units);
@@ -1069,7 +1082,7 @@ END
                     var player = saveGame.EntityType("player")!;
 
                     // Current job unit
-                    if(!player.TryGetPointer("current_job", out Entity2? job)) {
+                    if (!player.TryGetPointer("current_job", out Entity2? job)) {
                         MessageBox.Show("You don't have any job now.", "Error");
                         return;
                     }
@@ -1133,8 +1146,32 @@ END
                         // Adding a dummy accessory with path to "/def/vehicle/trailer_owned/scs.box/data.sii" fixes N/A in trailer listings
                         var trailer = saveGame[currentTrailerId];
 
+                        string? suitablePath = (from a in trailer.GetAllPointers("accessories") where a.Unit.Type == "vehicle_accessory" && a.GetValue("data_path").StartsWith("\"/def/vehicle/trailer/") select a.GetValue("data_path")).FirstOrDefault();
+                        string accPath = "/def/vehicle/trailer_owned/scs.box/data.sii";
+                        if (suitablePath is not null) {
+                            if (suitablePath.Contains("/wielton")) {
+                                accPath = "/def/vehicle/trailer_owned/wielton.containerm/data.sii";
+                            } else if (suitablePath.Contains("/krone")) {
+                                accPath = "/def/vehicle/trailer_owned/krone.dryliner/data.sii";
+                            } else if (suitablePath.Contains("/feldbinder")) {
+                                accPath = "/def/vehicle/trailer_owned/feldbinder.kip/data.sii";
+                            } else if (suitablePath.Contains("/kassbohrer")) {
+                                accPath = "/def/vehicle/trailer_owned/kassbohrer.scx/data.sii";
+                            } else if (suitablePath.Contains("/kogel")) {
+                                accPath = "/def/vehicle/trailer_owned/kogel.cargo/data.sii";
+                            } else if (suitablePath.Contains("/tirsan")) {
+                                accPath = "/def/vehicle/trailer_owned/tirsan.scs/data.sii";
+                            } else if (suitablePath.Contains("/schmitz")) {
+                                accPath = "/def/vehicle/trailer_owned/schmitz.ski/data.sii";
+                            } else if (suitablePath.Contains("/schwmuller")) {
+                                accPath = "/def/vehicle/trailer_owned/schwmuller.cisternfood/data.sii";
+                            } else if (suitablePath.Contains("/tmp")) {
+                                accPath = "/def/vehicle/trailer_owned/tmp.caravan/data.sii";
+                            }
+                        }
+
                         var newUnit = saveGame.CreateNewUnit("vehicle_accessory");
-                        newUnit.Set("data_path", "\"/def/vehicle/trailer_owned/scs.box/data.sii\"");
+                        newUnit.Set("data_path", $"\"{accPath}\"");
 
                         trailer.ArrayAppend("accessories", newUnit.Unit.Id, true);
                     } else if (isCurrentTrailerStealable) { // The user decided to only steal the truck and abandon the trailer. Delete the unused job trailer.
@@ -1152,7 +1189,7 @@ END
                     }
 
                     // Special transport
-                    if(job.TryGetPointer("special", out Entity2? special)) {
+                    if (job.TryGetPointer("special", out Entity2? special)) {
                         CommonEdits.DeleteUnitRecursively(economy.GetPointer("stored_special_job"), ["AUTO"]);
                         economy.Set("stored_special_job", "null");
                         special.DeleteSelf();

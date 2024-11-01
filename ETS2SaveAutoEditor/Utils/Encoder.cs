@@ -28,6 +28,9 @@ namespace ETS2SaveAutoEditor.Utils {
         }
 
         public static string EncodeScsFloat(float value) {
+            if(value % 1 == 0) {
+                return value.ToString();
+            }
             byte[] bytes = BitConverter.GetBytes(value);
             if (BitConverter.IsLittleEndian) // The hex float notation in game save files is stored in big-endian format.
                 Array.Reverse(bytes);

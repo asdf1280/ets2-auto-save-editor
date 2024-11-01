@@ -272,5 +272,8 @@ namespace ETS2SaveAutoEditor.SII2Parser {
         public void DeleteSelf() {
             Unit.Parent.Remove(Unit);
         }
+
+        public string Id { get => Unit.Id; }
+        public string Type { get => Unit.Type; }
     }
 }

@@ -222,7 +222,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
             }
             if (type == 0x03) { // encoded string
                 ulong value = ByteEncoder.DecodeUInt64(ReadN(8));
-                unit.Set(field.name, JsonEncodeString(GetEncodedString(value)));
+                unit.Set(field.name, GetEncodedString(value));
                 return;
             }
             if (type == 0x04) { // encoded string[]
@@ -230,7 +230,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 string[] strings = new string[count];
                 for (int i = 0; i < count; i++) {
                     ulong value = ByteEncoder.DecodeUInt64(ReadN(8));
-                    strings[i] = JsonEncodeString(GetEncodedString(value));
+                    strings[i] = GetEncodedString(value);
                 }
                 unit.Set(field.name, strings);
                 return;

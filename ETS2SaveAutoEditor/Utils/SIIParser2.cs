@@ -309,7 +309,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 float f2 = ByteEncoder.DecodeFloat(ReadN(4));
                 float f3 = ByteEncoder.DecodeFloat(ReadN(4));
                 float f4 = ByteEncoder.DecodeFloat(ReadN(4));
-                unit.Set(field.name, $"({EncodeFloat(f1)}, {EncodeFloat(f2)}, {EncodeFloat(f3)}, {EncodeFloat(f4)})");
+                unit.Set(field.name, $"({EncodeFloat(f1)}; {EncodeFloat(f2)}, {EncodeFloat(f3)}, {EncodeFloat(f4)})");
                 return;
             }
             if (type == 0x18) { // (float, float, float, float)[]
@@ -320,7 +320,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                     float f2 = ByteEncoder.DecodeFloat(ReadN(4));
                     float f3 = ByteEncoder.DecodeFloat(ReadN(4));
                     float f4 = ByteEncoder.DecodeFloat(ReadN(4));
-                    floats[i] = $"({EncodeFloat(f1)}, {EncodeFloat(f2)}, {EncodeFloat(f3)}, {EncodeFloat(f4)})";
+                    floats[i] = $"({EncodeFloat(f1)}; {EncodeFloat(f2)}, {EncodeFloat(f3)}, {EncodeFloat(f4)})";
                 }
                 unit.Set(field.name, floats);
                 return;

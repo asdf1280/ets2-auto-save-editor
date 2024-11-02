@@ -28,7 +28,7 @@ namespace ETS2SaveAutoEditor.Utils {
         }
 
         public static string EncodeScsFloat(float value) {
-            if(MathF.Floor(value) == value) {
+            if (float.IsInteger(value)) {
                 return value.ToString();
             }
             byte[] bytes = BitConverter.GetBytes(value);

@@ -1146,29 +1146,7 @@ END
                         // Adding a dummy accessory with path to "/def/vehicle/trailer_owned/scs.box/data.sii" fixes N/A in trailer listings
                         var trailer = saveGame[currentTrailerId];
 
-                        string? suitablePath = (from a in trailer.GetAllPointers("accessories") where a.Unit.Type == "vehicle_accessory" && a.GetValue("data_path").StartsWith("\"/def/vehicle/trailer/") select a.GetValue("data_path")).FirstOrDefault();
                         string accPath = "/def/vehicle/trailer_owned/scs.box/data.sii";
-                        if (suitablePath is not null) {
-                            if (suitablePath.Contains("/wielton")) {
-                                accPath = "/def/vehicle/trailer_owned/wielton.containerm/data.sii";
-                            } else if (suitablePath.Contains("/krone")) {
-                                accPath = "/def/vehicle/trailer_owned/krone.dryliner/data.sii";
-                            } else if (suitablePath.Contains("/feldbinder")) {
-                                accPath = "/def/vehicle/trailer_owned/feldbinder.kip/data.sii";
-                            } else if (suitablePath.Contains("/kassbohrer")) {
-                                accPath = "/def/vehicle/trailer_owned/kassbohrer.scx/data.sii";
-                            } else if (suitablePath.Contains("/kogel")) {
-                                accPath = "/def/vehicle/trailer_owned/kogel.cargo/data.sii";
-                            } else if (suitablePath.Contains("/tirsan")) {
-                                accPath = "/def/vehicle/trailer_owned/tirsan.scs/data.sii";
-                            } else if (suitablePath.Contains("/schmitz")) {
-                                accPath = "/def/vehicle/trailer_owned/schmitz.ski/data.sii";
-                            } else if (suitablePath.Contains("/schwmuller")) {
-                                accPath = "/def/vehicle/trailer_owned/schwmuller.cisternfood/data.sii";
-                            } else if (suitablePath.Contains("/tmp")) {
-                                accPath = "/def/vehicle/trailer_owned/tmp.caravan/data.sii";
-                            }
-                        }
 
                         var newUnit = saveGame.CreateNewUnit("vehicle_accessory");
                         newUnit.Set("data_path", $"\"{accPath}\"");

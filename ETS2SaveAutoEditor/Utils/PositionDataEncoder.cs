@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -9,10 +10,11 @@ namespace ETS2SaveAutoEditor.Utils {
     public struct PositionData {
         public List<float[]> Positions;
         public bool TrailerConnected;
+        public bool MinifiedOrientation;
     }
 
     public class PositionCodeEncoder {
-        private static readonly int POSITION_DATA_VERSION = 2;
+        private static readonly int POSITION_DATA_VERSION = 3;
 
         public static string EncodePositionCode(PositionData data) {
             MemoryStream ms1 = new();
@@ -26,23 +28,26 @@ namespace ETS2SaveAutoEditor.Utils {
             }
 
             MemoryStream ms2 = new MemoryStream();
-            BinaryWriter bs2 = new BinaryWriter(ms2);
 
             void sendPlacement(float[] p) {
-                for (int t = 0; t < 7; t++) {
-                    byte[] b = BitConverter.GetBytes(p[t]);
-                    // The coordinate values must be stored in big-endian format due to a bug in the initial implementation.
-                    if (BitConverter.IsLittleEndian)
-                        Array.Reverse(b);
-                    bs2.Write(b);
+                if (data.MinifiedOrientation) {
+                    for (int i = 0; i < 4; i++)
+                        ms2.Write(ByteEncoder.EncodeFloat(p[i], ByteOrder.BigEndian));
+
+                    ms2.Write(ByteEncoder.EncodeFloat(p[5], ByteOrder.BigEndian));
+                } else {
+                    for (int i = 0; i < 7; i++)
+                        ms2.Write(ByteEncoder.EncodeFloat(p[i], ByteOrder.BigEndian));
                 }
             }
-            bs2.Write((byte)((data.Positions.Count & ~(1 << 7)) + (data.TrailerConnected ? 1 << 7 : 0)));
+
+            // Header byte
+            ms2.WriteByte((byte)((data.Positions.Count & 0b00111111) | (data.TrailerConnected ? 1 << 7 : 0) | (data.MinifiedOrientation ? 1 << 6 : 0)));
             foreach (float[] p in data.Positions) {
                 sendPlacement(p);
             }
 
-            bs2.Close();
+            ms2.Close();
 
             bs1.Write(Compressor.Compress(ms2.ToArray()));
             bs1.Close();
@@ -69,7 +74,7 @@ namespace ETS2SaveAutoEditor.Utils {
                 version = BitConverter.ToInt32(b, 0);
             }
 
-            if (version != POSITION_DATA_VERSION && version != 1) {
+            if (version != POSITION_DATA_VERSION && version != 2 && version != 1) { // Version 1 and 2 can be supported without additional code.
                 // redundant compatibility checks
                 //if (version == 3 || version == 4) {
                 //    return DecodePositionCodeV3V4(encoded);
@@ -91,22 +96,31 @@ namespace ETS2SaveAutoEditor.Utils {
             MemoryStream ms2 = new(Compressor.Decompress(tempBuf.ToArray()));
             BinaryReader bs2 = new(ms2);
 
+            byte length = bs2.ReadByte(); // Count of placements
+            var trailerConnected = (length & 1 << 7) > 0; // The first bit indicates whether the trailer is connected.
+            bool minifiedOrientation = (length & 1 << 6) > 0; // The second bit indicates whether the orientation is minified.
+            length = (byte)(length & 0b00111111); // The remaining bits indicate the number of placements.
+
             // Data exchange
             float[] receivePlacement() {
                 float[] result = new float[7];
-                for (int i = 0; i < 7; i++) {
-                    byte[] bytes = bs2.ReadBytes(4);
-                    if (BitConverter.IsLittleEndian) { // The coordinate values must be stored in big-endian format due to a bug in the initial implementation.
-                        Array.Reverse(bytes);
+                if (minifiedOrientation) {
+                    for (int i = 0; i < 5; i++) {
+                        byte[] bytes = bs2.ReadBytes(4);
+                        result[i] = ByteEncoder.DecodeFloat(bytes, ByteOrder.BigEndian);
                     }
-                    result[i] = BitConverter.ToSingle(bytes, 0);
+                    result[5] = result[4];
+                    result[4] = 0;
+                    result[6] = 0;
+                } else {
+                    for (int i = 0; i < 7; i++) {
+                        byte[] bytes = bs2.ReadBytes(4);
+                        result[i] = ByteEncoder.DecodeFloat(bytes, ByteOrder.BigEndian);
+                    }
                 }
                 return result;
             }
 
-            byte length = bs2.ReadByte(); // Count of placements
-            var trailerConnected = (length & 1 << 7) > 0; // The first bit indicates whether the trailer is connected.
-            length = (byte)(length & (~(1 << 7))); // The remaining bits indicate the number of placements.
             for (int i = 0; i < length; i++) {
                 placements.Add(receivePlacement());
             }

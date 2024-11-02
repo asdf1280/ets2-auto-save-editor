@@ -21,6 +21,8 @@ namespace ETS2SaveAutoEditor.SII2Parser {
         internal readonly List<Unit2> units = [];
         internal readonly Dictionary<string, Unit2> unitMap = [];
 
+        public object? StructureData;
+
         public const string Indent = " ";
         private static bool countArrays = false;
         public static bool CountArrays {

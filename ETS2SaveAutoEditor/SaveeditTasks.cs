@@ -20,6 +20,10 @@ namespace ETS2SaveAutoEditor {
             saveGame = new(SIIParser2.Parse(saveFile.content));
 
             saveFile.Save(saveGame);
+            if(saveGame.Reader.StructureData is Dictionary<int, BSIIStruct>) {
+                // Save structure data next to the save file
+                BSIIStructureDumper.WriteStructureDataTo(saveFile.GetWriter("bsii.txt"), (Dictionary<int, BSIIStruct>)saveGame.Reader.StructureData);
+            }
         }
 
 #pragma warning disable CS8618
@@ -261,6 +265,7 @@ namespace ETS2SaveAutoEditor {
 
                     string encodedData = PositionCodeEncoder.EncodePositionCode(new PositionData {
                         TrailerConnected = trailerConnected,
+                        MinifiedOrientation = true,
                         Positions = positions
                     });
                     Clipboard.SetText(encodedData);
@@ -335,7 +340,8 @@ namespace ETS2SaveAutoEditor {
                         a
                     };
 
-                    positionData.TrailerConnected = true;
+                    positionData.TrailerConnected = true; // Always true because we're erasing where trailer was connected. If it's not connected, the game wouldn't know where to place the trailer.
+                    positionData.MinifiedOrientation = true; // Remove X and Z components of the quaternion in orientation. This reduces the length of the code without affecting the accuracy.
 
                     string encodedData = PositionCodeEncoder.EncodePositionCode(positionData);
                     Clipboard.SetText(encodedData);

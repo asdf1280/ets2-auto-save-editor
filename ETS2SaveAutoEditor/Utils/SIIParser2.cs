@@ -270,14 +270,14 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, strings);
                 return;
             }
-            if (type == 0x03) { // encoded string
+            if (type == 0x03) { // token
                 ulong value = ByteEncoder.DecodeUInt64(NextBuffer(8));
                 var s = GetEncodedString(value);
                 if (s == "") s = "\"\""; // Empty string should be '""'
                 unit.Set(field.name, s);
                 return;
             }
-            if (type == 0x04) { // encoded string[]
+            if (type == 0x04) { // token[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] strings = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -288,7 +288,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, strings);
                 return;
             }
-            if (type == 0x05) {  // float
+            if (type == 0x05) { // float
                 unit.Set(field.name, EncodeFloat(ByteEncoder.DecodeFloat(NextBuffer(4))));
                 return;
             }
@@ -301,11 +301,11 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, floats);
                 return;
             }
-            if (type == 0x07) { // (float, float)
+            if (type == 0x07) { // float2 (x, y)
                 unit.Set(field.name, ReadFloat2());
                 return;
             }
-            if (type == 0x08) { // (float, float)[]
+            if (type == 0x08) { // float2[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] floats = new string[count];
                 for (int i = 0; i < count; i++)
@@ -313,12 +313,12 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, floats);
                 return;
             }
-            if (type == 0x09) // (float, float, float)
+            if (type == 0x09) // float3 (x, y, z)
             {
                 unit.Set(field.name, ReadFloat3());
                 return;
             }
-            if (type == 0x0A) { // (float, float, float)[]
+            if (type == 0x0A) { // float3[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] floats = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -327,14 +327,58 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, floats);
                 return;
             }
-            if (type == 0x11) { // (int, int, int)
+            if (type == 0x0B) // float4 (x, y, z, w)
+            {
+                unit.Set(field.name, ReadFloat4());
+                return;
+            }
+            if (type == 0x0C) { // float4[]
+                uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
+                string[] floats = new string[count];
+                for (int i = 0; i < count; i++) {
+                    floats[i] = ReadFloat4();
+                }
+                unit.Set(field.name, floats);
+                return;
+            }
+            if (type == 0x0D) { // fixed (int)
+                unit.Set(field.name, ByteEncoder.DecodeInt32(NextBuffer(4)) + "");
+                return;
+            }
+            if (type == 0x0E) { // fixed[]
+                uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
+                string[] ints = new string[count];
+                for (int i = 0; i < count; i++) {
+                    ints[i] = ByteEncoder.DecodeInt32(NextBuffer(4)) + "";
+                }
+                unit.Set(field.name, ints);
+                return;
+            }
+            if (type == 0x0F) { // fixed2 (int) (x, y)
+                int i1 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                int i2 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                unit.Set(field.name, $"({i1}, {i2})");
+                return;
+            }
+            if (type == 0x10) { // fixed2[]
+                uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
+                string[] ints = new string[count];
+                for (int i = 0; i < count; i++) {
+                    int i1 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                    int i2 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                    ints[i] = $"({i1}, {i2})";
+                }
+                unit.Set(field.name, ints);
+                return;
+            }
+            if (type == 0x11) { // fixed3 (int) (x, y, z)
                 int i1 = ByteEncoder.DecodeInt32(NextBuffer(4));
                 int i2 = ByteEncoder.DecodeInt32(NextBuffer(4));
                 int i3 = ByteEncoder.DecodeInt32(NextBuffer(4));
                 unit.Set(field.name, $"({i1}, {i2}, {i3})");
                 return;
             }
-            if (type == 0x12) { // (int, int, int)[]
+            if (type == 0x12) { // fixed3[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] ints = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -346,11 +390,49 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, ints);
                 return;
             }
-            if (type == 0x17) { // (float, float, float, float)
+            if (type == 0x13) { // fixed4 (int) (x, y, z, w)
+                int i1 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                int i2 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                int i3 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                int i4 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                unit.Set(field.name, $"({i1}; {i2}, {i3}, {i4})");
+                return;
+            }
+            if (type == 0x14) { // fixed4[]
+                uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
+                string[] ints = new string[count];
+                for (int i = 0; i < count; i++) {
+                    int i1 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                    int i2 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                    int i3 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                    int i4 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                    ints[i] = $"({i1}; {i2}, {i3}, {i4})";
+                }
+                unit.Set(field.name, ints);
+                return;
+            }
+            if (type == 0x15) { // int2 (x, y)
+                int i1 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                int i2 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                unit.Set(field.name, $"({i1}, {i2})");
+                return;
+            }
+            if (type == 0x16) { // int2[]
+                uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
+                string[] ints = new string[count];
+                for (int i = 0; i < count; i++) {
+                    int i1 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                    int i2 = ByteEncoder.DecodeInt32(NextBuffer(4));
+                    ints[i] = $"({i1}, {i2})";
+                }
+                unit.Set(field.name, ints);
+                return;
+            }
+            if (type == 0x17) { // quaternion (w, x, y, z) - basically float4 but with different meaning
                 unit.Set(field.name, ReadFloat4());
                 return;
             }
-            if (type == 0x18) { // (float, float, float, float)[]
+            if (type == 0x18) { // quaternion[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] s = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -359,11 +441,11 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, s);
                 return;
             }
-            if (type == 0x19) { // float[8] but must be converted to (float * 7)
+            if (type == 0x19) { // placement (float[8]) needs conversion to float[7] (x, y, z) (w; x, y, z)
                 unit.Set(field.name, ReadFloat8());
                 return;
             }
-            if (type == 0x1A) { // float[8][] but must be converted to (float * 7)[]
+            if (type == 0x1A) { // placement[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] s = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -372,11 +454,11 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, s);
                 return;
             }
-            if (type == 0x25) { // int32
+            if (type == 0x25) { // s32 (int)
                 unit.Set(field.name, ByteEncoder.DecodeInt32(NextBuffer(4)) + "");
                 return;
             }
-            if (type == 0x26) { // int32[]
+            if (type == 0x26) { // s32[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] ints = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -385,11 +467,11 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, ints);
                 return;
             }
-            if (type == 0x27 || type == 0x2F) { // uint32. 0x2f unclear. (only used for cash in game)
+            if (type == 0x27 || type == 0x2F) { // u32 (uint). 0x2f is unclear. (only used for cash in game)
                 unit.Set(field.name, ByteEncoder.DecodeUInt32(NextBuffer(4)) + "");
                 return;
             }
-            if (type == 0x28) { // uint32[]
+            if (type == 0x28) { // u32[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] ints = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -398,11 +480,11 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, ints);
                 return;
             }
-            if (type == 0x29) { // int16
+            if (type == 0x29) { // s16 (short)
                 unit.Set(field.name, ByteEncoder.DecodeInt16(NextBuffer(2)) + "");
                 return;
             }
-            if (type == 0x2A) { // int16[]
+            if (type == 0x2A) { // s16[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] ints = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -411,11 +493,11 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, ints);
                 return;
             }
-            if (type == 0x2B) { // uint16
+            if (type == 0x2B) { // u16 (ushort)
                 unit.Set(field.name, ByteEncoder.DecodeUInt16(NextBuffer(2)) + "");
                 return;
             }
-            if (type == 0x2C) { // uint16[]
+            if (type == 0x2C) { // u16[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] ints = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -424,11 +506,11 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, ints);
                 return;
             }
-            if (type == 0x31) { // int64
+            if (type == 0x31) { // s64 (long)
                 unit.Set(field.name, ByteEncoder.DecodeInt64(NextBuffer(8)) + "");
                 return;
             }
-            if (type == 0x32) { // int64[]
+            if (type == 0x32) { // s64[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] ints = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -437,11 +519,11 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, ints);
                 return;
             }
-            if (type == 0x33) { // uint64
+            if (type == 0x33) { // u64 (ulong)
                 unit.Set(field.name, ByteEncoder.DecodeUInt64(NextBuffer(8)) + "");
                 return;
             }
-            if (type == 0x34) { // uint64[]
+            if (type == 0x34) { // u64[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] ints = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -463,13 +545,13 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, bools);
                 return;
             }
-            if (type == 0x37) { // Enum
+            if (type == 0x37) { // enum
                 Dictionary<int, string> enumValues = (Dictionary<int, string>)field.data!;
                 int enumValue = ByteEncoder.DecodeInt32(NextBuffer(4));
                 unit.Set(field.name, enumValues[enumValue]);
                 return;
             }
-            if (type == 0x38) { // Enum[]
+            if (type == 0x38) { // enum[]
                 Dictionary<int, string> enumValues = (Dictionary<int, string>)field.data!;
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] enums = new string[count];
@@ -480,7 +562,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, enums);
                 return;
             }
-            if (type == 0x39 || type == 0x3B || type == 0x3D) { // Three types of pointers, but doesn't matter when converting to string.
+            if (type == 0x39 || type == 0x3B || type == 0x3D) { // Three types of pointers, owner_ptr, inner_ptr, link_ptr. doesn't matter when converting to string.
                 unit.Set(field.name, ReadToken());
                 return;
             }
@@ -584,7 +666,215 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 }
             }
 
+            sii.StructureData = structures;
+
             return sii;
+        }
+    }
+
+    class BSIIStructureDumper {
+        public static void WriteStructureDataTo(TextWriter w, Dictionary<int, BSIIStruct> structures) {
+            w.Write("// This file was generated by ASE for save editors. Refer to this file to understand what value fits in which field of savegame.\n\n");
+            w.Write("// Note that this file is only generated when ASE decodes a binary SII save.\n\n");
+            w.Write("// Some of types are documented in https://modding.scssoft.com/wiki/Documentation/Engine/Units\n\n");
+
+            foreach (var structId in structures.Keys) {
+                BSIIStruct structDef = structures[structId];
+                w.Write($"STRUCTURE  0x{structId:x2}  {structDef.name}\n");
+                w.Write($"    {"NAME", -40}  TYPE_ID  TYPE\n");
+                foreach (var field in structDef.fields) {
+                    w.Write($"    {field.name,-40}  0x{field.type:x2}     {StringifyType(field)}\n");
+                }
+                w.Write("\n");
+            }
+
+            w.Close();
+        }
+
+        private static string StringifyType(BSIIField field) {
+            int type = field.type;
+            if (type == 0x00) {
+                return "Invalid";
+            }
+            if (type == 0x01) {
+                return "string";
+            }
+            if (type == 0x02) {
+                return "string[]";
+            }
+            if (type == 0x03) {
+                return "token"; // 0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,_
+            }
+            if (type == 0x04) {
+                return "token[]";
+            }
+            if (type == 0x05) {
+                return "float";
+            }
+            if (type == 0x06) {
+                return "float[]";
+            }
+            if (type == 0x07) {
+                return "float2";
+            }
+            if (type == 0x08) {
+                return "float2[]";
+            }
+            if (type == 0x09) {
+                return "float3";
+            }
+            if (type == 0x0A) {
+                return "float3[]";
+            }
+            if (type == 0x0B) {
+                return "float4";
+            }
+            if (type == 0x0C) {
+                return "float4[]";
+            }
+            if (type == 0x0D) {
+                return "fixed";
+            }
+            if (type == 0x0E) {
+                return "fixed[]";
+            }
+            if (type == 0x0F) {
+                return "fixed2";
+            }
+            if (type == 0x10) {
+                return "fixed2[]";
+            }
+            if (type == 0x11) {
+                return "fixed3";
+            }
+            if (type == 0x12) {
+                return "fixed3[]";
+            }
+            if(type == 0x13) {
+                return "fixed4";
+            }
+            if (type == 0x14) {
+                return "fixed4[]";
+            }
+            if (type == 0x15) {
+                return "int2";
+            }
+            if (type == 0x16) {
+                return "int2[]";
+            }
+            if (type == 0x17) {
+                return "quaternion";
+            }
+            if (type == 0x18) {
+                return "quaternion[]";
+            }
+            if (type == 0x19) {
+                return "placement";
+            }
+            if (type == 0x1A) {
+                return "placement[]";
+            }
+            if (type == 0x25) {
+                return "s32";
+            }
+            if (type == 0x26) {
+                return "s32[]";
+            }
+            if (type == 0x27) {
+                return "u32";
+            }
+            if (type == 0x28) {
+                return "u32[]";
+            }
+            if (type == 0x29) {
+                return "s16";
+            }
+            if (type == 0x2A) {
+                return "s16[]";
+            }
+            if (type == 0x2B) {
+                return "u16";
+            }
+            if (type == 0x2C) {
+                return "u16[]";
+            }
+            if (type == 0x2D) {
+                return "unknown";
+            }
+            if (type == 0x2E) {
+                return "unknown[]";
+            }
+            if (type == 0x2F) {
+                return "uint";
+            }
+            if (type == 0x30) {
+                return "uint[]";
+            }
+            if (type == 0x31) {
+                return "s64";
+            }
+            if (type == 0x32) {
+                return "s64[]";
+            }
+            if (type == 0x33) {
+                return "u64";
+            }
+            if (type == 0x34) {
+                return "u64[]";
+            }
+            if (type == 0x35) {
+                return "bool";
+            }
+            if (type == 0x36) {
+                return "bool[]";
+            }
+            if (type == 0x37) {
+                string s = "";
+                Dictionary<int, string> data = (Dictionary<int, string>)field.data!;
+
+                foreach (int enumValue in data.Keys) {
+                    string enumName = data[enumValue];
+
+                    s += $"{enumName}={enumValue}, ";
+                }
+
+                s = s.Substring(0, s.Length - 2);
+
+                return "enum<" + s + ">";
+            }
+            if (type == 0x38) {
+                string s = "";
+                Dictionary<int, string> data = (Dictionary<int, string>)field.data!;
+
+                foreach (int enumValue in data.Keys) {
+                    string enumName = data[enumValue];
+
+                    s += $"{enumName}={enumValue}, ";
+                }
+
+                s = s.Substring(0, s.Length - 2);
+
+                return "enum<" + s + ">[]";
+            }
+            if (type == 0x39) {
+                return "owner_ptr";
+            }
+            if (type == 0x3A) {
+                return "owner_ptr[]";
+            }
+            if (type == 0x3B) {
+                return "inner_ptr";
+            }
+            if (type == 0x3C) {
+                return "inner_ptr[]";
+            }
+            if (type == 0x3D) {
+                return "link_ptr";
+            }
+            if (type == 0x3E) {
+                return "link_ptr[]";
+            }
+            return "Unknown";
         }
     }
 

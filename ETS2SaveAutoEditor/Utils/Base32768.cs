@@ -79,7 +79,7 @@ namespace ETS2SaveAutoEditor.Utils {
     /// </summary>
     public class Base32768 {
         // Pair of code points to use in Base32768 output. Only the first 32768 characters are used.
-        private static readonly ushort[] charSheet = new ushort[] { 48, 57, 65, 90, 97, 122, 256, 750, 13056, 13310, 13312, 19893, 19968, 40869, 40960, 42182, 44032, 55203, 63744, 64045, 64256, 64511, 65072, 65103, 65136, 65276, 65281, 65439 };
+        private static readonly ushort[] charSheet = [48, 57, 65, 90, 97, 122, 256, 750, 13056, 13310, 13312, 19893, 19968, 40869, 40960, 42182, 44032, 55203, 63744, 64045, 64256, 64511, 65072, 65103, 65136, 65276, 65281, 65439];
 
         /// <summary>
         /// Encodes a 15-bit integer value to a corresponding character from the Base32768 character sheet.

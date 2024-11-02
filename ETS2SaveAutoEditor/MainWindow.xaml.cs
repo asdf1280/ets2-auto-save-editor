@@ -50,8 +50,8 @@ namespace ETS2SaveAutoEditor {
             Save(instance.Reader);
         }
 
-        public StreamWriter GetWriter() {
-            return new StreamWriter(new BufferedStream(new FileStream(fullPath + @"\game.sii", FileMode.Create)), BetterThanStupidMS.UTF8);
+        public StreamWriter GetWriter(string filePath = "game.sii") {
+            return new StreamWriter(new BufferedStream(new FileStream(fullPath + $"\\{filePath}", FileMode.Create)), BetterThanStupidMS.UTF8);
         }
     }
     public struct SaveEditTask {

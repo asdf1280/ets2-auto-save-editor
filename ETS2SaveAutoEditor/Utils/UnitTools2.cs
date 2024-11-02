@@ -66,7 +66,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
         public Entity2 CreateNewUnit(string type, [Optional] string? id) {
             id ??= GenerateNewID();
             Unit2 unit = new(type, id);
-            reader.Add(unit);
+            reader.UncheckedAdd(unit);
             return new(unit);
         }
 

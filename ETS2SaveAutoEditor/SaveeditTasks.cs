@@ -265,7 +265,7 @@ namespace ETS2SaveAutoEditor {
 
                     string encodedData = PositionCodeEncoder.EncodePositionCode(new PositionData {
                         TrailerConnected = trailerConnected,
-                        MinifiedOrientation = true,
+                        MinifiedOrientation = false,
                         Positions = positions
                     });
                     Clipboard.SetText(encodedData);

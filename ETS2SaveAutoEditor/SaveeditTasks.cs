@@ -777,12 +777,16 @@ END
                         for (int k = 0; k < vehicleCount; k++) {
                             // Decode the vehicle data
                             var toRead = r.ReadUInt32();
+                            uint bytesRead = 0;
                             var buf = new byte[toRead];
                             while (toRead > 0) {
-                                toRead -= (uint)r.Read(buf, 0, (int)toRead);
+                                uint read = (uint)r.Read(buf, (int)bytesRead, (int)toRead);
+                                bytesRead += read;
+                                toRead -= read;
+                                if(read == 0 && toRead > 0) throw new Exception("Unexpected end of stream while reading vehicle data.");
                             }
                             var r2 = new MemoryStream(AESEncoder.InstanceA.Decode(buf));
-                            bool hasTrailer = r.ReadByte() > 0;
+                            bool hasTrailer = r2.ReadByte() > 0;
 
                             List<Entity2> units = [];
                             string[] keys = new string[hasTrailer ? 2 : 1];
@@ -834,6 +838,10 @@ END
                             // game.sii
                             SII2 clonedReader = SII2SiiNDecoder.Decode(saveToClone);
                             Game2 cloned = new(clonedReader);
+
+                            foreach(var vehicle in vehicleData.units) {
+                                vehicle.Unit.___detach_do_not_use(); // In this function, same units are attached to multiple saves. Since old save files aren't used after saving, we can safely move units to new save.
+                            }
 
                             cloned.AddAll(vehicleData.units);
 

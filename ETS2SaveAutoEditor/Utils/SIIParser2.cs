@@ -253,6 +253,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
 
         private string EncodeFloat(float f) {
             return SCSSpecialString.EncodeScsFloat(f);
+            //return f.ToString("R"); // Debugging
         }
 
         private void SaveFieldValue(Entity2 unit, BSIIField field) {

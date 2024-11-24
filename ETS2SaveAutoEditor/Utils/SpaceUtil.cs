@@ -35,7 +35,6 @@ namespace ASE.Utils {
         // An intrinsic rotation sequence about the 𝑥, 𝑦, 𝑧 axes is mathematically equivalent to an extrinsic rotation sequence about the 𝑧, 𝑦, 𝑥 axes, in that order.
         // This equivalence arises due to the way rotation matrices are applied and multiplied in each case.
 
-        // https://chatgpt.com/share/6742c81d-94c8-8010-89f9-acf34f370719
         // A rotation in the order of 𝑥, 𝑦, 𝑧 axes is:
         // - If it's intrinsic rotation:
         // -- R = Rx * Ry' * Rz'' and Q = Qx * Qy * Qz
@@ -43,8 +42,8 @@ namespace ASE.Utils {
         // -- R = Rz * Ry * Rx and Q = Qz * Qy * Qx
         // Rx, Ry, Rz are rotation matrices representing rotation about x, y, z axes respectively.
         // Qx, Qy, Qz are quaternions representing rotation about x, y, z axes respectively.
-        // This formula has been verified by gpt-o1. However, the formula is not verified by a human expert.
-        // https://chatgpt.com/share/673895f4-ebac-8010-af8f-fbb5f7c1958d
+
+        // ChatGPT says sometimes you need to reverse the order for intrinsic rotation, sometimes vice versa (inverse for extrinsic rotation). Don't trust it.
 
         // https://dominicplein.medium.com/extrinsic-intrinsic-rotation-do-i-multiply-from-right-or-left-357c38c1abfd
 

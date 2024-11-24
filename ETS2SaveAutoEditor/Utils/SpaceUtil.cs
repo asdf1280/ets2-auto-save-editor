@@ -98,12 +98,8 @@ namespace ASE.Utils {
             //
             //
             // In our scenario, this intrinsic rotation is applied in the order of y, x, z.
-            // ∴ The rotation matrix R = Rz(𝜃z) * Rx(𝜃x) * Ry(𝜃y)
+            // ∴ The rotation matrix R = Ry(𝜃y) * Rx(𝜃x) * Rz(𝜃z)
             // NOTE: Roll is done about the NEGATIVE z-axis.
-
-            //          |  cos(𝜃z) -sin(𝜃z)  0        |
-            // Rz(𝜃z) = |  sin(𝜃z)  cos(𝜃z)  0        |
-            //          |  0        0        1        |
 
             //          |  1        0        0        |
             // Rx(𝜃x) = |  0        cos(𝜃x) -sin(𝜃x)  |
@@ -113,46 +109,95 @@ namespace ASE.Utils {
             // Ry(𝜃y) = |  0        1        0        |
             //          | -sin(𝜃y)  0        cos(𝜃y)  |
 
-            //          |  cos(𝜃z) -sin(𝜃z)cos(𝜃x)  sin(𝜃x)sin(𝜃z) |
-            // Rz*Rx =  |  sin(𝜃z)  cos(𝜃x)cos(𝜃z) -sin(𝜃x)cos(𝜃z) |
-            //          |  0        sin(𝜃x)         cos(𝜃x)        |
+            //          |  cos(𝜃z) -sin(𝜃z)  0        |
+            // Rz(𝜃z) = |  sin(𝜃z)  cos(𝜃z)  0        |
+            //          |  0        0        1        |
 
-            //                  |  cos(𝜃y)cos(𝜃z)-sin(𝜃x)sin(𝜃y)sin(𝜃z) -cos(𝜃x)sin(𝜃z)  sin(𝜃y)cos(𝜃z)+sin(𝜃x)cos(𝜃y)sin(𝜃z) |
-            // R = (Rz*Rx)*Ry = |  cos(𝜃y)sin(𝜃z)+sin(𝜃x)sin(𝜃y)cos(𝜃z)  cos(𝜃x)cos(𝜃z)  sin(𝜃y)sin(𝜃z)-sin(𝜃x)cos(𝜃y)cos(𝜃z) |
-            //                  | -cos(𝜃x)sin(𝜃y)                        sin(𝜃x)         cos(𝜃x)cos(𝜃y)                       |
+            //          |   cos(𝜃y)  sin(𝜃x)sin(𝜃y)  cos(𝜃x)sin(𝜃y) |
+            // Ry*Rx =  |   0        cos(𝜃x)        -sin(𝜃x)        |
+            //          |  -sin(𝜃y)  sin(𝜃x)cos(𝜃y)  cos(𝜃x)cos(𝜃y) |
+
+            //                  |  cos(𝜃y)cos(𝜃z)+sin(𝜃x)sin(𝜃y)sin(𝜃z) -cos(𝜃y)sin(𝜃z)+sin(𝜃x)sin(𝜃y)cos(𝜃z)  cos(𝜃x)sin(𝜃y) |
+            // R = (Ry*Rx)*Rz = |  cos(𝜃x)sin(𝜃z)                        cos(𝜃x)cos(𝜃z)                       -sin(𝜃x)        |
+            //                  | -sin(𝜃y)cos(𝜃z)+sin(𝜃x)cos(𝜃y)sin(𝜃z)  sin(𝜃y)sin(𝜃z)+sin(𝜃x)cos(𝜃y)cos(𝜃z)  cos(𝜃x)cos(𝜃y) |
 
             // where R = Rq
 
-            // 𝜃x = arcsin ( R21 )
-            // 𝜃y = arctan2 ( -R20, R22 )
-            // 𝜃z = arctan2 ( -R01, R11 )
+            // 𝜃x = arcsin ( -R12 )
+            // 𝜃y = arctan2 ( R02, R22 )
+            // 𝜃z = arctan2 ( R10, R11 )
 
             // I have verified the formula above myself, which was originally given by AI. Time to implement it.
 
-            var nominal = Normalize();
+            var q = Normalize();
+            var w = q.w; var x = q.x; var y = q.y; var z = q.z;
 
-            var R01 = 2 * (nominal.x * nominal.y - nominal.w * nominal.z);
-            var R11 = 1 - 2 * (nominal.x * nominal.x + nominal.z * nominal.z);
-            var R20 = 2 * (nominal.x * nominal.z - nominal.w * nominal.y);
-            var R21 = 2 * (nominal.y * nominal.z + nominal.w * nominal.x);
-            var R22 = 1 - 2 * (nominal.x * nominal.x + nominal.y * nominal.y);
+            //      | 1 - 2(y^2 + z^2)  2(xy - wz)        2(xz + wy)       |
+            // Rq = | 2(xy + wz)        1 - 2(x^2 + z^2)  2(yz - wx)       |
+            //      | 2(xz - wy)        2(yz + wx)        1 - 2(x^2 + y^2) |
+            // Be careful. Copilot for C# is very stupid and produces wrong results here.
+            double[,] Rq = {{1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y) },
+                             { 2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)},
+                             { 2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y) } };
 
             // If values are extremely close to -1, 0, 1, assume they're integer.
-            for (int i = -1; i <= 1; i++) {
-                if (Math.Abs(R01 - i) < 1e-10) R01 = i;
-                if (Math.Abs(R11 - i) < 1e-10) R11 = i;
-                if (Math.Abs(R20 - i) < 1e-10) R20 = i;
-                if (Math.Abs(R21 - i) < 1e-10) R21 = i;
-                if (Math.Abs(R22 - i) < 1e-10) R22 = i;
+            for (int row = 0; row < 3; row++) {
+                for (int col = 0; col < 3; col++) {
+                    if (Math.Abs(Rq[row, col] - Math.Round(Rq[row, col])) < 1e-12) {
+                        Rq[row, col] = Math.Round(Rq[row, col]);
+                        if (Rq[row, col] == -0) Rq[row, col] = 0;
+                    }
+                }
             }
 
-            // Debug 5 values
-            //Console.WriteLine($"{R01}, {R11}, {R20}, {R21}, {R22}");
+
+            // Print the Rq matrix fancy with indents
+            //for (int i = 0; i < Rq.GetLength(0); i++) {
+            //    for (int j = 0; j < Rq.GetLength(1); j++) {
+            //        // Modify Rq to the rounded value if the error's less than 1e-12
+            //        Console.Write($"{Rq[i, j],30}");
+            //    }
+            //    Console.WriteLine();
+            //}
 
             // Calculation of angles
-            var theta_x = Math.Asin(R21);
-            var theta_y = Math.Atan2(-R20, R22);
-            var theta_z = Math.Atan2(-R01, R11);
+            var theta_x = Math.Asin(-Rq[1, 2]);
+            var theta_y = Math.Atan2(Rq[0, 2], Rq[2, 2]);
+            var theta_z = Math.Atan2(Rq[1, 0], Rq[1, 1]);
+
+            // Needs special handling when cos(𝜃x) = 0 (gimbal lock)
+            var sx = -Rq[1, 2];
+            if (sx == 1) {
+                // R00 =  cos(𝜃y)cos(𝜃z) + sin(𝜃y)sin(𝜃z) = cos(𝜃z - 𝜃y)
+                // R20 = -sin(𝜃y)cos(𝜃z) + cos(𝜃y)sin(𝜃z) = sin(𝜃z - 𝜃y)
+                // R21 =  sin(𝜃y)sin(𝜃z) + cos(𝜃y)cos(𝜃z) = cos(𝜃y - 𝜃z) =  cos(𝜃z - 𝜃y)
+                // R01 = -cos(𝜃y)sin(𝜃z) + sin(𝜃y)cos(𝜃z) = sin(𝜃y - 𝜃z) = -sin(𝜃z - 𝜃y)
+
+                // Print values of atan2(R20, R00), atan2(-R01, R21)
+                //Console.WriteLine("90");
+                //Console.WriteLine($"{Math.Atan2(Rq[2, 0], Rq[0, 0]) * 180 / Math.PI}\n{Math.Atan2(-Rq[0, 1], Rq[2, 1]) * 180 / Math.PI}");
+
+                // a = atan2(R20, R00)
+                // 𝜃z and 𝜃y can be any value that satisfies the equation 𝜃z - 𝜃y = a
+                // Let's assume 𝜃y = 0, then 𝜃z = a
+                theta_y = 0;
+                theta_z = Math.Atan2(Rq[2, 0], Rq[0, 0]);
+            } else if (sx == -1) {
+                // R00 =  cos(𝜃y)cos(𝜃z) - sin(𝜃y)sin(𝜃z) = cos(𝜃z + 𝜃y)
+                // R20 = -sin(𝜃y)cos(𝜃z) - cos(𝜃y)sin(𝜃z) = -sin(𝜃z + 𝜃y)
+                // R21 =  sin(𝜃y)sin(𝜃z) - cos(𝜃y)cos(𝜃z) = -cos(𝜃y + 𝜃z)
+                // R01 = -cos(𝜃y)sin(𝜃z) - sin(𝜃y)cos(𝜃z) = -sin(𝜃y + 𝜃z)
+
+                // Print values of atan2(-R20, R00), atan2(-R01, -R21)
+                //Console.WriteLine("-90");
+                //Console.WriteLine($"{Math.Atan2(-Rq[2, 0], Rq[0, 0]) * 180 / Math.PI}\n{Math.Atan2(-Rq[0, 1], -Rq[2, 1]) * 180 / Math.PI}");
+
+                // a = atan2(-R20, R00)
+                // 𝜃z and 𝜃y can be any value that satisfies the equation 𝜃z + 𝜃y = a
+                // Let's assume 𝜃y = 0, then 𝜃z = a
+                theta_y = 0;
+                theta_z = Math.Atan2(-Rq[2, 0], Rq[0, 0]);
+            }
 
             // x, y, z correspond to pitch, yaw, roll respectively.
             return (theta_y, theta_x, theta_z);

@@ -157,38 +157,41 @@ namespace ETS2SaveAutoEditor {
     (0, 0, -360),
     
     // Combined rotations
-    //(45, 45, 45),
-    //(-45, -45, -45),
-    //(30, 60, 90),
-    //(-30, -60, -90),
-    //(120, 240, 300),
-    //(-120, -240, -300),
+    (45, 45, 45),
+    (-45, -45, -45),
+    (30, 60, 90),
+    (-30, -60, -90),
+    (120, 240, 300),
+    (-120, -240, -300),
     
     // Small angles
-    //(0.1, 0.2, 0.3),
-    //(-0.1, -0.2, -0.3),
+    (0.1, 0.2, 0.3),
+    (-0.1, -0.2, -0.3),
     
     // Angles that may cause gimbal lock
-    (0, 90, 0),
-    (0, -90, 0),
+    (90, 90, 90),
+    (-90, -90, -90),
     (180, 90, 0),
     (180, -90, 0),
     
     // Random angles
-    //(15, 75, 105),
-    //(-15, -75, -105),
-    //(135, 225, 315),
-    //(-135, -225, -315),
+    (15, 75, 105),
+    (-15, -75, -105),
+    (135, 225, 315),
+    (-135, -225, -315),
 };
 
             Console.WriteLine("Now performing quaternion case test. In this test, we will test the conversion between Euler angles and quaternions. If the result differs more than 1e-6 degrees, the test will fail.");
             // Iterate over the test cases and call debugQuat
+            int failures = 0, count = 0;
             foreach (var (yaw, pitch, roll) in testCases) {
+                Console.WriteLine("-------------------------------");
+                count++;
+
                 var quat = Quaternion.FromEulerDegrees(yaw, pitch, roll);
                 var ed = quat.ToEulerDegrees();
                 var quat2 = Quaternion.FromEulerDegrees(ed.Item1, ed.Item2, ed.Item3);
 
-                Console.WriteLine("-------------------------------");
                 Console.WriteLine($"Testing Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°");
                 Console.WriteLine($"Quaternion: {quat.ToAxisAngleString()}");
                 Console.WriteLine("Forward: " + quat.GetDirection());
@@ -199,7 +202,17 @@ namespace ETS2SaveAutoEditor {
                     Console.WriteLine($"Test failed. Difference: {diff * 180 / Math.PI} degrees.");
                     Console.WriteLine($"Euler angles (restored): {ed.Item1}, {ed.Item2}, {ed.Item3}");
                     Console.WriteLine($"Quaternion (reproduced): {quat2.ToAxisAngleString()}");
+
+                    failures++;
                 }
+            }
+
+            Console.WriteLine("-------------------------------");
+
+            if (failures == 0) {
+                Console.WriteLine("Passed all quaternion conversion test cases!!!!!!!!!!");
+            } else {
+                Console.WriteLine("Failed " + failures + " out of " + count + " quaternion conversion test cases.");
             }
 
             //{

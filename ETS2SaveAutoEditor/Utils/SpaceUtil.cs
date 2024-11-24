@@ -35,17 +35,18 @@ namespace ASE.Utils {
         // An intrinsic rotation sequence about the 𝑥, 𝑦, 𝑧 axes is mathematically equivalent to an extrinsic rotation sequence about the 𝑧, 𝑦, 𝑥 axes, in that order.
         // This equivalence arises due to the way rotation matrices are applied and multiplied in each case.
 
-        // https://chatgpt.com/share/6738939f-598c-8010-9e12-49b25028725c
-        // A rotation in the order of x, y, z axis is:
+        // https://chatgpt.com/share/6742c81d-94c8-8010-89f9-acf34f370719
+        // A rotation in the order of 𝑥, 𝑦, 𝑧 axes is:
         // - If it's intrinsic rotation:
-        // -- R = Rz * Ry * Rx and Q = Qx * Qy * Qz
+        // -- R = Rx * Ry' * Rz'' and Q = Qx * Qy * Qz
         // - If it's extrinsic rotation:
-        // -- R = Rx * Ry * Rz and Q = Qz * Qy * Qx
+        // -- R = Rz * Ry * Rx and Q = Qz * Qy * Qx
         // Rx, Ry, Rz are rotation matrices representing rotation about x, y, z axes respectively.
         // Qx, Qy, Qz are quaternions representing rotation about x, y, z axes respectively.
         // This formula has been verified by gpt-o1. However, the formula is not verified by a human expert.
         // https://chatgpt.com/share/673895f4-ebac-8010-af8f-fbb5f7c1958d
 
+        // https://dominicplein.medium.com/extrinsic-intrinsic-rotation-do-i-multiply-from-right-or-left-357c38c1abfd
 
         // In ETS2, the rotation is applied in y, x, z order in an intrinsic manner.
 
@@ -63,28 +64,19 @@ namespace ASE.Utils {
 
         public static Quaternion FromEuler(double yaw, double pitch, double roll) {
             // Normalize angles to the range -π to π for consistency
-            yaw = NormalizeAngle(yaw);
-            pitch = NormalizeAngle(pitch);
-            roll = NormalizeAngle(roll);
+            //yaw = NormalizeAngle(yaw);
+            //pitch = NormalizeAngle(pitch);
+            //roll = NormalizeAngle(roll);
 
-            //// Calculate sin and cos for each half-angle
-            //double cy = Math.Cos(yaw * 0.5);
-            //double sy = Math.Sin(yaw * 0.5);
-            //double cp = Math.Cos(pitch * 0.5);
-            //double sp = Math.Sin(pitch * 0.5);
-            //double cr = Math.Cos(roll * 0.5);
-            //double sr = Math.Sin(roll * 0.5);
+            // Generate quaternions for each axis-angle rotation
+            Quaternion qYaw = new Vector3(0, 1, 0).AsAxisAngle(yaw);   // Yaw about positive Y-axis
+            Quaternion qPitch = new Vector3(1, 0, 0).AsAxisAngle(pitch); // Pitch about positive X-axis
+            Quaternion qRoll = new Vector3(0, 0, 1).AsAxisAngle(roll); // Roll about positive Z-axis
 
-            //// Corrected quaternion calculation
-            //double w = cy * cp * cr - sy * sp * sr;
-            //double x = cy * sp * cr + sy * cp * sr;
-            //double y = sy * cp * cr - cy * sp * sr;
-            //double z = cy * cp * sr + sy * sp * cr;
-
-            //return new Quaternion(w, x, y, z);
-
-            return new Vector3(0, 1, 0).Rotate(yaw) * new Vector3(1, 0, 0).Rotate(pitch) * new Vector3(0, 0, 1).Rotate(roll);
+            // yaw - pitch - roll intrinsic rotation.
+            return qYaw * qPitch * qRoll;
         }
+
 
         public static Quaternion FromEulerDegrees(double yaw, double pitch, double roll) {
             return FromEuler(yaw * Math.PI / 180, pitch * Math.PI / 180, roll * Math.PI / 180);
@@ -107,6 +99,7 @@ namespace ASE.Utils {
             //
             // In our scenario, this intrinsic rotation is applied in the order of y, x, z.
             // ∴ The rotation matrix R = Rz(𝜃z) * Rx(𝜃x) * Ry(𝜃y)
+            // NOTE: Roll is done about the NEGATIVE z-axis.
 
             //          |  cos(𝜃z) -sin(𝜃z)  0        |
             // Rz(𝜃z) = |  sin(𝜃z)  cos(𝜃z)  0        |
@@ -154,7 +147,7 @@ namespace ASE.Utils {
             }
 
             // Debug 5 values
-            Console.WriteLine($"{R01}, {R11}, {R20}, {R21}, {R22}");
+            //Console.WriteLine($"{R01}, {R11}, {R20}, {R21}, {R22}");
 
             // Calculation of angles
             var theta_x = Math.Asin(R21);
@@ -162,7 +155,6 @@ namespace ASE.Utils {
             var theta_z = Math.Atan2(-R01, R11);
 
             // x, y, z correspond to pitch, yaw, roll respectively.
-
             return (theta_y, theta_x, theta_z);
         }
 
@@ -244,7 +236,7 @@ namespace ASE.Utils {
 
         public static Vector3 operator *(Quaternion rotation, Vector3 point) {
             Quaternion pointQuat = new Quaternion(0, point.x, point.y, point.z);
-            Quaternion rotatedQuat = (rotation * pointQuat) * rotation.Conjugate();
+            Quaternion rotatedQuat = (rotation * pointQuat) * rotation.Normalize().Conjugate();
             return new Vector3(rotatedQuat.x, rotatedQuat.y, rotatedQuat.z);
         }
 
@@ -322,7 +314,7 @@ namespace ASE.Utils {
 
         public Vector3 Normalize() {
             double length = Math.Sqrt(x * x + y * y + z * z);
-            if(length == 0) return new Vector3(0, 0, 0);
+            if (length == 0) return new Vector3(0, 0, 0);
             return new Vector3(x / length, y / length, z / length);
         }
 
@@ -343,7 +335,7 @@ namespace ASE.Utils {
         /// </summary>
         /// <param name="radians"></param>
         /// <returns></returns>
-        public Quaternion Rotate(double radians) {
+        public Quaternion AsAxisAngle(double radians) {
             double halfAngle = radians / 2;
             double sinHalfAngle = Math.Sin(halfAngle);
             var normalized = Normalize();

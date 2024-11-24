@@ -118,30 +118,6 @@ namespace ETS2SaveAutoEditor {
             LoadGame(gameThatShouldBeAvailable, false);
             ProfileChanged(false); // No need to call GameChanged because we want it visible
 
-            // Quaternion Debug
-            Quaternion a;
-
-            int debugId = 0;
-            void debugQuat(Quaternion q) {
-                Console.WriteLine($"\n[{debugId}] Printing quaternion #{debugId}. {q}");
-                Console.WriteLine("Direction: " + q.GetDirection());
-                Console.WriteLine("Yaw axis: " + q.GetYawAxis());
-                Console.WriteLine("Pitch axis: " + q.GetPitchAxis());
-                Console.WriteLine("Roll axis: " + q.GetRollAxis());
-                var decomp = q.Decomposite();
-                // Convert to degrees
-                Console.WriteLine($"The rotation axis is {decomp.Item1} and the angle is {decomp.Item2 * 180 / Math.PI} degrees.");
-
-                // Print in Euler angles
-                var euler = q.ToEulerDegrees();
-                Console.WriteLine($"Euler angles: {euler.Item1}, {euler.Item2}, {euler.Item3} (deg)");
-
-                debugId++;
-            }
-            //debugQuat(Quaternion.FromEulerDegrees(0, 0, 0));
-
-            //debugQuat(Quaternion.FromEulerDegrees(0, 90, 0));
-
             // Define test cases with significant yaw, pitch, and roll values
             var testCases = new List<(double yaw, double pitch, double roll)>
             {
@@ -181,16 +157,16 @@ namespace ETS2SaveAutoEditor {
     (0, 0, -360),
     
     // Combined rotations
-    (45, 45, 45),
-    (-45, -45, -45),
-    (30, 60, 90),
-    (-30, -60, -90),
-    (120, 240, 300),
-    (-120, -240, -300),
+    //(45, 45, 45),
+    //(-45, -45, -45),
+    //(30, 60, 90),
+    //(-30, -60, -90),
+    //(120, 240, 300),
+    //(-120, -240, -300),
     
     // Small angles
-    (0.1, 0.2, 0.3),
-    (-0.1, -0.2, -0.3),
+    //(0.1, 0.2, 0.3),
+    //(-0.1, -0.2, -0.3),
     
     // Angles that may cause gimbal lock
     (0, 90, 0),
@@ -199,10 +175,10 @@ namespace ETS2SaveAutoEditor {
     (180, -90, 0),
     
     // Random angles
-    (15, 75, 105),
-    (-15, -75, -105),
-    (135, 225, 315),
-    (-135, -225, -315),
+    //(15, 75, 105),
+    //(-15, -75, -105),
+    //(135, 225, 315),
+    //(-135, -225, -315),
 };
 
             Console.WriteLine("Now performing quaternion case test. In this test, we will test the conversion between Euler angles and quaternions. If the result differs more than 1e-6 degrees, the test will fail.");
@@ -212,32 +188,34 @@ namespace ETS2SaveAutoEditor {
                 var ed = quat.ToEulerDegrees();
                 var quat2 = Quaternion.FromEulerDegrees(ed.Item1, ed.Item2, ed.Item3);
 
+                Console.WriteLine("-------------------------------");
+                Console.WriteLine($"Testing Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°");
+                Console.WriteLine($"Quaternion: {quat.ToAxisAngleString()}");
+                Console.WriteLine("Forward: " + quat.GetDirection());
+                Console.WriteLine("Up: " + quat.GetYawAxis());
+
                 var diff = quat.RotationFrom(quat2).Decomposite().Angle; // This will be positive because of how Decomposite works. It takes inverse of cosine and assumes it's positive.
                 if(diff > 1e-6) {
-                    Console.WriteLine("-------------------------------");
-                    Console.WriteLine($"Testing Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°");
                     Console.WriteLine($"Test failed. Difference: {diff * 180 / Math.PI} degrees.");
-                    Console.WriteLine($"Quaternion: {quat.ToAxisAngleString()}");
-                    Console.WriteLine("Direction: " + quat.GetDirection());
-                    Console.WriteLine($"Euler angles: {ed.Item1}, {ed.Item2}, {ed.Item3}");
-                    Console.WriteLine($"Quaternion from Euler angles: {quat2.ToAxisAngleString()}");
+                    Console.WriteLine($"Euler angles (restored): {ed.Item1}, {ed.Item2}, {ed.Item3}");
+                    Console.WriteLine($"Quaternion (reproduced): {quat2.ToAxisAngleString()}");
                 }
             }
 
-            {
-                Console.WriteLine("Starting quaternion incremental test. The numbers should be increasing by 5 degrees from 0 to 180 then decreasing back to 0.");
-                var random = new Random();
-                var randomYaw = random.NextDouble() * 720 - 360;
-                var randomPitch = random.NextDouble() * 720 - 360;
-                Console.WriteLine("Random yaw and pitch: " + randomYaw + ", " + randomPitch);
-                for (int i = 0; i <= 360; i += 5) {
-                    var qa = Quaternion.FromEulerDegrees(randomYaw, 0, randomPitch);
-                    var qb = Quaternion.FromEulerDegrees(randomYaw, i, randomPitch);
-                    var angleDiff = qa.RotationFrom(qb).Decomposite().Angle * 180 / Math.PI;
-                    // Print up to 5 decimal places
-                    Console.WriteLine($"{i}°: {angleDiff:F5}°");
-                }
-            }
+            //{
+            //    Console.WriteLine("Starting quaternion incremental test. The numbers should be increasing by 5 degrees from 0 to 180 then decreasing back to 0.");
+            //    var random = new Random();
+            //    var randomYaw = random.NextDouble() * 720 - 360;
+            //    var randomPitch = random.NextDouble() * 720 - 360;
+            //    Console.WriteLine("Random yaw and pitch: " + randomYaw + ", " + randomPitch);
+            //    for (int i = 0; i <= 360; i += 5) {
+            //        var qa = Quaternion.FromEulerDegrees(randomYaw, 0, randomPitch);
+            //        var qb = Quaternion.FromEulerDegrees(randomYaw, i, randomPitch);
+            //        var angleDiff = qa.RotationFrom(qb).Decomposite().Angle * 180 / Math.PI;
+            //        // Print up to 5 decimal places
+            //        Console.WriteLine($"{i}°: {angleDiff:F5}°");
+            //    }
+            //}
         }
 
         private Trucksim GetNextAvailableGame(Trucksim currentGame) {

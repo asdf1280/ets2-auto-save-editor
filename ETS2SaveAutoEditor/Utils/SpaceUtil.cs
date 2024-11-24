@@ -7,8 +7,124 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Windows.Management.Deployment.Preview;
 
 namespace ASE.Utils {
+    public class QuaternionTester {
+        public static void TestQuaternion() {
+            // Define test cases with significant yaw, pitch, and roll values
+            var testCases = new List<(double yaw, double pitch, double roll)>
+            {
+    // Zero rotation
+    (0, 0, 0),
+    
+    // Single-axis rotations
+    (90, 0, 0),
+    (0, 90, 0),
+    (0, 0, 90),
+    (-90, 0, 0),
+    (0, -90, 0),
+    (0, 0, -90),
+    
+    // 180-degree rotations
+    (180, 0, 0),
+    (0, 180, 0),
+    (0, 0, 180),
+    (-180, 0, 0),
+    (0, -180, 0),
+    (0, 0, -180),
+    
+    // 270-degree rotations
+    (270, 0, 0),
+    (0, 270, 0),
+    (0, 0, 270),
+    (-270, 0, 0),
+    (0, -270, 0),
+    (0, 0, -270),
+    
+    // Full rotations
+    (360, 0, 0),
+    (0, 360, 0),
+    (0, 0, 360),
+    (-360, 0, 0),
+    (0, -360, 0),
+    (0, 0, -360),
+    
+    // Combined rotations
+    (45, 45, 45),
+    (-45, -45, -45),
+    (30, 60, 90),
+    (-30, -60, -90),
+    (120, 240, 300),
+    (-120, -240, -300),
+    
+    // Small angles
+    (0.1, 0.2, 0.3),
+    (-0.1, -0.2, -0.3),
+    
+    // Angles that may cause gimbal lock
+    (90, 90, 90),
+    (-90, -90, -90),
+    (180, 90, 0),
+    (180, -90, 0),
+    
+    // Random angles
+    (15, 75, 105),
+    (-15, -75, -105),
+    (135, 225, 315),
+    (-135, -225, -315),
+};
+
+            Console.WriteLine("Now performing quaternion case test. In this test, we will test the conversion between Euler angles and quaternions. If the result differs more than 1e-6 degrees, the test will fail.");
+            // Iterate over the test cases and call debugQuat
+            int failures = 0, count = 0;
+            foreach (var (yaw, pitch, roll) in testCases) {
+                Console.WriteLine("-------------------------------");
+                count++;
+
+                var quat = Quaternion.FromEulerDegrees(yaw, pitch, roll);
+                var ed = quat.ToEulerDegrees();
+                var quat2 = Quaternion.FromEulerDegrees(ed.Item1, ed.Item2, ed.Item3);
+
+                Console.WriteLine($"Testing Yaw: {yaw}°, Pitch: {pitch}°, Roll: {roll}°");
+                Console.WriteLine($"Quaternion: {quat.ToAxisAngleString()}");
+                Console.WriteLine("Forward: " + quat.GetDirection());
+                Console.WriteLine("Up: " + quat.GetYawAxis());
+
+                var diff = quat.RotationFrom(quat2).Decomposite().Angle; // This will be positive because of how Decomposite works. It takes inverse of cosine and assumes it's positive.
+                if (diff > 1e-6) {
+                    Console.WriteLine($"Test failed. Difference: {diff * 180 / Math.PI} degrees.");
+                    Console.WriteLine($"Euler angles (restored): {ed.Item1}, {ed.Item2}, {ed.Item3}");
+                    Console.WriteLine($"Quaternion (reproduced): {quat2.ToAxisAngleString()}");
+
+                    failures++;
+                }
+            }
+
+            Console.WriteLine("-------------------------------");
+
+            if (failures == 0) {
+                Console.WriteLine("Passed all special quaternion conversion test cases!!!!!!!!!!");
+            } else {
+                Console.WriteLine("Failed " + failures + " out of " + count + " quaternion conversion test cases.");
+            }
+
+            {
+                Console.WriteLine("Starting quaternion incremental test. The numbers should be increasing by 5 degrees from 0 to 180 then decreasing back to 0.");
+                var random = new Random();
+                var randomYaw = random.NextDouble() * 720 - 360;
+                var randomPitch = random.NextDouble() * 720 - 360;
+                Console.WriteLine("Random yaw and pitch: " + randomYaw + ", " + randomPitch);
+                for (int i = 0; i <= 360; i += 5) {
+                    var qa = Quaternion.FromEulerDegrees(randomYaw, 0, randomPitch);
+                    var qb = Quaternion.FromEulerDegrees(randomYaw, i, randomPitch);
+                    var angleDiff = qa.RotationFrom(qb).Decomposite().Angle * 180 / Math.PI;
+                    // Print up to 5 decimal places
+                    Console.WriteLine($"{i}°: {angleDiff:F5}°");
+                }
+            }
+        }
+    }
     public class Quaternion(double w, double x, double y, double z) {
         public double w = w, x = x, y = y, z = z;
 

@@ -117,6 +117,7 @@ namespace ETS2SaveAutoEditor {
             }
             LoadGame(gameThatShouldBeAvailable, false);
             ProfileChanged(false); // No need to call GameChanged because we want it visible
+            //QuaternionTester.TestQuaternion();
         }
 
         private Trucksim GetNextAvailableGame(Trucksim currentGame) {

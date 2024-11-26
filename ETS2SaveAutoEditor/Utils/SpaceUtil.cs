@@ -294,9 +294,9 @@ namespace ASE.Utils {
 
                 // a = atan2(R20, R00)
                 // 𝜃z and 𝜃y can be any value that satisfies the equation 𝜃z - 𝜃y = a
-                // Let's assume 𝜃y = 0, then 𝜃z = a
-                theta_y = 0;
-                theta_z = Math.Atan2(Rq[2, 0], Rq[0, 0]);
+                // Let's assume 𝜃z = 0, then 𝜃y = -a
+                theta_z = 0;
+                theta_y = -Math.Atan2(Rq[2, 0], Rq[0, 0]);
             } else if (sx == -1) {
                 // R00 =  cos(𝜃y)cos(𝜃z) - sin(𝜃y)sin(𝜃z) = cos(𝜃z + 𝜃y)
                 // R20 = -sin(𝜃y)cos(𝜃z) - cos(𝜃y)sin(𝜃z) = -sin(𝜃z + 𝜃y)
@@ -309,9 +309,9 @@ namespace ASE.Utils {
 
                 // a = atan2(-R20, R00)
                 // 𝜃z and 𝜃y can be any value that satisfies the equation 𝜃z + 𝜃y = a
-                // Let's assume 𝜃y = 0, then 𝜃z = a
-                theta_y = 0;
-                theta_z = Math.Atan2(-Rq[2, 0], Rq[0, 0]);
+                // Let's assume 𝜃z = 0, then 𝜃y = a
+                theta_z = 0;
+                theta_y = Math.Atan2(-Rq[2, 0], Rq[0, 0]);
             }
 
             // x, y, z correspond to pitch, yaw, roll respectively.

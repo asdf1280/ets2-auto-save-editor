@@ -14,6 +14,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
+using System.Windows.Input;
 
 namespace ETS2SaveAutoEditor {
     public class SaveeditTasks {
@@ -206,7 +207,7 @@ namespace ETS2SaveAutoEditor {
                     ArgumentNullException.ThrowIfNull(proc, "ETS2 is not running.");
 
                     var isMultiplayer = (from a in proc.Modules.OfType<ProcessModule>() where a.ModuleName.Contains("ets2mp") select a).Any();
-                    if(isMultiplayer) {
+                    if(isMultiplayer && !Keyboard.IsKeyDown(Key.LeftAlt)) {
                         MessageBox.Show("This tool does not work for TruckersMP until stability is guaranteed.", "Error");
                         return;
                     }
@@ -222,7 +223,7 @@ namespace ETS2SaveAutoEditor {
 
                     var current = BitConverter.ToSingle(reader.ReadPath(ba + 0x26BA9D0, [0xF0, 0x10, 0x28, 0x8, 0x20, 0x178], 4));
                     if (!(current >= 0 && current <= 1)) { // Out of range hap
-                        MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refule current vehicle' tool instead.", "Error");
+                        MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refuel current vehicle' tool instead.", "Error");
                         return;
                     }
                     reader.WritePath(ba + 0x26BA9D0, [0xF0, 0x10, 0x28, 0x8, 0x20, 0x178], BitConverter.GetBytes((float)1));
@@ -238,8 +239,7 @@ namespace ETS2SaveAutoEditor {
                     }
 
                 } catch (Exception e) {
-                    MessageBox.Show("Failed to modify the memory. Please use 'Refule current vehicle' tool instead.", "Error");
-                    throw;
+                    MessageBox.Show("Failed to modify the memory. Please use 'Refuel current vehicle' tool instead.", "Error");
                 }
             });
             return new SaveEditTask {

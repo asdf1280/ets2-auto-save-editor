@@ -202,6 +202,15 @@ namespace ETS2SaveAutoEditor {
         public SaveEditTask RefuelNow() {
             var run = new Action(() => {
                 try {
+                    var proc = Process.GetProcessesByName("eurotrucks2").FirstOrDefault();
+                    ArgumentNullException.ThrowIfNull(proc, "ETS2 is not running.");
+
+                    var isMultiplayer = (from a in proc.Modules.OfType<ProcessModule>() where a.ModuleName.Contains("ets2mp") select a).Any();
+                    if(isMultiplayer) {
+                        MessageBox.Show("This tool does not work for TruckersMP until stability is guaranteed.", "Error");
+                        return;
+                    }
+
                     SCSMemoryReader reader = new SCSMemoryReader("eurotrucks2");
                     var ba = reader.GetBaseAddress(null);
 
@@ -219,7 +228,7 @@ namespace ETS2SaveAutoEditor {
                     reader.WritePath(ba + 0x26BA9D0, [0xF0, 0x10, 0x28, 0x8, 0x20, 0x178], BitConverter.GetBytes((float)1));
                     //MessageBox.Show("Done", "Done");
                     // Instead of showing Done, focus on the game window
-                    var proc = Process.GetProcessesByName("eurotrucks2").FirstOrDefault();
+                    
                     if (proc != null) {
                         SetForegroundWindow(proc.MainWindowHandle);
                         ShowWindow(proc.MainWindowHandle, 9); // SW_RESTORE

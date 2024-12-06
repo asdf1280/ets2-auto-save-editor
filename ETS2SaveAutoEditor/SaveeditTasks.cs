@@ -8,9 +8,11 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows;
 
 namespace ETS2SaveAutoEditor {
@@ -20,7 +22,7 @@ namespace ETS2SaveAutoEditor {
             saveGame = new(SIIParser2.Parse(saveFile.content));
 
             saveFile.Save(saveGame);
-            if(saveGame.Reader.StructureData is Dictionary<int, BSIIStruct>) {
+            if (saveGame.Reader.StructureData is Dictionary<int, BSIIStruct>) {
                 // Save structure data next to the save file
                 BSIIStructureDumper.WriteStructureDataTo(saveFile.GetWriter("bsii.txt"), (Dictionary<int, BSIIStruct>)saveGame.Reader.StructureData);
             }
@@ -189,6 +191,52 @@ namespace ETS2SaveAutoEditor {
                 name = "Refuel current vehicle",
                 run = run,
                 description = "Set the fuel(or battery) level of current truck to maximum."
+            };
+        }
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        public SaveEditTask RefuelNow() {
+            var run = new Action(() => {
+                try {
+                    SCSMemoryReader reader = new SCSMemoryReader("eurotrucks2");
+                    var ba = reader.GetBaseAddress(null);
+
+                    var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2038B19, 24));
+                    if (!gameVersion.StartsWith("1.53")) {
+                        MessageBox.Show("This tool only supports ETS2 1.53. As it directly modifies the memory, it is disabled for other versions.", "Error");
+                        return;
+                    }
+
+                    var current = BitConverter.ToSingle(reader.ReadPath(ba + 0x26BA9D0, [0xF0, 0x10, 0x28, 0x8, 0x20, 0x178], 4));
+                    if (!(current >= 0 && current <= 1)) { // Out of range hap
+                        MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refule current vehicle' tool instead.", "Error");
+                        return;
+                    }
+                    reader.WritePath(ba + 0x26BA9D0, [0xF0, 0x10, 0x28, 0x8, 0x20, 0x178], BitConverter.GetBytes((float)1));
+                    //MessageBox.Show("Done", "Done");
+                    // Instead of showing Done, focus on the game window
+                    var proc = Process.GetProcessesByName("eurotrucks2").FirstOrDefault();
+                    if (proc != null) {
+                        SetForegroundWindow(proc.MainWindowHandle);
+                        ShowWindow(proc.MainWindowHandle, 9); // SW_RESTORE
+
+                        Console.Beep(660, 150); // First tone: A5 (880 Hz), duration: 150 ms
+                        Console.Beep(880, 150); // Second tone: C6 (1046 Hz), duration: 150 ms
+                    }
+
+                } catch (Exception e) {
+                    MessageBox.Show("Failed to modify the memory. Please use 'Refule current vehicle' tool instead.", "Error");
+                    throw;
+                }
+            });
+            return new SaveEditTask {
+                name = "Refuel now!",
+                run = run,
+                description = "Refuel the current vehicle 'in the running ETS2'. Not supported for ATS yet. Only supports ETS2 1.53."
             };
         }
         public SaveEditTask FixEverything() { // Needs rework due to binary sii support
@@ -783,7 +831,7 @@ END
                                 uint read = (uint)r.Read(buf, (int)bytesRead, (int)toRead);
                                 bytesRead += read;
                                 toRead -= read;
-                                if(read == 0 && toRead > 0) throw new Exception("Unexpected end of stream while reading vehicle data.");
+                                if (read == 0 && toRead > 0) throw new Exception("Unexpected end of stream while reading vehicle data.");
                             }
                             var r2 = new MemoryStream(AESEncoder.InstanceA.Decode(buf));
                             bool hasTrailer = r2.ReadByte() > 0;
@@ -839,7 +887,7 @@ END
                             SII2 clonedReader = SII2SiiNDecoder.Decode(saveToClone);
                             Game2 cloned = new(clonedReader);
 
-                            foreach(var vehicle in vehicleData.units) {
+                            foreach (var vehicle in vehicleData.units) {
                                 vehicle.Unit.___detach_do_not_use(); // In this function, same units are attached to multiple saves. Since old save files aren't used after saving, we can safely move units to new save.
                             }
 

@@ -81,6 +81,7 @@ namespace ETS2SaveAutoEditor {
             addAction(tasks.UnlockScreens());
             addAction(tasks.TruckEngineSet());
             addAction(tasks.Refuel());
+            addAction(tasks.RefuelNow());
             addAction(tasks.FixEverything());
             addAction(tasks.SharePosition());
             addAction(tasks.ImportPosition());

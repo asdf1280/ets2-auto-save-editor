@@ -9,6 +9,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -200,6 +201,7 @@ namespace ETS2SaveAutoEditor {
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+        [SupportedOSPlatform("Windows")]
         public SaveEditTask RefuelNow() {
             var run = new Action(() => {
                 try {
@@ -223,7 +225,7 @@ namespace ETS2SaveAutoEditor {
                     reader.WritePath(ba + 0x26BA9D0, [0xF0, 0x10, 0x28, 0x8, 0x20, 0x178], BitConverter.GetBytes((float)1));
                     //MessageBox.Show("Done", "Done");
                     // Instead of showing Done, focus on the game window
-                    
+
                     if (proc != null) {
                         SetForegroundWindow(proc.MainWindowHandle);
                         ShowWindow(proc.MainWindowHandle, 9); // SW_RESTORE
@@ -286,6 +288,162 @@ namespace ETS2SaveAutoEditor {
                 name = "Repair All",
                 run = run,
                 description = "Repairs all trucks and trailers in the current savegame.\n\n1.49 Warning - This will even repair trucks in used truck dealer!"
+            };
+        }
+
+        public SaveEditTask ShareNavigation() {
+            var run = new Action(() => {
+                try {
+                    var economy = saveGame.EntityType("economy")!;
+                    var waypointsBehind = economy.GetAllPointers("stored_gps_behind_waypoints");
+                    var waypointsAhead = economy.GetAllPointers("stored_gps_ahead_waypoints");
+                    var avoids = economy.GetAllPointers("stored_gps_avoid_waypoints");
+
+                    byte DirectionToByte(string direction) { // enum<any=2, backward=1, forward=0>
+                        if (direction == "forward") {
+                            return 0;
+                        } else if (direction == "backward") {
+                            return 1;
+                        } else {
+                            return 2;
+                        }
+                    }
+
+                    List<(byte, int, int, int)> readPointStorage(Entity2[] units) {
+                        List<(byte, int, int, int)> res = new();
+                        // Parse '(0, 0, 0)' format
+                        foreach (var unit in units) {
+                            byte direction = DirectionToByte(unit.GetValue("direction"));
+                            var pos = unit.GetValue("nav_node_position");
+                            var posArr = pos[1..^1].Split(',');
+                            // trim spaces
+                            for (int i = 0; i < posArr.Length; i++) {
+                                posArr[i] = posArr[i].Trim();
+                            }
+
+                            //MessageBox.Show(int.Parse(posArr[0]) + " " + int.Parse(posArr[1]) + " " + int.Parse(posArr[2]), "Debug");
+
+                            res.Add((direction, int.Parse(posArr[0]), int.Parse(posArr[1]), int.Parse(posArr[2])));
+                        }
+                        return res;
+                    }
+
+                    if(waypointsBehind is null || waypointsAhead is null || avoids is null) {
+                        // Corrupt save.
+                        MessageBox.Show("The navigation data is corrupted. Please remove all waypoints and try again.", "Error");
+                        return;
+                    }
+
+                    if (waypointsBehind.Length > 256 || waypointsAhead.Length > 256 || avoids.Length > 256) { // Never happens because of in-game limit. Just in case.
+                        MessageBox.Show("The number of waypoints exceeds the limit of 256. Please remove some waypoints and try again.", "Error");
+                        return;
+                    }
+
+                    NavigationData data = new NavigationData {
+                        WaypointBehind = readPointStorage(waypointsBehind),
+                        WaypointAhead = readPointStorage(waypointsAhead),
+                        Avoid = readPointStorage(avoids)
+                    };
+
+                    string encodedData = NavigationDataEncoder.EncodeNavigationCode(data);
+                    Clipboard.SetText(encodedData);
+                    MessageBox.Show($"Successfully encoded {waypointsBehind.Length} / {waypointsAhead.Length} waypoint(s) and {avoids.Length} avoid point(s)!\n\nThe navigation data was copied to clipboard.", "Complete!");
+                } catch (Exception e) {
+                    if (e.Message == "incompatible version") {
+                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                    } else {
+                        if (e.Message.Contains("Clipboard")) {
+                            MessageBox.Show($"There was an error while copying the position code. However, it may have already worked. Please check your clipboard.", "Complete!");
+                        } else {
+                            MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        }
+                    }
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask {
+                name = "Share Navigation",
+                run = run,
+                description = "Shares the current navigation waypoints with others by copying it to the clipboard."
+            };
+        }
+        public SaveEditTask ImportNavigation() {
+            var run = new Action(() => {
+                try {
+                    var economy = saveGame.EntityType("economy")!;
+
+                    var navigationData = NavigationDataEncoder.DecodeNavigationCode(Clipboard.GetText().Trim());
+
+                    string ByteToDirection(byte b) {
+                        return b switch {
+                            0 => "forward",
+                            1 => "backward",
+                            _ => "any"
+                        };
+                    }
+
+                    (string direction, string nav_node_position) EntryToStr((byte, int, int, int) entry) {
+                        return (ByteToDirection(entry.Item1), $"({entry.Item2}, {entry.Item3}, {entry.Item4})");
+                    }
+
+                    Entity2 AppendGps((byte, int, int, int) entry) {
+                        var newGps = saveGame.CreateNewUnit("gps_waypoint_storage");
+                        newGps.Set("nav_node_position", EntryToStr(entry).nav_node_position);
+                        newGps.Set("direction", EntryToStr(entry).direction);
+                        return newGps;
+                    }
+
+                    // Erase navigation data first
+                    foreach (var item in economy.GetAllPointers("stored_gps_behind_waypoints")) {
+                        CommonEdits.DeleteUnitRecursively(item, []);
+                    }
+                    economy.Set("stored_gps_behind_waypoints", []);
+
+                    foreach (var item in economy.GetAllPointers("stored_gps_ahead_waypoints"))
+                    {
+                        CommonEdits.DeleteUnitRecursively(item, []);
+                    }
+                    economy.Set("stored_gps_ahead_waypoints", []);
+
+                    foreach (var item in economy.GetAllPointers("stored_gps_avoid_waypoints")) {
+                        CommonEdits.DeleteUnitRecursively(item, []);
+                    }
+                    economy.Set("stored_gps_avoid_waypoints", []);
+
+                    // Write new navigation data
+                    foreach (var item in navigationData.WaypointBehind)
+                    {
+                        economy.ArrayAppend("stored_gps_behind_waypoints", AppendGps(item).Id);
+                    }
+                    foreach (var item in navigationData.WaypointAhead) {
+                        economy.ArrayAppend("stored_gps_ahead_waypoints", AppendGps(item).Id);
+                    }
+                    // Avoid points
+                    foreach (var item in navigationData.Avoid) {
+                        economy.ArrayAppend("stored_gps_avoid_waypoints", AppendGps(item).Id);
+                    }
+
+                    // Set registry data[0] to '5' which means custom route
+                    var registry = saveGame.EntityType("economy")!.GetPointer("registry");
+                    var arr = registry.GetArray("data");
+                    arr[0] = navigationData.WaypointAhead.Count > 0 ? "5" : "0";
+                    registry.Set("data", arr);
+
+                    saveFile.Save(saveGame);
+                    MessageBox.Show($"Successfully imported the navigation data!\n\n{navigationData.WaypointBehind.Count} / {navigationData.WaypointAhead.Count} waypoint(s) and {navigationData.Avoid.Count} avoid point(s) were imported.", "Complete!");
+                } catch (Exception e) {
+                    if (e.Message == "incompatible version") {
+                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                    } else {
+                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                    }
+                    Console.WriteLine(e);
+                }
+            });
+            return new SaveEditTask {
+                name = "Import Navigation",
+                run = run,
+                description = "Imports the shared navigation waypoints from clipboard."
             };
         }
 
@@ -392,7 +550,7 @@ namespace ETS2SaveAutoEditor {
                     };
 
                     positionData.TrailerConnected = true; // Always true because we're erasing where trailer was connected. If it's not connected, the game wouldn't know where to place the trailer.
-                    positionData.MinifiedOrientation = true; // Remove X and Z components of the quaternion in orientation. This reduces the length of the code without affecting the accuracy.
+                    positionData.MinifiedOrientation = false; // Remove X and Z components of the quaternion in orientation. This reduces the length of the code without affecting the accuracy.
 
                     string encodedData = PositionCodeEncoder.EncodePositionCode(positionData);
                     Clipboard.SetText(encodedData);

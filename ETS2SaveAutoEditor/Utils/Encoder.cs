@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ASE.Utils;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
@@ -41,7 +42,23 @@ namespace ETS2SaveAutoEditor.Utils {
         public static float[] DecodeSCSPosition(string placement) {
             var a = placement.Split(new string[] { "(", ")", ",", ";" }, StringSplitOptions.RemoveEmptyEntries);
             var q = from v in a select v.Trim() into b where b.Length > 0 select ParseScsFloat(b);
-            return q.ToArray();
+
+            var arr = q.ToArray();
+
+            Quaternion q1 = new Quaternion(arr[3], arr[4], arr[5], arr[6]);
+            var (y, p, r) = q1.ToEuler();
+            p = Math.PI / 2;
+            r = 0;
+            var q2 = Quaternion.FromEuler(y, p, r);
+            //var q2 = q1 * new Vector3(0, 0, 1).AsAxisAngle(Math.PI);
+            //var q2 = q1.GetPitchAxis().AsAxisAngle(Math.PI / 2) * q1; // Both codes do the same rotation. First line is extrinsic rotation. Second line is intrinsic rotation. Same as multiplication of rotation matrices.
+            arr[3] = (float)q2.w;
+            arr[4] = (float)q2.x;
+            arr[5] = (float)q2.y;
+            arr[6] = (float)q2.z;
+            arr[1] += 15;
+
+            return arr;
         }
 
         public static string EncodeSCSPosition(float[] data) {

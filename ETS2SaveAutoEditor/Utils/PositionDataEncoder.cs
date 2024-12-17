@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace ETS2SaveAutoEditor.Utils {
     public struct PositionData {
@@ -127,6 +128,116 @@ namespace ETS2SaveAutoEditor.Utils {
             return new PositionData {
                 Positions = placements,
                 TrailerConnected = trailerConnected
+            };
+        }
+    }
+
+    public struct NavigationData {
+        public List<(byte, int, int, int)> WaypointBehind;
+        public List<(byte, int, int, int)> WaypointAhead;
+        public List<(byte, int, int, int)> Avoid;
+    }
+
+    public class NavigationDataEncoder {
+        private static readonly uint NAVIGATION_DATA_VERSION = (437 << 8) | 1; // Random number to discern position data from navigation data.
+
+        public static string EncodeNavigationCode(NavigationData data) {
+            MemoryStream ms1 = new();
+            ms1.Write(ByteEncoder.EncodeUInt32(NAVIGATION_DATA_VERSION, ByteOrder.LittleEndian));
+
+            MemoryStream ms2 = new MemoryStream();
+
+            void WritePoint((byte, int, int, int) p) {
+                ms2.WriteByte(p.Item1);
+                ms2.Write(ByteEncoder.EncodeInt32(p.Item2, ByteOrder.LittleEndian));
+                ms2.Write(ByteEncoder.EncodeInt32(p.Item3, ByteOrder.LittleEndian));
+                ms2.Write(ByteEncoder.EncodeInt32(p.Item4, ByteOrder.LittleEndian));
+            }
+
+            // You can only have up to 10 waypoints, and 11 if there's forced destination. Therefore 4 bits are enough.
+            // However, we will use the whole byte for future compatibility.
+
+            // Similarly, there can only be 10 avoid points. Therefore 4 bits are enough.
+
+            // Write waypoints behind
+            ms2.WriteByte((byte)(data.WaypointBehind.Count & 0xFF));
+            foreach (var p in data.WaypointBehind) {
+                WritePoint(p);
+            }
+
+            // Write waypoints ahead
+            ms2.WriteByte((byte)(data.WaypointAhead.Count & 0xFF));
+            foreach (var p in data.WaypointAhead) {
+                WritePoint(p);
+            }
+
+            // Write avoid points
+            ms2.WriteByte((byte)(data.Avoid.Count & 0xFF));
+            foreach (var p in data.Avoid) {
+                WritePoint(p);
+            }
+
+            ms2.Close();
+
+            //// For debugging, return hex dump of ms2.ToArray()
+            //return BitConverter.ToString(ms2.ToArray()).Replace("-", " ");
+
+            ms1.Write(Compressor.Compress(ms2.ToArray()));
+            ms1.Close();
+
+            string encoded = Base32768.EncodeBase32768(ms1.ToArray());
+            return encoded;
+        }
+        public static NavigationData DecodeNavigationCode(string encoded) {
+            // Base32768 is our own encoding to minimize the length of the visible string.
+            byte[] data = Base32768.DecodeBase32768(encoded);
+
+            MemoryStream ms1 = new(data);
+            BinaryReader bs1 = new(ms1);
+
+            // Compatibility layer.
+            uint version = ByteEncoder.DecodeUInt32(bs1.ReadBytes(4), ByteOrder.LittleEndian);
+
+            if (version != NAVIGATION_DATA_VERSION) {
+                throw new IOException("incompatible version");
+            }
+
+            MemoryStream tempBuf = new();
+            ms1.CopyTo(tempBuf); // Copy remaining data to a temporary buffer. (without version header)
+
+            MemoryStream ms2 = new(Compressor.Decompress(tempBuf.ToArray()));
+            BinaryReader bs2 = new(ms2);
+
+            // Data exchange
+            (byte, int, int, int) ReceivePoint() {
+                byte a = bs2.ReadByte();
+                int b = ByteEncoder.DecodeInt32(bs2.ReadBytes(4), ByteOrder.LittleEndian);
+                int c = ByteEncoder.DecodeInt32(bs2.ReadBytes(4), ByteOrder.LittleEndian);
+                int d = ByteEncoder.DecodeInt32(bs2.ReadBytes(4), ByteOrder.LittleEndian);
+                return (a, b, c, d);
+            }
+
+            List<(byte, int, int, int)> waypointsBehind = new();
+            List<(byte, int, int, int)> waypointsAhead = new();
+            List<(byte, int, int, int)> avoids = new();
+
+            byte waypointBehindCount = bs2.ReadByte();
+            for (int i = 0; i < waypointBehindCount; i++) {
+                waypointsBehind.Add(ReceivePoint());
+            }
+            byte waypointAheadCount = bs2.ReadByte();
+            for (int i = 0; i < waypointAheadCount; i++) {
+                waypointsAhead.Add(ReceivePoint());
+            }
+            byte avoidCount = bs2.ReadByte();
+            for (int i = 0; i < avoidCount; i++) {
+                avoids.Add(ReceivePoint());
+            }
+
+            return new NavigationData {
+                WaypointBehind = waypointsBehind,
+                WaypointAhead = waypointsAhead,
+                Avoid = avoids
             };
         }
     }

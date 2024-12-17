@@ -211,18 +211,18 @@ namespace ETS2SaveAutoEditor {
                     SCSMemoryReader reader = new SCSMemoryReader("eurotrucks2");
                     var ba = reader.GetBaseAddress(null);
 
-                    var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2038B19, 24));
-                    if (!gameVersion.StartsWith("1.53")) {
-                        MessageBox.Show("This tool only supports ETS2 1.53. As it directly modifies the memory, it is disabled for other versions.", "Error");
+                    var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2046759, 24));
+                    if (!gameVersion.StartsWith("1.53.3.6")) {
+                        MessageBox.Show("This tool only supports ETS2 1.53.3.6. As it directly modifies the memory, it is disabled for other versions.", "Error");
                         return;
                     }
 
-                    var current = BitConverter.ToSingle(reader.ReadPath(ba + 0x26BA9D0, [0xF0, 0x10, 0x28, 0x8, 0x20, 0x178], 4));
+                    var current = BitConverter.ToSingle(reader.ReadPath(ba + 0x2F57B38, [0x2870, 0x20, 0xE8, 0x148, 0x178], 4));
                     if (!(current >= 0 && current <= 1)) { // Out of range hap
                         MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refuel current vehicle' tool instead.", "Error");
                         return;
                     }
-                    reader.WritePath(ba + 0x26BA9D0, [0xF0, 0x10, 0x28, 0x8, 0x20, 0x178], BitConverter.GetBytes((float)1));
+                    reader.WritePath(ba + 0x2F57B38, [0x2870, 0x20, 0xE8, 0x148, 0x178], BitConverter.GetBytes((float)1));
                     //MessageBox.Show("Done", "Done");
                     // Instead of showing Done, focus on the game window
 

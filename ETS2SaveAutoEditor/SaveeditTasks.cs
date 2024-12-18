@@ -114,6 +114,62 @@ namespace ETS2SaveAutoEditor {
                 description = "Enables locked GUIs, including skills, for new profiles. Some normally disabled GUIs may also be enabled."
             };
         }
+
+        public SaveEditTask WinterlandPortals() {
+            var run = new Action(() => {
+                try {
+                    var economy = saveGame.EntityType("economy")!;
+
+                    string[] WINTERLAND_HOUSES = [
+                        "company.volatile.x_choco.x_choco",
+                        "company.volatile.x_market.x_market",
+                        "company.volatile.x_mountain.x_mountain",
+                        "company.volatile.x_post.x_post",
+                        "company.volatile.x_work.x_work"
+                        ];
+
+                    if (!economy.ArrayContains("companies", WINTERLAND_HOUSES[0])) {
+                        // The event is over. Task not applicable.
+                        MessageBox.Show("The Winterland event is over. This task is not applicable.", "Error");
+                    }
+
+                    var player = saveGame.EntityType("player")!;
+                    if (!player.TryGetPointer("current_job", out var currentJob)) {
+                        MessageBox.Show("No job found. Please follow the instructions.", "Error");
+                        return;
+                    }
+
+                    // set 'target_company' of currentJob to any Winterland house (chosen randomly)
+                    currentJob.Set("target_company", WINTERLAND_HOUSES[new Random().Next(WINTERLAND_HOUSES.Length)]);
+
+                    // Remove the job reward by setting 'planned_distance_km' to 0
+                    currentJob.Set("planned_distance_km", "0");
+
+                    // Set 'time_upper_limit' to UInt32 max
+                    currentJob.Set("time_upper_limit", "4294967295");
+
+                    // Remove all possible online job connection (1) set 'online_job_id' to UInt64 max, (2) set 'online_job_trailer_model' to null
+                    currentJob.Set("online_job_id", "18446744073709551615");
+                    currentJob.Set("online_job_trailer_model", "null");
+
+                    // Erase navigation data about the original job
+                    DestroyNavigationData(economy);
+
+                    saveFile.Save(saveGame);
+                    MessageBox.Show("Done!", "Done");
+                } catch (Exception e) {
+                    MessageBox.Show("An unexpected error occured.", "Error");
+                    Console.WriteLine(e);
+                    throw;
+                }
+            });
+            return new SaveEditTask {
+                name = "Make Winterland Portals",
+                run = run,
+                description = "Creates portals to Winterland which you normally need WoT jobs to enter.\n\nYOU MUST FOLLOW THE INSTSRUCTION:\n1. Take any job in the game.\n2. Save the game and load it in ase.\n3. Run this task and load the save. It's normal that the navigation's reset.\n4. Move to the nearest portal and teleport.\n5. Cancel the job. The job is broken."
+            };
+        }
+
         public SaveEditTask TruckEngineSet() {
             var run = new Action(() => {
                 try {
@@ -327,7 +383,7 @@ namespace ETS2SaveAutoEditor {
                         return res;
                     }
 
-                    if(waypointsBehind is null || waypointsAhead is null || avoids is null) {
+                    if (waypointsBehind is null || waypointsAhead is null || avoids is null) {
                         // Corrupt save.
                         MessageBox.Show("The navigation data is corrupted. Please remove all waypoints and try again.", "Error");
                         return;
@@ -398,8 +454,7 @@ namespace ETS2SaveAutoEditor {
                     }
                     economy.Set("stored_gps_behind_waypoints", []);
 
-                    foreach (var item in economy.GetAllPointers("stored_gps_ahead_waypoints"))
-                    {
+                    foreach (var item in economy.GetAllPointers("stored_gps_ahead_waypoints")) {
                         CommonEdits.DeleteUnitRecursively(item, []);
                     }
                     economy.Set("stored_gps_ahead_waypoints", []);
@@ -410,8 +465,7 @@ namespace ETS2SaveAutoEditor {
                     economy.Set("stored_gps_avoid_waypoints", []);
 
                     // Write new navigation data
-                    foreach (var item in navigationData.WaypointBehind)
-                    {
+                    foreach (var item in navigationData.WaypointBehind) {
                         economy.ArrayAppend("stored_gps_behind_waypoints", AppendGps(item).Id);
                     }
                     foreach (var item in navigationData.WaypointAhead) {

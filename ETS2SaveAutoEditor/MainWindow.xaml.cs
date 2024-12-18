@@ -66,7 +66,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.31.2";
+        public static string Version = "1.32";
 
         private SaveeditTasks tasks = new();
 
@@ -79,6 +79,7 @@ namespace ETS2SaveAutoEditor {
             addAction(tasks.MoneySet());
             addAction(tasks.ExpSet());
             addAction(tasks.UnlockScreens());
+            addAction(tasks.WinterlandPortals());
             addAction(tasks.TruckEngineSet());
             addAction(tasks.Refuel());
             if (OperatingSystem.IsWindows())

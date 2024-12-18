@@ -125,15 +125,14 @@ namespace ETS2SaveAutoEditor {
                         return;
                     }
 
-                    var engineNames = new string[] { "Scania Electric 450kW", "Renault Electric 490kW", "Scania new 730", "Scania old 730", "Volvo new 750", "Volvo old 750", "Renault Premium 380", "Iveco 310(...)" };
+                    var engineNames = new string[] { "Volvo FH6 780 hp", "Volvo old 750 hp", "Scania Electric 450 kW", "Renault Electric 490 kW", "Scania new 730 hp", "Scania old 730 hp", "Iveco 310" };
                     var enginePaths = new string[] {
+                        "/def/vehicle/truck/volvo.fh_2024/engine/d17a780.sii",
+                        "/def/vehicle/truck/volvo.fh16/engine/d16g750.sii",
                         "/def/vehicle/truck/scania.s_2024e/engine/450kw.sii",
                         "/def/vehicle/truck/renault.etech_t/engine/490kw.sii",
                         "/def/vehicle/truck/scania.s_2016/engine/dc16_730.sii",
                         "/def/vehicle/truck/scania.streamline/engine/dc16_730_2.sii",
-                        "/def/vehicle/truck/volvo.fh16_2012/engine/d16g750.sii",
-                        "/def/vehicle/truck/volvo.fh16/engine/d16g750.sii",
-                        "/def/vehicle/truck/renault.premium/engine/dxi11_380.sii",
                         "/def/vehicle/truck/iveco.stralis/engine/cursor8_310hp.sii"
                     };
                     var enginePath = "";
@@ -212,8 +211,8 @@ namespace ETS2SaveAutoEditor {
                     var ba = reader.GetBaseAddress(null);
 
                     var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2046759, 24));
-                    if (!gameVersion.StartsWith("1.53.3.6")) {
-                        MessageBox.Show("This tool only supports ETS2 1.53.3.6. As it directly modifies the memory, it is disabled for other versions.", "Error");
+                    if (!gameVersion.StartsWith("1.53.3.11")) {
+                        MessageBox.Show("This tool only supports ETS2 1.53.3.11. As it directly modifies the memory, it is disabled for other versions.", "Error");
                         return;
                     }
 

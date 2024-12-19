@@ -45,18 +45,19 @@ namespace ETS2SaveAutoEditor.Utils {
 
             var arr = q.ToArray();
 
-            Quaternion q1 = new Quaternion(arr[3], arr[4], arr[5], arr[6]);
-            var (y, p, r) = q1.ToEuler();
-            p = Math.PI / 2;
-            r = 0;
-            var q2 = Quaternion.FromEuler(y, p, r);
-            //var q2 = q1 * new Vector3(0, 0, 1).AsAxisAngle(Math.PI);
-            //var q2 = q1.GetPitchAxis().AsAxisAngle(Math.PI / 2) * q1; // Both codes do the same rotation. First line is extrinsic rotation. Second line is intrinsic rotation. Same as multiplication of rotation matrices.
-            arr[3] = (float)q2.w;
-            arr[4] = (float)q2.x;
-            arr[5] = (float)q2.y;
-            arr[6] = (float)q2.z;
-            arr[1] += 15;
+            // Test code below of manipulating truck rotation. Don't release with this code uncommented.
+            //Quaternion q1 = new Quaternion(arr[3], arr[4], arr[5], arr[6]);
+            //var (y, p, r) = q1.ToEuler();
+            //p = Math.PI / 2;
+            //r = 0;
+            //var q2 = Quaternion.FromEuler(y, p, r);
+            ////var q2 = q1 * new Vector3(0, 0, 1).AsAxisAngle(Math.PI);
+            ////var q2 = q1.GetPitchAxis().AsAxisAngle(Math.PI / 2) * q1; // Both codes do the same rotation. First line is extrinsic rotation. Second line is intrinsic rotation. Same as multiplication of rotation matrices.
+            //arr[3] = (float)q2.w;
+            //arr[4] = (float)q2.x;
+            //arr[5] = (float)q2.y;
+            //arr[6] = (float)q2.z;
+            //arr[1] += 15;
 
             return arr;
         }

@@ -13,5 +13,6 @@ namespace ETS2SaveAutoEditor
     /// </summary>
     public partial class App : Application
     {
+        
     }
 }

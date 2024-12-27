@@ -66,7 +66,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.32.1";
+        public static string Version = "1.32.2";
 
         private SaveeditTasks tasks = new();
 
@@ -122,7 +122,9 @@ namespace ETS2SaveAutoEditor {
             }
             LoadGame(gameThatShouldBeAvailable, false);
             ProfileChanged(false); // No need to call GameChanged because we want it visible
-            //QuaternionTester.TestQuaternion();
+                                   //QuaternionTester.TestQuaternion();
+
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         }
 
         private Trucksim GetNextAvailableGame(Trucksim currentGame) {
@@ -550,6 +552,58 @@ namespace ETS2SaveAutoEditor {
                 Owner = this
             };
             w.ShowDialog();
+        }
+
+        // Unhandled exception handling
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
+            HandleException(e.ExceptionObject as Exception);
+        }
+
+        private void HandleException(Exception? ex) {
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string logFileName = $"Details.{timestamp}.txt";
+
+            StringBuilder details = new StringBuilder();
+            details.AppendLine("Unhandled Exception Occurred");
+            details.AppendLine($"Timestamp: {DateTime.Now.ToUniversalTime():yyyy-MM-dd HH:mm:ss} UTC ({DateTime.Now})");
+
+            if (ex is null) {
+                details.AppendLine("No exception object provided");
+            } else {
+                // Print exception details
+
+                details.AppendLine($"Message: {ex.Message}");
+                details.AppendLine($"Source: {ex.Source}");
+            }
+
+            void recurseException(Exception ex) {
+                details.AppendLine($"{ex.GetType().FullName} : {ex.Message} <- {ex.Source}");
+                details.AppendLine(ex.StackTrace + "\n");
+
+                if (ex is AggregateException aex) {
+                    foreach (var iex in aex.InnerExceptions) {
+                        recurseException(iex);
+                    }
+                }
+
+                if (ex.InnerException is not null) {
+                    recurseException(ex.InnerException);
+                }
+            }
+            if (ex is not null)
+                recurseException(ex);
+
+            try {
+                // Write to log file
+                File.WriteAllText(logFileName, details.ToString());
+            } catch (Exception fileException) {
+                MessageBox.Show($"Failed to write log file: {fileException.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Show error in message box
+            MessageBox.Show($"An unexpected error occurred. Details have been written to {logFileName}.\n\nError: {ex?.Message}",
+                "Unhandled Exception", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

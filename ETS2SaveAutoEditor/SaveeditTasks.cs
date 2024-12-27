@@ -267,14 +267,16 @@ namespace ETS2SaveAutoEditor {
                     var ba = reader.GetBaseAddress(null);
 
                     var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2046759, 24));
-                    if (!gameVersion.StartsWith("1.53.3.11")) {
-                        MessageBox.Show("This tool only supports ETS2 1.53.3.11. As it directly modifies the memory, it is disabled for other versions.", "Error");
+                    if (!gameVersion.StartsWith("1.53.3.14")) {
+                        MessageBox.Show("This tool only supports ETS2 1.53.3.14. As it directly modifies the memory, it is disabled for other versions.", "Error");
+#if !DEBUG
                         return;
+#endif
                     }
 
                     var current = BitConverter.ToSingle(reader.ReadPath(ba + 0x2F57B38, [0x2870, 0x20, 0xE8, 0x148, 0x178], 4));
                     if (!(current >= 0 && current <= 1)) { // Out of range hap
-                        MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refuel current vehicle' tool instead.", "Error");
+                        MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refuel current vehicle' tool first and try again.", "Error");
                         return;
                     }
                     reader.WritePath(ba + 0x2F57B38, [0x2870, 0x20, 0xE8, 0x148, 0x178], BitConverter.GetBytes((float)1));
@@ -289,7 +291,7 @@ namespace ETS2SaveAutoEditor {
                         Console.Beep(880, 150); // Second tone: C6 (1046 Hz), duration: 150 ms
                     }
 
-                } catch (Exception e) {
+                } catch (Exception) {
                     MessageBox.Show("Failed to modify the memory. Please use 'Refuel current vehicle' tool instead.", "Error");
                 }
             });

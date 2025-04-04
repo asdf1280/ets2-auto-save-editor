@@ -1,4 +1,5 @@
-﻿using ETS2SaveAutoEditor.Utils;
+﻿using ASE.Utils;
+using ETS2SaveAutoEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,24 +21,62 @@ namespace ETS2SaveAutoEditor.SII2Parser {
         public static readonly byte[] HEADER_STRING = [0x53, 0x69, 0x69, 0x4e]; // SiiN
         public static readonly byte[] HEADER_UTF8BOM = [0xEF, 0xBB, 0xBF];
 
-        public static SII2 Parse(byte[] data) {
+        public static StreamWriter? verboseLogger = null;
+
+        public static SII2 Parse(byte[] data, bool verbose = false) {
             byte[] header = data[0..4];
 
-            if (header[..3].SequenceEqual(HEADER_UTF8BOM)) {
-                data = data[3..];
-                header = data[0..4];
+            bool isVerboseLowerLayer = false;
+
+            if (verbose && verboseLogger == null) {
+                var fileName = "verbose" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".log.txt";
+                verboseLogger = new StreamWriter(new FileStream(fileName, FileMode.Create, FileAccess.Write));
+                verboseLogger.WriteLine("ASE Version " + MainWindow.Version + " - SII2 Parser Bullshit 5\n");
+                verboseLogger.Write("Beginning to parse SII file...\n\n");
+            } else if (verbose) {
+                verboseLogger?.WriteLine("Beginning of another layer of parsing SII file...\n\n");
+                isVerboseLowerLayer = true;
+            } else {
+                verboseLogger = null;
+                verboseLogger?.Close();
             }
-            if (header.SequenceEqual(HEADER_ENCRYPTED)) {
-                data = SII2ScsCDecryptor.Decrypt(data);
-                return Parse(data);
+
+            try {
+                if (header[..3].SequenceEqual(HEADER_UTF8BOM)) {
+                    data = data[3..];
+                    header = data[0..4];
+                    if (verboseLogger != null) verboseLogger.WriteLine("UTF-8 BOM detected. Removing it.");
+                }
+
+                // Print header as string
+                if (verboseLogger == null) {
+                    string headerString = Encoding.UTF8.GetString(header);
+                    verboseLogger?.WriteLine("Header: " + headerString);
+                }
+
+                if (header.SequenceEqual(HEADER_ENCRYPTED)) {
+                    data = SII2ScsCDecryptor.Decrypt(data);
+                    verboseLogger?.WriteLine("Decrypted SII file. Running 'Parse' again.");
+                    return Parse(data, verbose);
+                }
+                if (header.SequenceEqual(HEADER_BINARY)) {
+                    verboseLogger?.WriteLine("Binary SII file detected. Parsing as BSII.");
+                    return SII2BSIIDecoder.Decode(data);
+                }
+                if (header.SequenceEqual(HEADER_STRING)) {
+                    verboseLogger?.WriteLine("String SII file detected. Parsing as SiiN.");
+                    return SII2SiiNDecoder.Decode(BetterThanStupidMS.UTF8.GetString(data));
+                }
+                if (verboseLogger != null) verboseLogger.WriteLine("Unsupported SII format: " + BitConverter.ToString(header));
+                throw new ArgumentException("Unsupported SII format");
+            } finally {
+                if (!isVerboseLowerLayer) {
+                    verboseLogger?.Close();
+                    verboseLogger = null;
+                } else {
+                    verboseLogger?.WriteLine("End of another layer of parsing SII file...\n\n");
+                }
             }
-            if (header.SequenceEqual(HEADER_BINARY)) {
-                return SII2BSIIDecoder.Decode(data);
-            }
-            if (header.SequenceEqual(HEADER_STRING)) {
-                return SII2SiiNDecoder.Decode(Encoding.UTF8.GetString(data));
-            }
-            throw new ArgumentException("Unsupported SII format");
         }
 
         public static bool IsSupported(byte[] data) {
@@ -412,13 +451,13 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                 unit.Set(field.name, ints);
                 return;
             }
-            if (type == 0x15) { // int2 (x, y)
+            if (type == 0x15 || type == 0x41) { // int2 (x, y)
                 int i1 = ByteEncoder.DecodeInt32(NextBuffer(4));
                 int i2 = ByteEncoder.DecodeInt32(NextBuffer(4));
                 unit.Set(field.name, $"({i1}, {i2})");
                 return;
             }
-            if (type == 0x16) { // int2[]
+            if (type == 0x16 || type == 0x42) { // int2[]
                 uint count = ByteEncoder.DecodeUInt32(NextBuffer(4));
                 string[] ints = new string[count];
                 for (int i = 0; i < count; i++) {
@@ -682,7 +721,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
             foreach (var structId in structures.Keys) {
                 BSIIStruct structDef = structures[structId];
                 w.Write($"STRUCTURE  0x{structId:x2}  {structDef.name}\n");
-                w.Write($"    {"NAME", -40}  TYPE_ID  TYPE\n");
+                w.Write($"    {"NAME",-40}  TYPE_ID  TYPE\n");
                 foreach (var field in structDef.fields) {
                     w.Write($"    {field.name,-40}  0x{field.type:x2}     {StringifyType(field)}\n");
                 }
@@ -751,7 +790,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
             if (type == 0x12) {
                 return "fixed3[]";
             }
-            if(type == 0x13) {
+            if (type == 0x13) {
                 return "fixed4";
             }
             if (type == 0x14) {
@@ -875,6 +914,12 @@ namespace ETS2SaveAutoEditor.SII2Parser {
             if (type == 0x3E) {
                 return "link_ptr[]";
             }
+            if (type == 0x41) {
+                return "int2 (id 0x41)";
+            }
+            if (type == 0x42) {
+                return "int2[] (id 0x42)";
+            }
             return "Unknown";
         }
     }
@@ -889,6 +934,9 @@ namespace ETS2SaveAutoEditor.SII2Parser {
 
     class SII2SiiNDecoder {
         public static SII2 Decode(string data) {
+            SIIParser2.verboseLogger?.WriteLine("The whole SII file is\n=========================================");
+            SIIParser2.verboseLogger?.WriteLine(data);
+            SIIParser2.verboseLogger?.WriteLine("=========================================");
             IEnumerable<string> lines = data.Replace("\r", "").Split('\n');
 
             SIIOpenStage siiOpenStage = SIIOpenStage.NotOpened;
@@ -906,6 +954,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
 
             int ln = 0;
             foreach (string s in from a in lines select a.Trim() into b where b.Length > 0 select b) {
+                SIIParser2.verboseLogger?.WriteLine($"Parsing line {ln}: {s} / Stage {siiOpenStage} / Current unit: {currentUnit?.Type} / Current key: {currentKey} / Current value: {currentValue}");
                 ++ln;
                 switch (siiOpenStage) {
                     case SIIOpenStage.NotOpened:
@@ -935,6 +984,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                         string id; {
                             int sepIndex = s.IndexOf(" : ");
                             int braceIndex = s.IndexOf(" {");
+                            SIIParser2.verboseLogger?.WriteLine($"sepIndex: {sepIndex} / braceIndex: {braceIndex}");
                             if (sepIndex == -1 || braceIndex == -1) throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
                             type = s[..sepIndex];
                             id = s[(sepIndex + 3)..braceIndex];
@@ -967,6 +1017,7 @@ namespace ETS2SaveAutoEditor.SII2Parser {
                         bool isArrayElement = false;
                         string value; {
                             int i = s.IndexOf(':');
+                            SIIParser2.verboseLogger?.WriteLine($"i: {i}");
                             if (i == -1) {
                                 throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
                             }

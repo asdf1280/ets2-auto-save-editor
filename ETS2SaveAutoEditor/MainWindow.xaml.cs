@@ -66,7 +66,7 @@ namespace ETS2SaveAutoEditor {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.32.2";
+        public static string Version = "1.32.4";
 
         private SaveeditTasks tasks = new();
 
@@ -271,16 +271,22 @@ namespace ETS2SaveAutoEditor {
                     var directoryName = new DirectoryInfo(save).Name;
 
                     if (!SIIParser2.IsSupported(content)) {
-                        MessageBox.Show("Unsupported save. Removing from list.\n" + new DirectoryInfo(save).Name, "Unsupported save");
+                        MessageBox.Show("Unsupported save. Removing from list.\n" + new DirectoryInfo(save).Name, "Unsupported save (1)");
                         continue;
                     }
 
-                    SII2 infoSii = SIIParser2.Parse(content);
+                    SII2 infoSii;
+                    try {
+                        infoSii = SIIParser2.Parse(content);
+                    } catch {
+                        MessageBox.Show("Unsupported save. Removing from list.\n" + new DirectoryInfo(save).Name, "Unsupported save (2)");
+                        continue;
+                    }
                     Game2 info = new(infoSii);
 
                     Entity2? unit = info.EntityType("save_container");
                     if (unit is null) {
-                        MessageBox.Show("Unsupported save. Removing from list.\n" + new DirectoryInfo(save).Name, "Unsupported save");
+                        MessageBox.Show("Unsupported save. Removing from list.\n" + new DirectoryInfo(save).Name, "Unsupported save (3)");
                         continue;
                     }
 

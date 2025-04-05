@@ -12,12 +12,10 @@ using System.Threading.Tasks;
 using System.Windows;
 
 namespace ASE {
-    /// <summary>
-    /// App.xaml에 대한 상호 작용 논리
-    /// </summary>
     public partial class App : Application {
         private void Application_Startup(object sender, StartupEventArgs e) {
             // Very important to disregard stupid C# localization to prevent critical bugs.
+            // This is merely a temporary fix until I modify all string comparisons to use InvariantCulture and Ordinal.
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 

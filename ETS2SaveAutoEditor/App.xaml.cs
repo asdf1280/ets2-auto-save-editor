@@ -14,18 +14,10 @@ using System.Windows;
 namespace ASE {
     public partial class App : Application {
         private void Application_Startup(object sender, StartupEventArgs e) {
-            // Very important to disregard stupid C# localization to prevent critical bugs.
-            // This is merely a temporary fix until I modify all string comparisons to use InvariantCulture and Ordinal.
-            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
-
             // If the argument contains a path to a sii file, decode it and quit.
             if (e.Args.Length == 0) return;
             string path = string.Join(" ", e.Args);
-            if (!path.EndsWith(".sii")) return;
+            if (!path.EndsWith(".sii", StringComparison.OrdinalIgnoreCase)) return;
             // if file does not exist, quit.
             if (!File.Exists(path)) return;
 

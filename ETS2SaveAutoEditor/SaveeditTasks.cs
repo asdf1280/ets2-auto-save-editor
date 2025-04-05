@@ -266,7 +266,7 @@ namespace ASE {
                     var ba = reader.GetBaseAddress(null);
 
                     var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2046759, 24));
-                    if (!gameVersion.StartsWith("1.53.3.14")) {
+                    if (!gameVersion.StartsWith("1.53.3.14", StringComparison.Ordinal)) {
                         MessageBox.Show("This tool only supports ETS2 1.53.3.14. As it directly modifies the memory, it is disabled for other versions.", "Error");
 #if !DEBUG
                         return;
@@ -304,7 +304,7 @@ namespace ASE {
             var run = new Action(() => {
                 foreach (var e in saveGame.Reader) {
                     foreach (var f in e) {
-                        if (f.Contains("_wear") || f.Contains("integrity_odometer")) {
+                        if (f.Contains("_wear", StringComparison.Ordinal) || f.Contains("integrity_odometer", StringComparison.Ordinal)) {
                             e[f] = new RawDataValue2("0");
                         }
                     }
@@ -408,7 +408,7 @@ namespace ASE {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
                     } else {
-                        if (e.Message.Contains("Clipboard")) {
+                        if (e.Message.Contains("Clipboard", StringComparison.Ordinal)) {
                             MessageBox.Show($"There was an error while copying the position code. However, it may have already worked. Please check your clipboard.", "Complete!");
                         } else {
                             MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
@@ -537,7 +537,7 @@ namespace ASE {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
                     } else {
-                        if (e.Message.Contains("Clipboard")) {
+                        if (e.Message.Contains("Clipboard", StringComparison.Ordinal)) {
                             MessageBox.Show($"There was an error while copying the position code. However, it may have already worked. Please check your clipboard.", "Complete!");
                         } else {
                             MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");

@@ -931,7 +931,7 @@ namespace ASE.SII2Parser {
             SIIParser2.verboseLogger?.WriteLine("The whole SII file is\n=========================================");
             SIIParser2.verboseLogger?.WriteLine(data);
             SIIParser2.verboseLogger?.WriteLine("=========================================");
-            IEnumerable<string> lines = data.Replace("\r", "").Split('\n');
+            IEnumerable<string> lines = data.Replace("\r", "", StringComparison.Ordinal).Split('\n');
 
             SIIOpenStage siiOpenStage = SIIOpenStage.NotOpened;
             Unit2? currentUnit = null;
@@ -976,8 +976,8 @@ namespace ASE.SII2Parser {
 
                         string type;
                         string id; {
-                            int sepIndex = s.IndexOf(" : ");
-                            int braceIndex = s.IndexOf(" {");
+                            int sepIndex = s.IndexOf(" : ", StringComparison.Ordinal);
+                            int braceIndex = s.IndexOf(" {", StringComparison.Ordinal);
                             SIIParser2.verboseLogger?.WriteLine($"sepIndex: {sepIndex} / braceIndex: {braceIndex}");
                             if (sepIndex == -1 || braceIndex == -1) throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
                             type = s[..sepIndex];
@@ -1010,7 +1010,7 @@ namespace ASE.SII2Parser {
                         string key;
                         bool isArrayElement = false;
                         string value; {
-                            int i = s.IndexOf(':');
+                            int i = s.IndexOf(':', StringComparison.Ordinal);
                             SIIParser2.verboseLogger?.WriteLine($"i: {i}");
                             if (i == -1) {
                                 throw new ArgumentException("The file is not a valid SII file at line " + ln + ".");
@@ -1018,7 +1018,7 @@ namespace ASE.SII2Parser {
                             key = s[..i];
                             if (key.EndsWith(']')) {
                                 isArrayElement = true;
-                                key = key[..key.IndexOf('[')];
+                                key = key[..key.IndexOf('[', StringComparison.Ordinal)];
                             }
                             value = s[(i + 1)..].Trim();
                         }

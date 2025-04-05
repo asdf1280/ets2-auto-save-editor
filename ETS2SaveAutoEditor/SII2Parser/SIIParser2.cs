@@ -15,7 +15,7 @@ namespace ASE.SII2Parser {
         public static readonly byte[] HEADER_STRING = [0x53, 0x69, 0x69, 0x4e]; // SiiN
         public static readonly byte[] HEADER_UTF8BOM = [0xEF, 0xBB, 0xBF];
 
-        public static StreamWriter? verboseLogger = null;
+        internal static StreamWriter? verboseLogger = null;
 
         public static SII2 Parse(byte[] data, bool verbose = false) {
             byte[] header = data[0..4];
@@ -39,7 +39,7 @@ namespace ASE.SII2Parser {
                 if (header[..3].SequenceEqual(HEADER_UTF8BOM)) {
                     data = data[3..];
                     header = data[0..4];
-                    if (verboseLogger != null) verboseLogger.WriteLine("UTF-8 BOM detected. Removing it.");
+                    verboseLogger?.WriteLine("UTF-8 BOM detected. Removing it.");
                 }
 
                 // Print header as string
@@ -61,7 +61,7 @@ namespace ASE.SII2Parser {
                     verboseLogger?.WriteLine("String SII file detected. Parsing as SiiN.");
                     return SII2SiiNDecoder.Decode(BetterThanStupidMS.UTF8.GetString(data));
                 }
-                if (verboseLogger != null) verboseLogger.WriteLine("Unsupported SII format: " + BitConverter.ToString(header));
+                verboseLogger?.WriteLine("Unsupported SII format: " + BitConverter.ToString(header));
                 throw new ArgumentException("Unsupported SII format");
             } finally {
                 if (!isVerboseLowerLayer) {
@@ -154,7 +154,7 @@ namespace ASE.SII2Parser {
 
         private byte[] data;
         private int offset = 0;
-        private Dictionary<int, BSIIStruct> structures = new();
+        private Dictionary<int, BSIIStruct> structures = [];
 
         private SII2BSIIDecoder(byte[] siiData) {
             // Header is already checked
@@ -265,7 +265,7 @@ namespace ASE.SII2Parser {
 
         private string JsonEncodeString(string s) {
             byte[] utf8Bytes = Encoding.UTF8.GetBytes(s);
-            StringBuilder stringBuilder = new StringBuilder();
+            StringBuilder stringBuilder = new();
 
             foreach (byte b in utf8Bytes) {
                 if (b == (byte)'"') {
@@ -872,7 +872,7 @@ namespace ASE.SII2Parser {
                     s += $"{enumName}={enumValue}, ";
                 }
 
-                s = s.Substring(0, s.Length - 2);
+                s = s[..^2];
 
                 return "enum<" + s + ">";
             }
@@ -886,7 +886,7 @@ namespace ASE.SII2Parser {
                     s += $"{enumName}={enumValue}, ";
                 }
 
-                s = s.Substring(0, s.Length - 2);
+                s = s[..^2];
 
                 return "enum<" + s + ">[]";
             }

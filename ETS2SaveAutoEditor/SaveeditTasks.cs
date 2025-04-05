@@ -23,9 +23,9 @@ namespace ASE {
             saveGame = new(SIIParser2.Parse(saveFile.content));
 
             saveFile.Save(saveGame);
-            if (saveGame.Reader.StructureData is Dictionary<int, BSIIStruct>) {
+            if (saveGame.Reader.StructureData is Dictionary<int, BSIIStruct> dictionary) {
                 // Save structure data next to the save file
-                BSIIStructureDumper.WriteStructureDataTo(saveFile.GetWriter("bsii.txt"), (Dictionary<int, BSIIStruct>)saveGame.Reader.StructureData);
+                BSIIStructureDumper.WriteStructureDataTo(saveFile.GetWriter("bsii.txt"), dictionary);
             }
         }
 
@@ -262,7 +262,7 @@ namespace ASE {
                     var proc = Process.GetProcessesByName("eurotrucks2").FirstOrDefault();
                     ArgumentNullException.ThrowIfNull(proc, "ETS2 is not running.");
 
-                    SCSMemoryReader reader = new SCSMemoryReader("eurotrucks2");
+                    SCSMemoryReader reader = new("eurotrucks2");
                     var ba = reader.GetBaseAddress(null);
 
                     var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2046759, 24));
@@ -366,7 +366,7 @@ namespace ASE {
                     }
 
                     List<(byte, int, int, int)> readPointStorage(Entity2[] units) {
-                        List<(byte, int, int, int)> res = new();
+                        List<(byte, int, int, int)> res = [];
                         // Parse '(0, 0, 0)' format
                         foreach (var unit in units) {
                             byte direction = DirectionToByte(unit.GetValue("direction"));
@@ -395,7 +395,7 @@ namespace ASE {
                         return;
                     }
 
-                    NavigationData data = new NavigationData {
+                    NavigationData data = new() {
                         WaypointBehind = readPointStorage(waypointsBehind),
                         WaypointAhead = readPointStorage(waypointsAhead),
                         Avoid = readPointStorage(avoids)
@@ -559,16 +559,16 @@ namespace ASE {
 
                     var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
                     var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeSCSPosition(a)).ToArray();
-                    if (decoded.Count() >= 1) {
+                    if (decoded.Length >= 1) {
                         player.Set("truck_placement", decoded[0]);
                     }
-                    if (decoded.Count() >= 2) {
+                    if (decoded.Length >= 2) {
                         player.Set("trailer_placement", decoded[1]);
                     } else {
                         player.Set("trailer_placement", decoded[0]);
                     }
-                    if (decoded.Count() > 2) {
-                        player.Set("slave_trailer_placements", decoded.Skip(2).ToArray());
+                    if (decoded.Length > 2) {
+                        player.Set("slave_trailer_placements", [.. decoded.Skip(2)]);
                     } else {
                         player.Set("slave_trailer_placements", "0");
                     }
@@ -578,7 +578,7 @@ namespace ASE {
                     DestroyNavigationData(saveGame.EntityType("economy")!);
 
                     saveFile.Save(saveGame);
-                    MessageBox.Show($"Successfully imported the position code!\nNumber of vehicles in the code: {decoded.Count()}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
+                    MessageBox.Show($"Successfully imported the position code!\nNumber of vehicles in the code: {decoded.Length}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
                         MessageBox.Show("Data version doesn't match the current version.", "Error");
@@ -599,9 +599,9 @@ namespace ASE {
                 try {
                     var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
                     var a = positionData.Positions[0];
-                    positionData.Positions = new List<float[]> {
+                    positionData.Positions = [
                         a
-                    };
+                    ];
 
                     positionData.TrailerConnected = true; // Always true because we're erasing where trailer was connected. If it's not connected, the game wouldn't know where to place the trailer.
                     positionData.MinifiedOrientation = false; // Remove X and Z components of the quaternion in orientation. This reduces the length of the code without affecting the accuracy.
@@ -706,7 +706,7 @@ namespace ASE {
             const string AseVehicleFormat = "1";
             var run = new Action(() => {
                 while (true) {
-                    var choice = ListInputBox.Show("Vehicle Sharing", "WARNING: Importing an imcompatible vehicle (DLC, MOD, or incompatible version) will break your save. Click 'Cancel' to close this window.", new string[] { "Share Truck", "Share Trailer", "Import Vehicle", "Don't use this" });
+                    var choice = ListInputBox.Show("Vehicle Sharing", "WARNING: Importing an imcompatible vehicle (DLC, MOD, or incompatible version) will break your save. Click 'Cancel' to close this window.", ["Share Truck", "Share Trailer", "Import Vehicle", "Don't use this"]);
                     if (choice == -1) break;
 
                     if (choice == 3) { // SII2 reader test
@@ -887,7 +887,7 @@ namespace ASE {
                             string trailerDefId = entities[0].GetValue("trailer_definition");
 
                             player.ArrayAppend("trailers", trailerId, true);
-                            if (trailerDefId.StartsWith("_")) {
+                            if (trailerDefId.StartsWith('_')) {
                                 player.ArrayAppend("trailer_defs", trailerDefId, true);
                             }
 
@@ -949,7 +949,7 @@ END
 ** NOTE **
 - If you want to place the same truck, but different trailer, or vice-versa, you have to insert another vehicle pair generated with 'export active vehicle' option.";
                 while (true) {
-                    var res = ListInputBox.Show("ASE CC Tool", document, new string[] { "---- Application ----", "Apply CC Data to this profile", "Delete all CC saves in this profile", "---- Generation ----", "Export Active Vehicle", "Compile CC Data" });
+                    var res = ListInputBox.Show("ASE CC Tool", document, ["---- Application ----", "Apply CC Data to this profile", "Delete all CC saves in this profile", "---- Generation ----", "Export Active Vehicle", "Compile CC Data"]);
                     if (res == -1) return;
                     if (res == 4) { // Export active vehicle
                         try {
@@ -1084,7 +1084,7 @@ END
                         for (int k = 0; k < positionCount; k++) {
                             var targetEditedDate = startTime.AddMinutes(k + 1);
                             var saveName = r.ReadString();
-                            var vehicleData = vehicles[r.ReadInt32()];
+                            var (keys, units) = vehicles[r.ReadInt32()];
                             var positionData = PositionCodeEncoder.DecodePositionCode(r.ReadString());
 
                             // output path
@@ -1102,20 +1102,20 @@ END
                             SII2 clonedReader = SII2SiiNDecoder.Decode(saveToClone);
                             Game2 cloned = new(clonedReader);
 
-                            foreach (var vehicle in vehicleData.units) {
+                            foreach (var vehicle in units) {
                                 vehicle.Unit.___detach_do_not_use(); // In this function, same units are attached to multiple saves. Since old save files aren't used after saving, we can safely move units to new save.
                             }
 
-                            cloned.AddAll(vehicleData.units);
+                            cloned.AddAll(units);
 
                             Entity2 player = cloned.EntityType("player")!;
 
                             // Add the vehicle to truck list
-                            player.ArrayAppend("trucks", vehicleData.keys[0]);
+                            player.ArrayAppend("trucks", keys[0]);
 
                             // Activate the truck
-                            player.Set("assigned_truck", vehicleData.keys[0]);
-                            player.Set("my_truck", vehicleData.keys[0]);
+                            player.Set("assigned_truck", keys[0]);
+                            player.Set("my_truck", keys[0]);
 
                             // Prevent game CTD bug
                             string dummyPfLogId = cloned.GenerateNewID();
@@ -1126,13 +1126,13 @@ END
                             u.Set("acc_distance_on_job", "0");
                             u.Set("history_age", "nil");
 
-                            if (vehicleData.keys.Length == 2) { // Add the vehicle to trailer list
-                                player.ArrayAppend("trailers", vehicleData.keys[1], true);
+                            if (keys.Length == 2) { // Add the vehicle to trailer list
+                                player.ArrayAppend("trailers", keys[1], true);
 
-                                player.Set("assigned_trailer", vehicleData.keys[1]);
-                                player.Set("my_trailer", vehicleData.keys[1]);
+                                player.Set("assigned_trailer", keys[1]);
+                                player.Set("my_trailer", keys[1]);
 
-                                string trailerDefId = (from a in vehicleData.units where a.Unit.Id == vehicleData.keys[1] select a).First().GetValue("trailer_definition");
+                                string trailerDefId = (from a in units where a.Unit.Id == keys[1] select a).First().GetValue("trailer_definition");
 
                                 if (trailerDefId.StartsWith('_')) {
                                     player.ArrayAppend("trailer_defs", trailerDefId, true);
@@ -1145,16 +1145,16 @@ END
                             // copy paste of InjectLocation
                             {
                                 var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeSCSPosition(a)).ToArray();
-                                if (decoded.Count() >= 1) {
+                                if (decoded.Length >= 1) {
                                     player.Set("truck_placement", decoded[0]);
                                 }
-                                if (decoded.Count() >= 2) {
+                                if (decoded.Length >= 2) {
                                     player.Set("trailer_placement", decoded[1]);
                                 } else {
                                     player.Set("trailer_placement", decoded[0]);
                                 }
-                                if (decoded.Count() > 2) {
-                                    player.Set("slave_trailer_placements", decoded.Skip(2).ToArray());
+                                if (decoded.Length > 2) {
+                                    player.Set("slave_trailer_placements", [.. decoded.Skip(2)]);
                                 } else {
                                     player.Set("slave_trailer_placements", "0");
                                 }
@@ -1199,7 +1199,7 @@ END
                                         if (lines[j].Length < 25) {
                                             content += lines[j];
                                         } else {
-                                            content += lines[j].Substring(0, 25) + "...";
+                                            content += lines[j][..25] + "...";
                                         }
                                     } else if (j == len) {
                                         content += "(end of data)";

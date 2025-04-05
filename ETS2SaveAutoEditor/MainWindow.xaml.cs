@@ -57,15 +57,13 @@ namespace ASE {
         public string name;
         public string description;
         public Action run;
-        public override string ToString() {
-            return name;
-        }
+        public override string ToString() => name;
     }
     /// <summary>
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static string Version = "1.32.4";
+        public static readonly string Version = "1.32.4";
 
         private SaveeditTasks tasks = new();
 
@@ -103,7 +101,7 @@ namespace ASE {
             return dtDateTime;
         }
 
-        private readonly Dictionary<string, string> pNameAndPaths = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> pNameAndPaths = [];
         private string currentGamePath = "";
         private Trucksim currentGame = Trucksim.ETS2;
 
@@ -161,17 +159,11 @@ namespace ASE {
         private string GetGamePath(Trucksim game) {
             var path = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
-            switch (game) {
-                case Trucksim.ETS2:
-                    path = Path.Combine(path, "Euro Truck Simulator 2");
-                    break;
-                case Trucksim.ATS:
-                    path = Path.Combine(path, "American Truck Simulator");
-                    break;
-                default:
-                    throw new ArgumentException("Invalid game specified.");
-            }
-
+            path = game switch {
+                Trucksim.ETS2 => Path.Combine(path, "Euro Truck Simulator 2"),
+                Trucksim.ATS => Path.Combine(path, "American Truck Simulator"),
+                _ => throw new ArgumentException("Invalid game specified."),
+            };
             return path + @"\profiles";
         }
 
@@ -292,8 +284,8 @@ namespace ASE {
                     var nameResult = "N/A";
                     {
                         nameResult = unit.GetValue("name");
-                        if (nameResult.StartsWith("\"") && nameResult.EndsWith("\"")) {
-                            nameResult = nameResult.Substring(1, nameResult.Length - 2);
+                        if (nameResult.StartsWith('\"') && nameResult.EndsWith('\"')) {
+                            nameResult = nameResult[1..^1];
                         }
                         nameResult = SCSSaveHexEncodingSupport.GetUnescapedSaveName(nameResult);
                     }
@@ -307,7 +299,7 @@ namespace ASE {
                         dateFormatResult = dateTime.ToString("yyyy-MM-ddTHH\\:mm\\:ss");
                     }
 
-                    ProfileSave psave = new ProfileSave {
+                    ProfileSave psave = new() {
                         savename = nameResult,
                         directory = directoryName,
                         time = dateResult,
@@ -569,7 +561,7 @@ namespace ASE {
             string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string logFileName = $"Details.{timestamp}.txt";
 
-            StringBuilder details = new StringBuilder();
+            StringBuilder details = new();
             details.AppendLine("Unhandled Exception Occurred");
             details.AppendLine($"Timestamp: {DateTime.Now.ToUniversalTime():yyyy-MM-dd HH:mm:ss} UTC ({DateTime.Now})");
 

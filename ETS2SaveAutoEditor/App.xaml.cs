@@ -1,5 +1,5 @@
 ﻿using ASE.Utils;
-using ETS2SaveAutoEditor.SII2Parser;
+using ASE.SII2Parser;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace ETS2SaveAutoEditor {
+namespace ASE {
     /// <summary>
     /// App.xaml에 대한 상호 작용 논리
     /// </summary>

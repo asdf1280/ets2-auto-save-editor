@@ -1,5 +1,4 @@
 ﻿using ASE.Utils;
-using ETS2SaveAutoEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,13 +7,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Web;
-using System.Windows;
 
-namespace ETS2SaveAutoEditor.SII2Parser {
+namespace ASE.SII2Parser {
     public class SIIParser2 {
         public static readonly byte[] HEADER_ENCRYPTED = [0x53, 0x63, 0x73, 0x43]; // ScsC
         public static readonly byte[] HEADER_BINARY = [0x42, 0x53, 0x49, 0x49]; // BSII

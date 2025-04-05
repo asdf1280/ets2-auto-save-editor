@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace ETS2SaveAutoEditor.Utils {
+namespace ASE.Utils {
     public struct PositionData {
         public List<float[]> Positions;
         public bool TrailerConnected;

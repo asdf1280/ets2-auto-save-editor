@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace ETS2SaveAutoEditor.Utils {
+namespace ASE.Utils {
     internal class SCSSpecialString {
         public static float ParseScsFloat(string data) {
             if (data.StartsWith("&")) {

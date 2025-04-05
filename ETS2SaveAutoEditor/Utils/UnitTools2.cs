@@ -1,4 +1,4 @@
-﻿using ETS2SaveAutoEditor.Utils;
+﻿using ASE.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ using System.Windows.Shapes;
 using System.Xml.Linq;
 using Windows.Devices.PointOfService;
 
-namespace ETS2SaveAutoEditor.SII2Parser {
+namespace ASE.SII2Parser {
 
     /// <summary>
     /// The primary class for managing SII files, offering functionality to read, modify, and write these files. 

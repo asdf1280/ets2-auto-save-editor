@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ETS2SaveAutoEditor.SII2Parser {
+namespace ASE.SII2Parser {
     /// <summary>
     /// Provides methods for serializing and deserializing unit entities.
     /// Note that this class does not handle the file format itself or check the file format version.

@@ -13,7 +13,7 @@ using System.Windows.Shapes;
 using System.Xml.Linq;
 using Windows.Foundation.Metadata;
 
-namespace ETS2SaveAutoEditor.SII2Parser {
+namespace ASE.SII2Parser {
     /// <summary>
     /// A next-generation SII file parser. The key difference is that this parser decodes the whole file to the memory, unlike the old parser which kept the data line by line in SII string.
     /// </summary>

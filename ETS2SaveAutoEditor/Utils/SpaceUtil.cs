@@ -1,4 +1,4 @@
-﻿using ETS2SaveAutoEditor.Utils;
+﻿using ASE.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ETS2SaveAutoEditor.Properties {
+namespace ASE.Properties {
     using System;
     
     

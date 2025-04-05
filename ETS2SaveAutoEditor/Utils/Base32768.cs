@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace ETS2SaveAutoEditor.Utils {
+namespace ASE.Utils {
 
     /// <summary>
     /// The <c>Base32768</c> class provides a custom encoding mechanism designed to encode binary data into a highly compact string format 

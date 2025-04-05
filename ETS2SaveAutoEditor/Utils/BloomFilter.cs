@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ETS2SaveAutoEditor.Utils {
+namespace ASE.Utils {
 
     /// <summary>
     /// Bloom filter implementation for generic types by ChatGPT o1.

@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ETS2SaveAutoEditor.Utils {
+namespace ASE.Utils {
     public enum ByteOrder {
         BigEndian,
         LittleEndian

@@ -14,7 +14,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace ETS2SaveAutoEditor
+namespace ASE
 {
     public class StringInputBox
     {

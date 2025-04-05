@@ -18,7 +18,7 @@
     </ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>ETS2SaveAutoEditor.App</StartupObject>
+    <StartupObject>ASE.App</StartupObject>
     <PlatformTarget>x64</PlatformTarget>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <IsPublishable>True</IsPublishable>
@@ -41,7 +41,7 @@
     <Content Include="Icon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ETS2SaveAutoEditor_TemporaryKey.pfx" />
+    <None Include="ASE_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Icon.ico" />
@@ -49,5 +49,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="SII2Parser\" />
   </ItemGroup>
 </Project>

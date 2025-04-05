@@ -1,6 +1,5 @@
 ﻿using ASE.Utils;
-using ETS2SaveAutoEditor.SII2Parser;
-using ETS2SaveAutoEditor.Utils;
+using ASE.SII2Parser;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
@@ -17,7 +16,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 
-namespace ETS2SaveAutoEditor {
+namespace ASE {
     public class SaveeditTasks {
         public void SetSaveFile(ProfileSave file) {
             saveFile = file;

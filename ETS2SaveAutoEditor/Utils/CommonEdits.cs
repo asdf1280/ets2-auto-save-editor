@@ -1,11 +1,11 @@
-﻿using ETS2SaveAutoEditor.SII2Parser;
+﻿using ASE.SII2Parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ETS2SaveAutoEditor.Utils {
+namespace ASE.Utils {
     internal class CommonEdits {
         public static void DeleteUnitRecursively(Entity2 unit, IEnumerable<string> knownPtrItemsE) {
             HashSet<string> knownPtrItems = [.. knownPtrItemsE];

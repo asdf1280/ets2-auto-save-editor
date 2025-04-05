@@ -12,11 +12,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Linq;
-using ETS2SaveAutoEditor.Utils;
-using ETS2SaveAutoEditor.SII2Parser;
 using ASE.Utils;
+using ASE.SII2Parser;
 
-namespace ETS2SaveAutoEditor {
+namespace ASE {
 
     public enum Trucksim {
         ETS2, ATS

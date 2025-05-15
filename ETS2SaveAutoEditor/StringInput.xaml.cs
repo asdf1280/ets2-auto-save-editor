@@ -18,7 +18,7 @@ namespace ASE
 {
     public class StringInputBox
     {
-        public static string Show(string title, string description)
+        public static string? Show(string title, string description)
         {
             StringInput inst = new StringInput(title, description);
             _ = inst.ShowDialog();
@@ -64,7 +64,7 @@ namespace ASE
             DragMove();
         }
 
-        public string text = null;
+        public string? text = null;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {

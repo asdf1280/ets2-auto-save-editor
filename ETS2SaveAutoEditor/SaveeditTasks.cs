@@ -152,7 +152,7 @@ namespace ASE {
                     currentJob.Set("online_job_trailer_model", "null");
 
                     // Erase navigation data about the original job
-                    DestroyNavigationData(economy);
+                    CommonEdits.DestroyNavigationData(economy);
 
                     saveFile.Save(saveGame);
                     MessageBox.Show("Done!", "Done");
@@ -222,7 +222,7 @@ namespace ASE {
                 description = "Switches the truck's engine to one of the available options."
             };
         }
-        public SaveEditTask Refuel() {
+        public SaveEditTask Refuel(bool excessive) {
             var run = new Action(() => {
                 try {
                     var player = saveGame.EntityType("player")!;
@@ -233,7 +233,10 @@ namespace ASE {
                         return;
                     }
 
-                    assignedTruck.Set("fuel_relative", "1");
+                    if (excessive)
+                        assignedTruck.Set("fuel_relative", "1000");
+                    else
+                        assignedTruck.Set("fuel_relative", "1");
 
                     saveFile.Save(saveGame);
                     MessageBox.Show("Done", "Done");
@@ -243,11 +246,18 @@ namespace ASE {
                     throw;
                 }
             });
-            return new SaveEditTask {
-                name = "Refuel current vehicle",
-                run = run,
-                description = "Set the fuel(or battery) level of current truck to maximum."
-            };
+            if (excessive)
+                return new SaveEditTask {
+                    name = "Infinite fuel current vehicle",
+                    run = run,
+                    description = "Set the fuel(or battery) level of current truck to 1000x of the fuel tank. You must disable realistic fuel consumption in the game settings."
+                };
+            else
+                return new SaveEditTask {
+                    name = "Refuel current vehicle",
+                    run = run,
+                    description = "Set the fuel(or battery) level of current truck to 1%."
+                };
         }
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -558,7 +568,7 @@ namespace ASE {
                     var player = saveGame.EntityType("player")!;
 
                     var positionData = PositionCodeEncoder.DecodePositionCode(Clipboard.GetText().Trim());
-                    var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeSCSPosition(a)).ToArray();
+                    var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeFloatPositionToHex(a)).ToArray();
                     if (decoded.Length >= 1) {
                         player.Set("truck_placement", decoded[0]);
                     }
@@ -575,7 +585,7 @@ namespace ASE {
 
                     player.Set("assigned_trailer_connected", positionData.TrailerConnected ? "true" : "false");
 
-                    DestroyNavigationData(saveGame.EntityType("economy")!);
+                    CommonEdits.DestroyNavigationData(saveGame.EntityType("economy")!);
 
                     saveFile.Save(saveGame);
                     MessageBox.Show($"Successfully imported the position code!\nNumber of vehicles in the code: {decoded.Length}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
@@ -630,7 +640,7 @@ namespace ASE {
                 try {
                     var code = Clipboard.GetText().Trim();
                     var positionData = PositionCodeEncoder.DecodePositionCode(code);
-                    var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeDecimalPosition(a)).ToArray();
+                    var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeFloatPositionOnlyForHuman(a)).ToArray();
 
                     // xyz and quaternion
                     string res = "(x, y, z) (q1, q2, q3, q4)\nThe position is written as XYZ in meters, and rotation as quaternion.\n\n";
@@ -702,6 +712,117 @@ namespace ASE {
             };
         }
 
+        public SaveEditTask TeleportToCargo() {
+            var run = new Action(() => {
+                var economy = saveGame.EntityType("economy")!;
+                var player = saveGame.EntityType("player")!;
+
+                if (!player.TryGetPointer("current_job", out Entity2? job)) {
+                    MessageBox.Show("You need a job assigned!");
+                    return;
+                }
+
+                var companyTruck = job.GetValue("company_truck");
+
+                var assignedTruck = player.GetValue("assigned_truck");
+
+                bool isQuickJob = companyTruck == assignedTruck;
+                bool teleportToDestination = true;
+                if (isQuickJob) {
+                    // YesNo (would you like to teleport to the departure, or destination?)
+                    var choice = MessageBox.Show("Would you like to teleport to the departure?\n\nYes : Departure\nNo  : Destination", "Quick Job teleport option", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                    if (choice == MessageBoxResult.Cancel) {
+                        return;
+                    } else if (choice == MessageBoxResult.Yes) {
+                        teleportToDestination = false;
+                    } else {
+                        teleportToDestination = true;
+                    }
+                }
+
+                // If teleport to destination,
+                // Set truck, trailer placement to job.target_placement. Destroy everything related to job. Restore my_truck and my_trailer.
+                // Else,
+                // Set trailer placement to truck placement. Destroy everything related to job. Restore my_truck and my_trailer.
+
+                if (teleportToDestination) {
+                    var targetPlacement = "null";
+                    int targetMode = 0;
+                    if (targetPlacement == "null" || targetPlacement.EndsWith("(1; 0, 0, 0)", StringComparison.InvariantCulture)) {
+                        targetPlacement = job.GetValue("target_placement");
+                        targetMode = 1;
+                    }
+                    if (targetPlacement == "null" || targetPlacement.EndsWith("(1; 0, 0, 0)", StringComparison.InvariantCulture)) {
+                        targetPlacement = job.GetValue("target_placement_medium");
+                        targetMode = 2;
+                    }
+                    if (targetPlacement == "null" || targetPlacement.EndsWith("(1; 0, 0, 0)", StringComparison.InvariantCulture)) {
+                        targetPlacement = job.GetValue("target_placement_hard");
+                        targetMode = 3;
+                    }
+                    if (targetPlacement == "null" || targetPlacement.EndsWith("(1; 0, 0, 0)", StringComparison.InvariantCulture)) {
+                        targetPlacement = job.GetValue("target_placement_rigid");
+                        targetMode = 4;
+                    }
+                    if (targetPlacement == "null" || targetPlacement.EndsWith("(1; 0, 0, 0)", StringComparison.InvariantCulture)) {
+                        MessageBox.Show("Unable to locate the destination.");
+                        return;
+                    }
+
+                    // TargetMode 1 faces inside the company, so we'll reverse the quaternion by spinning it 180 degrees in Up direction.
+                    if (targetMode == 1) {
+                        var scsPlacement = SCSPlacement.Parse(targetPlacement);
+                        //scsPlacement.Orientation = scsPlacement.Orientation.GetYawAxis().AsAxisAngleDegrees(180) * scsPlacement.Orientation;
+                        scsPlacement.Orientation = scsPlacement.Orientation * Vector3.UnitY.AsAxisAngleDegrees(180);
+                    }
+
+                    player.Set("truck_placement", targetPlacement);
+                    //player.Set("trailer_placement", targetPlacement);
+                } else {
+                    var truckPlacement = player.GetValue("truck_placement");
+                    player.Set("trailer_placement", truckPlacement);
+                }
+
+                player.Set("slave_trailer_placements", "0");
+                //player.Set("assigned_trailer_connected", "true");
+
+                if (player.GetValue("my_truck") != "null") {
+                    player.Set("assigned_truck", player.GetValue("my_truck"));
+                }
+                // Using this tool with trailer attached results in TMP account suspension due to trailers clipping into buildings.
+                // Therefore, we're forcing the trailer to be detached.
+                //if (player.GetValue("my_trailer") != "null") {
+                //    player.Set("assigned_trailer", player.GetValue("my_trailer"));
+                //} else {
+                //    player.Set("assigned_trailer", "null");
+                //}
+                //player.Set("my_trailer", "null");
+                player.Set("assigned_trailer", "null");
+                player.Set("assigned_trailer_connected", "false");
+
+                bool trailerTeleportWarning = false;
+                if (player.GetValue("my_trailer") != "null") {
+                    trailerTeleportWarning = true;
+                }
+
+
+                CommonEdits.DestroyJobData(economy, player);
+
+                saveFile.Save(saveGame);
+                if (trailerTeleportWarning) {
+                    // Below 'Success!' message, let the user know that trailer hasn't been teleported along with the truck. And that to teleport the trailer, (1) first move the truck to somewhere with long backward space, (2) create a new save and use 'Connect Trailer Here' tool.
+                    MessageBox.Show($"Success!\n\nThe trailer hasn't been teleported along with the truck.\nTo teleport the trailer, (1) first move the truck to somewhere with long backward space, (2) create a new save and use 'Connect Trailer Here' tool.", "Complete!");
+                } else {
+                    MessageBox.Show($"Success!", "Complete!");
+                }
+            });
+            return new SaveEditTask {
+                name = "Teleport to Job Destination",
+                run = run,
+                description = "Use this to teleport to any company as you want in TruckersMP by using Job Dispatcher. Refer to 'ase' channel in MCG Discord for how-to-use."
+            };
+        }
+
         public SaveEditTask VehicleSharingTool(Trucksim game) {
             const string AseVehicleFormat = "1";
             var run = new Action(() => {
@@ -764,7 +885,7 @@ namespace ASE {
                             headerStr = builder.ToString();
                         }
                         Console.WriteLine($"[{sw.Elapsed.TotalNanoseconds}ns] Wrote the header");
-                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTruck, UnitSerializer.KNOWN_PTR_ITEMS_TRUCK);
+                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTruck, CommonEdits.KNOWN_PTR_ITEMS_TRUCK);
 
                         Console.WriteLine($"[{sw.Elapsed.TotalNanoseconds}ns] Serialized the truck. Opening the dialog...");
 
@@ -795,7 +916,7 @@ namespace ASE {
                             builder.Append("+\n");
                             headerStr = builder.ToString();
                         }
-                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTrailer, UnitSerializer.KNOWN_PTR_ITEMS_TRAILER);
+                        var vehicleStr = UnitSerializer.SerializeUnit(assignedTrailer, CommonEdits.KNOWN_PTR_ITEMS_TRAILER);
 
                         var d = new SaveFileDialog() {
                             Title = "Save Trailer",
@@ -905,7 +1026,7 @@ namespace ASE {
             };
         }
 
-        public SaveEditTask SpecialCCTask() {
+        public SaveEditTask SpecialCCTask(Trucksim game) {
             var run = new Action(() => {
                 var document = @"> Press 'Cancel' to close this window <
 
@@ -947,10 +1068,39 @@ END
 7. Share the result file (*.ddd)
 
 ** NOTE **
-- If you want to place the same truck, but different trailer, or vice-versa, you have to insert another vehicle pair generated with 'export active vehicle' option.";
+- If you want to place the same truck, but different trailer, or vice-versa, you have to insert another vehicle pair generated with 'export active vehicle' option.
+
+** DLL Injection **
+This actually has nothing to do with event CC tools. If you run this, ASE will inject 'injectionTarget.dll' in the directory of ASE.exe to running process of ATS/ETS2 (selected on left top). Don't use this if you don't know what you're doing.";
                 while (true) {
-                    var res = ListInputBox.Show("ASE CC Tool", document, ["---- Application ----", "Apply CC Data to this profile", "Delete all CC saves in this profile", "---- Generation ----", "Export Active Vehicle", "Compile CC Data"]);
+                    var res = ListInputBox.Show("ASE CC Tool", document, ["---- Application ----", "Apply CC Data to this profile", "Delete all CC saves in this profile", "---- Generation ----", "Export Active Vehicle", "Compile CC Data", "DLL Injection", ""]);
                     if (res == -1) return;
+                    if (res == 7) { // Debugging
+                        var economy = saveGame.EntityType("economy")!;
+                        var player = saveGame.EntityType("player")!;
+
+                        var sp = SCSPlacement.Parse(player.GetValue("truck_placement"));
+                        //sp.Position = sp.Position + sp.Orientation.GetDirection() * 5.0;
+                        sp.Position += Vector3.UnitY * 1.5;
+                        sp.Orientation = sp.Orientation * Vector3.UnitSCSRoll.AsAxisAngleDegrees(-90);
+                        player.Set("truck_placement", sp.ToString());
+
+                        saveFile.Save(saveGame);
+                    }
+                    if (res == 6) { // Hidden testing
+                        if (!File.Exists("injectionTarget.dll")) {
+                            MessageBox.Show("You can't use this.");
+                            return;
+                        }
+
+                        var smr = new SCSMemoryReader(game == Trucksim.ETS2 ? "eurotrucks2" : "amtrucks");
+                        var rez = smr.InjectDll("injectionTarget.dll");
+                        if (rez)
+                            MessageBox.Show("DLL injected. Inventory items unlocked.");
+                        else
+                            MessageBox.Show("DLL injection failed. Please check the log file.");
+                        return;
+                    }
                     if (res == 4) { // Export active vehicle
                         try {
                             var economy = saveGame.EntityType("economy")!;
@@ -972,14 +1122,14 @@ END
                             memory.WriteByte((byte)(assignedTrailer is not null ? 1 : 0));
 
                             // Encode truck
-                            var vehicleStr = UnitSerializer.SerializeUnit(assignedTruck, UnitSerializer.KNOWN_PTR_ITEMS_TRUCK);
+                            var vehicleStr = UnitSerializer.SerializeUnit(assignedTruck, CommonEdits.KNOWN_PTR_ITEMS_TRUCK);
                             byte[] buf = Encoding.UTF8.GetBytes(vehicleStr);
                             memory.Write(ByteEncoder.EncodeUInt32((uint)buf.Length, ByteOrder.BigEndian));
                             memory.Write(buf);
 
                             // Encode trailer
                             if (assignedTrailer is not null) {
-                                var trailerStr = UnitSerializer.SerializeUnit(assignedTrailer, UnitSerializer.KNOWN_PTR_ITEMS_TRAILER);
+                                var trailerStr = UnitSerializer.SerializeUnit(assignedTrailer, CommonEdits.KNOWN_PTR_ITEMS_TRAILER);
                                 buf = Encoding.UTF8.GetBytes(trailerStr);
                                 memory.Write(ByteEncoder.EncodeUInt32((uint)buf.Length, ByteOrder.BigEndian));
                                 memory.Write(buf);
@@ -1144,7 +1294,7 @@ END
 
                             // copy paste of InjectLocation
                             {
-                                var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeSCSPosition(a)).ToArray();
+                                var decoded = (from a in positionData.Positions select SCSSpecialString.EncodeFloatPositionToHex(a)).ToArray();
                                 if (decoded.Length >= 1) {
                                     player.Set("truck_placement", decoded[0]);
                                 }
@@ -1352,7 +1502,7 @@ END
             public string positionCode;
         }
 
-        public SaveEditTask StealCompanyTrailer() {
+        public SaveEditTask CompanyVehicleStealTool() {
             var run = new Action(() => {
                 try {
                     var economy = saveGame.EntityType("economy")!;
@@ -1399,7 +1549,7 @@ END
                     } else if (isCurrentTruckStealable) { // Delete unused job truck
                         var s = saveGame[currentTruckId];
 
-                        CommonEdits.DeleteUnitRecursively(s, UnitSerializer.KNOWN_PTR_ITEMS_TRUCK);
+                        CommonEdits.DeleteUnitRecursively(s, CommonEdits.KNOWN_PTR_ITEMS_TRUCK);
                     }
 
                     // Return to last position of owned truck, if exists
@@ -1432,7 +1582,7 @@ END
                     } else if (isCurrentTrailerStealable) { // The user decided to only steal the truck and abandon the trailer. Delete the unused job trailer.
                         var s = saveGame[currentTrailerId];
 
-                        CommonEdits.DeleteUnitRecursively(s, UnitSerializer.KNOWN_PTR_ITEMS_TRAILER);
+                        CommonEdits.DeleteUnitRecursively(s, CommonEdits.KNOWN_PTR_ITEMS_TRAILER);
                     }
 
                     if (player.GetValue("my_trailer_attached") == "true") {
@@ -1451,9 +1601,9 @@ END
                     }
 
                     // Delete the job and reset navigation
-                    CommonEdits.DeleteUnitRecursively(job, []);
+                    job.DeleteSelf();
                     player.Set("current_job", "null");
-                    DestroyNavigationData(economy);
+                    CommonEdits.DestroyNavigationData(economy);
 
                     saveFile.Save(saveGame);
                     if (stealTruck && stealTrailer) {
@@ -1476,19 +1626,6 @@ END
                 run = run,
                 description = "You can steal the trailer or truck from the job. If the trailer is yours, you can steal the cargo loaded in it."
             };
-        }
-
-        private void DestroyNavigationData(Entity2 economy) {
-            var i = economy.GetAllPointers("stored_gps_ahead_waypoints");
-            foreach (var t in i) {
-                t.DeleteSelf();
-            }
-            economy.Set("stored_gps_ahead_waypoints", "0");
-
-            var registry = economy.GetPointer("registry")!;
-            var regData = registry.GetArray("data");
-            if (regData.Count >= 3) regData[0] = "0";
-            registry.Set("data", regData);
         }
 
         public SaveEditTask ChangeCargoMass() {

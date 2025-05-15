@@ -247,6 +247,8 @@ namespace ASE.Utils {
             var q = Normalize();
             var w = q.w; var x = q.x; var y = q.y; var z = q.z;
 
+            // The rotation matrix corresponding to the quaternion q:
+            //
             //      | 1 - 2(y^2 + z^2)  2(xy - wz)        2(xz + wy)       |
             // Rq = | 2(xy + wz)        1 - 2(x^2 + z^2)  2(yz - wx)       |
             //      | 2(xz - wy)        2(yz + wx)        1 - 2(x^2 + y^2) |
@@ -386,6 +388,9 @@ namespace ASE.Utils {
         }
 
         public static Quaternion operator *(Quaternion left, Quaternion right) {
+            /* Say there are two rotational matrices A, B and quaternions q, r representing those two respectively.
+             * Say the product rotation C = AB.
+             * How to calculate quaternion corresponding to C? */
             return new Quaternion(
                 left.w * right.w - left.x * right.x - left.y * right.y - left.z * right.z,
                 left.w * right.x + left.x * right.w + left.y * right.z - left.z * right.y,
@@ -429,7 +434,7 @@ namespace ASE.Utils {
         }
 
         public override string ToString() {
-            return $"({w}; {x}, {y}, {z})";
+            return $"({SCSDecimalParser.EncodeDecimal(w)}; {SCSDecimalParser.EncodeDecimal(x)}, {SCSDecimalParser.EncodeDecimal(y)}, {SCSDecimalParser.EncodeDecimal(z)})";
         }
 
         public string ToAxisAngleString() {
@@ -440,6 +445,14 @@ namespace ASE.Utils {
 
     public class Vector3(double x, double y, double z) {
         public double x = x, y = y, z = z;
+
+        public static readonly Vector3 UnitX = new(1, 0, 0);
+        public static readonly Vector3 UnitY = new(0, 1, 0);
+        public static readonly Vector3 UnitZ = new(0, 0, 1);
+
+        public static readonly Vector3 UnitSCSYaw = UnitY;
+        public static readonly Vector3 UnitSCSPitch = UnitX;
+        public static readonly Vector3 UnitSCSRoll = UnitZ;
 
         public static Vector3 Parse(string value) {
             var pattern = new Regex(@"^\(([^,]+), ([^,]+), ([^,]+)\)$");
@@ -472,6 +485,14 @@ namespace ASE.Utils {
             return new Vector3(left.x - right.x, left.y - right.y, left.z - right.z);
         }
 
+        // Scalar multiplication
+        public static Vector3 operator *(Vector3 left, double right) {
+            return new Vector3(left.x * right, left.y * right, left.z * right);
+        }
+        public static Vector3 operator *(double left, Vector3 right) {
+            return new Vector3(left * right.x, left * right.y, left * right.z);
+        }
+
         public Vector3 Normalize() {
             double length = Math.Sqrt(x * x + y * y + z * z);
             if (length == 0) return new Vector3(0, 0, 0);
@@ -502,8 +523,12 @@ namespace ASE.Utils {
             return new Quaternion(Math.Cos(halfAngle), normalized.x * sinHalfAngle, normalized.y * sinHalfAngle, normalized.z * sinHalfAngle);
         }
 
+        public Quaternion AsAxisAngleDegrees(double degrees) {
+            return AsAxisAngle(degrees * Math.PI / 180);
+        }
+
         public override string ToString() {
-            return $"({x}, {y}, {z})";
+            return $"({SCSDecimalParser.EncodeDecimal(x)}, {SCSDecimalParser.EncodeDecimal(y)}, {SCSDecimalParser.EncodeDecimal(z)})";
         }
     }
 
@@ -517,7 +542,7 @@ namespace ASE.Utils {
             // (x, y, z) (w; x, y, z)
             // So we will split the string into two parts and parse them separately in Vector3 and Quaternion.
 
-            int firstSegEnd = value.IndexOf(')');
+            int firstSegEnd = value.IndexOf(')', StringComparison.InvariantCulture);
             if (firstSegEnd == -1) {
                 throw new FormatException("The string is not in the correct format.");
             }
@@ -589,7 +614,7 @@ namespace ASE.Utils {
             }
         }
 
-        public static string EncodeDecimal(double value, DecimalEncodingType? type) {
+        public static string EncodeDecimal(double value, DecimalEncodingType? type = DecimalEncodingType.AutoSingle) {
             if (type == null) {
                 if (double.IsInfinity(value) || double.IsNaN(value)) {
                     type = DecimalEncodingType.IEEE754Single;
@@ -619,10 +644,10 @@ namespace ASE.Utils {
                     return value.ToString();
                 case DecimalEncodingType.IEEE754Single:
                     byte[] bytes = ByteEncoder.EncodeFloat((float)value, ByteOrder.BigEndian);
-                    return "&" + string.Join("", bytes.Select(b => b.ToString("X2")));
+                    return "&" + string.Join("", bytes.Select(b => b.ToString("x2")));
                 case DecimalEncodingType.IEEE754Double:
                     bytes = ByteEncoder.EncodeDouble(value, ByteOrder.BigEndian);
-                    return "&" + string.Join("", bytes.Select(b => b.ToString("X2")));
+                    return "&" + string.Join("", bytes.Select(b => b.ToString("x2")));
                 default:
                     throw new ArgumentException("Invalid encoding type.");
             }

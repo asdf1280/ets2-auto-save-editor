@@ -15,7 +15,7 @@ using static System.Net.Mime.MediaTypeNames;
 namespace ASE.Utils {
     internal class SCSSpecialString {
         public static float ParseScsFloat(string data) {
-            if (data.StartsWith("&")) {
+            if (data.StartsWith("&", StringComparison.InvariantCulture)) {
                 byte[] bytes = new byte[4];
                 for (int i = 0; i < 4; i++) {
                     bytes[i] = byte.Parse(data.Substring(i * 2 + 1, 2), System.Globalization.NumberStyles.HexNumber);
@@ -28,14 +28,14 @@ namespace ASE.Utils {
             }
         }
 
-        public static string EncodeScsFloat(float value) {
+        public static string EncodeScsFloatToHex(float value) {
             if (float.IsInteger(value)) {
                 return value.ToString();
             }
             byte[] bytes = BitConverter.GetBytes(value);
             if (BitConverter.IsLittleEndian) // The hex float notation in game save files is stored in big-endian format.
                 Array.Reverse(bytes);
-            string hexString = BitConverter.ToString(bytes).Replace("-", "").ToLower();
+            string hexString = BitConverter.ToString(bytes).Replace("-", "", StringComparison.InvariantCulture).ToLower();
             return "&" + hexString;
         }
 
@@ -62,12 +62,14 @@ namespace ASE.Utils {
             return arr;
         }
 
-        public static string EncodeSCSPosition(float[] data) {
-            var data0 = (from d in data select EncodeScsFloat(d)).ToArray();
+        public static string EncodeFloatPositionToHex(float[] data) {
+            var data0 = (from d in data select EncodeScsFloatToHex(d)).ToArray();
             return $"({data0[0]}, {data0[1]}, {data0[2]}) ({data0[3]}; {data0[4]}, {data0[5]}, {data0[6]})";
         }
-
-        public static string EncodeDecimalPosition(float[] data) {
+        /**
+         * NEVER USE THIS FUNCTION FOR STORING TRUCK POSITION. IT IS NOT THE SAME AS SCS POSITION. IT'S SOLELY FOR HUMAN READABLE POSITION.
+         */
+        public static string EncodeFloatPositionOnlyForHuman(float[] data) {
             if (data.Length != 7) {
                 throw new ArgumentException("Invalid data length");
             }
@@ -78,7 +80,7 @@ namespace ASE.Utils {
 
     internal class HexEncoder {
         public static string ByteArrayToHexString(byte[] byteArray) {
-            return BitConverter.ToString(byteArray).Replace("-", string.Empty);
+            return BitConverter.ToString(byteArray).Replace("-", string.Empty, StringComparison.InvariantCulture);
         }
 
         public static byte[] HexStringToByteArray(string hexString) {
@@ -96,7 +98,7 @@ namespace ASE.Utils {
     internal class SCSSaveHexEncodingSupport {
 
         public static string GetUnescapedSaveName(string originalString) {
-            originalString = originalString.Replace("@@noname_save_game@@", "Quick Save");
+            originalString = originalString.Replace("@@noname_save_game@@", "Quick Save", StringComparison.InvariantCulture);
             if (originalString.Length == 0) {
                 originalString = "[Autosave]";
             }
@@ -231,9 +233,7 @@ namespace ASE.Utils {
         }
 
         public static byte[] GetDataChecksum(byte[] data) {
-            using (SHA256 sha = SHA256.Create()) {
-                return sha.ComputeHash(data);
-            }
+            return SHA256.HashData(data);
         }
 
         private AESEncoder(string key, string iv) {

@@ -15,9 +15,6 @@ namespace ASE.SII2Parser {
     /// The simple syntax of this format allows for easy manual editing.
     /// </summary>
     public class UnitSerializer {
-        public static readonly string[] KNOWN_PTR_ITEMS_TRUCK = ["vehicle:accessories"];
-        public static readonly string[] KNOWN_PTR_ITEMS_TRAILER = ["trailer:trailer_definition", "trailer:slave_trailer", "trailer:accessories"];
-
         /// <summary>
         /// Serializes a unit and its referenced subunits into a string representation.
         /// </summary>
@@ -71,7 +68,7 @@ namespace ASE.SII2Parser {
                         var arr = entity.GetArray(key);
                         for (int i = 0; i < arr.Count; i++) {
                             var v = arr[i];
-                            if ((isPointer || findPointers) && v.StartsWith("_")) {
+                            if ((isPointer || findPointers) && v.StartsWith("_", StringComparison.InvariantCulture)) {
                                 builder.Append($"    PTR {serializeSubunit(v):D6}\n");
                             } else {
                                 builder.Append($"    VAL {v}\n");
@@ -81,7 +78,7 @@ namespace ASE.SII2Parser {
                         builder.Append($"  ITEM {key}\n");
 
                         var v = entity.GetValue(key);
-                        if ((isPointer || findPointers) && v.StartsWith("_")) {
+                        if ((isPointer || findPointers) && v.StartsWith("_", StringComparison.InvariantCulture)) {
                             builder.Append($"    PTR {serializeSubunit(v):D6}\n");
                         } else {
                             builder.Append($"    VAL {v}\n");

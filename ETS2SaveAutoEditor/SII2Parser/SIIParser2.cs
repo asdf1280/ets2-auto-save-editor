@@ -285,7 +285,7 @@ namespace ASE.SII2Parser {
         }
 
         private string EncodeFloat(float f) {
-            return SCSSpecialString.EncodeScsFloat(f);
+            return SCSSpecialString.EncodeScsFloatToHex(f);
             //return f.ToString("R"); // Debugging
         }
 

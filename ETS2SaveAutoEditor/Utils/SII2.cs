@@ -137,7 +137,7 @@ namespace ASE.SII2Parser {
                 return false;
             }
             item.___detach_do_not_use();
-            return units.Remove(item) || unitMap.Remove(item.Id);
+            return units.Remove(item) & unitMap.Remove(item.Id); // non shortcircuit
         }
 
         public void RemoveAt(int index) {

@@ -14,6 +14,14 @@ using System.Windows;
 namespace ASE {
     public partial class App : Application {
         private void Application_Startup(object sender, StartupEventArgs e) {
+            // Set app culture to invariant culture
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+            // Set app culture to invariant culture for all threads
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
+
             // If the argument contains a path to a sii file, decode it and quit.
             if (e.Args.Length == 0) return;
             string path = string.Join(" ", e.Args);

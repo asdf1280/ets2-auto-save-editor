@@ -63,7 +63,7 @@ namespace ASE {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static readonly string Version = "1.32.4";
+        public static readonly string Version = "1.33.1";
 
         private SaveeditTasks tasks = new();
 
@@ -78,8 +78,9 @@ namespace ASE {
             addAction(tasks.UnlockScreens());
             addAction(tasks.WinterlandPortals());
             addAction(tasks.TruckEngineSet());
-            addAction(tasks.Refuel());
-            if (OperatingSystem.IsWindows())
+            addAction(tasks.Refuel(false));
+            addAction(tasks.Refuel(true));
+            if (false && OperatingSystem.IsWindows())
                 addAction(tasks.RefuelNow());
             addAction(tasks.FixEverything());
             addAction(tasks.ShareNavigation());
@@ -89,9 +90,10 @@ namespace ASE {
             addAction(tasks.ReducePosition());
             addAction(tasks.DecodePosition());
             addAction(tasks.ConnectTrailerInstantly());
+            addAction(tasks.TeleportToCargo());
             addAction(tasks.VehicleSharingTool(currentGame));
-            addAction(tasks.SpecialCCTask());
-            addAction(tasks.StealCompanyTrailer());
+            addAction(tasks.SpecialCCTask(currentGame));
+            addAction(tasks.CompanyVehicleStealTool());
             addAction(tasks.ChangeCargoMass());
         }
 

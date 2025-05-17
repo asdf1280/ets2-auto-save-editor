@@ -125,7 +125,7 @@ namespace ASE.Utils {
             }
         }
     }
-    public class Quaternion(double w, double x, double y, double z) {
+    public class Quaternion(double w, double x, double y, double z) : ICloneable {
         public double w = w, x = x, y = y, z = z;
 
         // Background knowledges
@@ -441,9 +441,13 @@ namespace ASE.Utils {
             var (axis, angle) = Decomposite();
             return $"{axis} {angle * 180 / Math.PI}";
         }
+
+        public object Clone() {
+            return new Quaternion(w, x, y, z);
+        }
     }
 
-    public class Vector3(double x, double y, double z) {
+    public class Vector3(double x, double y, double z) : ICloneable {
         public double x = x, y = y, z = z;
 
         public static readonly Vector3 UnitX = new(1, 0, 0);
@@ -494,9 +498,24 @@ namespace ASE.Utils {
         }
 
         public Vector3 Normalize() {
-            double length = Math.Sqrt(x * x + y * y + z * z);
+            // ChatGPT says this is still recommended rather than Clone then Length = 1. because it doesn't add method calls nor calculate Length twice.
+            double length = Length;
             if (length == 0) return new Vector3(0, 0, 0);
             return new Vector3(x / length, y / length, z / length);
+        }
+
+        // Gets or sets the length of the vector.
+        public double Length {
+            get {
+                return Math.Sqrt(x * x + y * y + z * z);
+            }
+            set {
+                double length = Length;
+                if (length == 0) return;
+                x *= value / length;
+                y *= value / length;
+                z *= value / length;
+            }
         }
 
         public static Vector3 Cross(Vector3 a, Vector3 b) {
@@ -530,9 +549,17 @@ namespace ASE.Utils {
         public override string ToString() {
             return $"({SCSDecimalParser.EncodeDecimal(x)}, {SCSDecimalParser.EncodeDecimal(y)}, {SCSDecimalParser.EncodeDecimal(z)})";
         }
+
+        public string ToHumanString() {
+            return $"({x}, {y}, {z})";
+        }
+
+        public object Clone() {
+            return new Vector3(x, y, z);
+        }
     }
 
-    public class SCSPlacement(Vector3 position, Quaternion orientation) {
+    public class SCSPlacement(Vector3 position, Quaternion orientation) : ICloneable {
         public Vector3 Position = position;
         public Quaternion Orientation = orientation;
 
@@ -561,6 +588,10 @@ namespace ASE.Utils {
                 result = null;
                 return false;
             }
+        }
+
+        public object Clone() {
+            return new SCSPlacement((Vector3)Position.Clone(), (Quaternion)Orientation.Clone());
         }
 
         public override string ToString() {

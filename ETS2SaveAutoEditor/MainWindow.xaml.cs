@@ -63,7 +63,7 @@ namespace ASE {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static readonly string Version = "1.33.1";
+        public static readonly string Version = "1.34";
 
         private SaveeditTasks tasks = new();
 
@@ -76,7 +76,9 @@ namespace ASE {
             addAction(tasks.MoneySet());
             addAction(tasks.ExpSet());
             addAction(tasks.UnlockScreens());
-            addAction(tasks.WinterlandPortals());
+            // VPS(Vehicle Placement Script) is too dangerous to be available by default. We look for the flag file.
+            if (OperatingSystem.IsWindows())
+                addAction(tasks.ExecuteVPS());
             addAction(tasks.TruckEngineSet());
             addAction(tasks.Refuel(false));
             addAction(tasks.Refuel(true));

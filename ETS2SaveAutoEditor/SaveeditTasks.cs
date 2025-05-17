@@ -15,6 +15,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
+using System.Globalization;
+using System.Management;
+using Windows.Media.Capture.Core;
 
 namespace ASE {
     public class SaveeditTasks {
@@ -1660,6 +1663,398 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                 name = "Adjust Trailer Cargo Mass",
                 run = run,
                 description = "Modify the cargo mass of the assigned trailer according to your preference."
+            };
+        }
+
+        private static string? currentVPSName = null;
+        private static string GetVPSName() {
+            if (currentVPSName != null) return currentVPSName;
+
+            if (!File.Exists("VPS.flag")) {
+                return "Unlicensed";
+            }
+
+            var name = File.ReadAllLines("VPS.flag");
+            if (name.Length < 2)
+                return "Unknown";
+            currentVPSName = name[0].Trim();
+            return currentVPSName;
+        }
+
+        private static string? currentVPSHWID = null;
+        [SupportedOSPlatform("Windows")]
+        private static string GetVPSHWID() {
+            if (currentVPSHWID != null) return currentVPSHWID;
+            string cpuId = "";
+            using (var mc = new ManagementClass("Win32_Processor"))
+                cpuId = mc.GetInstances().Cast<ManagementObject>()
+                          .FirstOrDefault()?["ProcessorId"]?.ToString() ?? "";
+
+            byte[] hash = SHA256.HashData(Encoding.ASCII.GetBytes(cpuId + "ASE SALT so salty"));
+            currentVPSHWID = BitConverter.ToString(hash).Replace("-", "", StringComparison.Ordinal).Substring(0, 8).ToLowerInvariant();
+            return currentVPSHWID;
+        }
+
+        [SupportedOSPlatform("Windows")]
+        public SaveEditTask ExecuteVPS() {
+            var run = new Action(() => {
+                // VPS Availability check
+                try {
+                    const string PublicKeyBase64 = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmuryOeKVRA26CEi3P5bI/3yl42w6cDxYc2R05QlMmHbTD3TYDfU7ERnLUXQFlF6d93EpbDyr87YGzsihbznjCb7uldDD7LcsGF5s7G8ehR7zqbHkVvk0L6pm0+bsuAf1cSHEYKmAieev++jjgQVPgMGISiGs+KKJdo4I/0f0OWKuf6SBdYaAlPObmu5I5YJEjFcfkrmwYy4rzFRVKBKU7u0JBjgYlQ7RynrCTX1HPQ/sTWqNZJYBwCfpmHM90NkpZtBmHKnlrOI1+sqJp4qPR9DcRk/uk6Ixb4KomdEVNuqFyDwn783vNhlOYbyMeeB8mPX18+pSoEJMSACa+FvCowIDAQAB";
+                    string[] flagLines = File.ReadAllLines("VPS.flag");
+                    string name = flagLines[0].Trim();
+                    string sigb64 = flagLines[1].Trim();
+
+                    var pubDer = Convert.FromBase64String(PublicKeyBase64);
+                    var data = Encoding.UTF8.GetBytes(name + "\n" + GetVPSHWID());
+                    var sig = Convert.FromBase64String(sigb64);
+
+                    using var rsa = RSA.Create();
+                    rsa.ImportSubjectPublicKeyInfo(pubDer, out _);
+
+                    bool ok = rsa.VerifyData(data, sig, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                    if (!ok) {
+                        throw new Exception("Signature verification failed");
+                    }
+                } catch {
+                    MessageBox.Show("You're not authorized to use this tool.\n\nPlease contact the developer. Send the following text to the developer:\n\n" + GetVPSHWID(), "Error");
+                    return;
+                }
+
+                var player = saveGame.EntityType("player");
+                if (player == null) {
+                    MessageBox.Show("Unable to find player.", "Error");
+                    return;
+                }
+                int vehicleCount = 0;
+                bool allowTranslationForTarget2 = false; // If the trailer's detached, also allow the first trailer to be translated not only truck. If false, all translation commands are allowed only if target is 1, and if true, all translation commands are allowed if target is 1 or 2.
+                Entity2? vehicleObj = null;
+                if (player.TryGetPointer("assigned_truck", out vehicleObj)) {
+                    vehicleCount++;
+                }
+                if (player.TryGetPointer("assigned_trailer", out vehicleObj)) {
+                    vehicleCount++;
+                    while (vehicleObj.TryGetPointer("slave_trailer", out vehicleObj)) {
+                        vehicleCount++;
+                    }
+                }
+
+                if (player.GetValue("assigned_trailer_connected") == "false") {
+                    allowTranslationForTarget2 = true;
+                }
+
+                List<SCSPlacement> vehiclePlacements = [];
+                if (vehicleCount >= 1)
+                    vehiclePlacements.Add(SCSPlacement.Parse(player.GetValue("truck_placement")));
+                if (vehicleCount >= 2)
+                    vehiclePlacements.Add(SCSPlacement.Parse(player.GetValue("trailer_placement")));
+                if (vehicleCount >= 3 && player.TryGetArray("slave_trailer_placements", out var slaveTrailerPlacements)) {
+                    foreach (var placement in slaveTrailerPlacements) {
+                        vehiclePlacements.Add(SCSPlacement.Parse(placement));
+                    }
+                }
+                while (vehiclePlacements.Count < vehicleCount) {
+                    // Copy last placement to fill the gap
+                    vehiclePlacements.Add(SCSPlacement.Parse(vehiclePlacements[^1].ToString()));
+                }
+
+                // Vehicle Placement Script specification
+                // "COMMAND param param..." consists a single command.
+                // A line separates the commands. Each line must be one of (1) empty (2) start with # for comment (3) start with the command. Otherwise an error will be thrown.
+
+                // Step 1. Validation
+                List<(int lineNumber, string command, object[] param)> validCommandLines = new();
+
+                var rawScript = Clipboard.GetText();
+                if (rawScript.Length == 0) {
+                    MessageBox.Show("Unable to find VPS script in clipboard.", "Error");
+                    return;
+                }
+
+                var lines = rawScript.Split('\n');
+                string? error = null;
+                int errorAt = -1;
+                int currentTarget = 1;
+                for (int i = 0; i < lines.Length; i++) {
+                    string line = lines[i].Trim();
+                    if (line.Length == 0 || line[0] == '#') continue;
+                    var words = line.Split(" ", StringSplitOptions.RemoveEmptyEntries);
+                    var command = words[0].ToLowerInvariant();
+
+                    if (command == "help") {
+                        var help = new StringBuilder();
+                        help.AppendLine("VPS(Vehicle Placement Script) help:");
+                        help.AppendLine("It is important to try and see the result yourself. The commands are very simple and easy to understand.");
+                        help.AppendLine("");
+                        help.AppendLine(" - What does 'intrinsic rotation' mean? Don't worry. It simply means a type of Yaw-Pitch-Roll rotation that works as you expect. If you don't know what it means, just try it out and see the result.");
+                        help.AppendLine("");
+                        help.AppendLine("* BASIC COMMANDS");
+                        help.AppendLine("HELP - Copy this help to clipboard. Other commands aren't executed (commands above will still be validated). Parameters will be ignored.");
+                        help.AppendLine("HELP_SHORT - Cheatsheet for familiar coders.");
+                        help.AppendLine("TARGET vehicleNumber - Set the target vehicle. x is an integer between 1 and the number of vehicles in the current combination. The initial target is 1. The commands below all modify the placement of target vehicle. 1 means truck. 2 means the first trailer. 3+ means slave trailers.");
+                        help.AppendLine("");
+                        help.AppendLine("* TRANSLATION : Only available if (a) target is 1 (b) target is 2 when trailer is disconnected. They apply to the target vehicle.");
+                        help.AppendLine("MOVE_TO x y z - Move the vehicle to the specified world coordinates. @ can be used instead to keep the position in that axis.");
+                        help.AppendLine("TRANSLATE_WORLD dx dy dz - Translate the vehicle by the specified vector in world Cartesian coordinates.");
+                        help.AppendLine("TRANSLATE_RELATIVE dx′ dy′ dz′ - Translate the vehicle by the specified vector in vehicle Cartesian coordinates.");
+                        help.AppendLine("");
+                        help.AppendLine("* ROTATION : They apply to the target vehicle.");
+                        help.AppendLine("SET_FACING yaw pitch roll - Set the vehicle facing in Yaw-Pitch-Roll degrees from particular default world facing direction. Try SET_FACING 0 0 0 if you wonder the default facing. It performs an INTRINSIC rotation in YPR order. @ can be used instead to keep the angle in that axis, but it's strongly discouraged because the current angle might be inaccurate due to gimbal lock.");
+                        help.AppendLine("ROTATE_WORLD dθY dθX dθZ - Modify the vehicle facing in degrees. Extrinsic rotation. The initial Y-X-Z axes are based on the world coordinates. The axis combination is intrinsic, that is, earlier rotations affect latter axes of rotation.");
+                        help.AppendLine("ROTATE_RELATIVE dYaw dPitch dRoll - Modify the vehicle facing in degrees. Intrinsic rotation. The initial Yaw-Pitch-Roll axes are based on the current facing of target vehicle. Yaw-Pitch-Roll Angles are merged intrinsically, that is, earlier rotations affect latter axes of rotation.");
+                        help.AppendLine("");
+                        help.AppendLine("* COPYING DIRECTIONS");
+                        help.AppendLine("COPY_FROM vehicleNumber - 'Copy vehicle orientation from n to target' Copy the facing of vehicle n to the target vehicle. n is an integer between 1 and the number of vehicles in the current combination.");
+                        help.AppendLine("STRAIGHT - 'Straighten the vehicles behind the target' Match the orientation(direction) of the vehicles behind the target vehicle to that of target vehicle. Can't be used if the target is the last vehicle.");
+                        help.AppendLine("EQUALIZE - 'Copy truck placement to all disconnected trailers' Only available if the trailer's disconnected. Copies the facing and direction of the truck to the first trailer. Further translation MUST!!!!!!!!! be made to either of the vehicles to prevent them clipping each other. Otherwise the consequences can be disastrous.");
+                        help.AppendLine("");
+                        help.AppendLine("* EXAMPLE CODE : The script below will teleport the truck to the coordinates (0, 0, 0) and make the trailer straight behind the truck.");
+                        help.AppendLine("TARGET 1");
+                        help.AppendLine("MOVE_TO 0 0 0");
+                        help.AppendLine("STRAIGHT");
+                        help.AppendLine("* END OF HELP *");
+                        Clipboard.SetText(help.ToString());
+
+                        MessageBox.Show("Copied list of commands and brief description to clipboard.\n\nPlease refer to VPS.html for more information.", "VPS Help");
+                        return;
+                    }
+                    if (command == "help_short") {
+                        var help = new StringBuilder();
+                        help.AppendLine("* BASIC COMMANDS");
+                        help.AppendLine("HELP");
+                        help.AppendLine("HELP_SHORT");
+                        help.AppendLine("TARGET vehicleNumber");
+                        help.AppendLine("");
+                        help.AppendLine("* TRANSLATION");
+                        help.AppendLine("MOVE_TO x y z");
+                        help.AppendLine("TRANSLATE_WORLD dx dy dz");
+                        help.AppendLine("TRANSLATE_RELATIVE dx′ dy′ dz′");
+                        help.AppendLine("");
+                        help.AppendLine("* ROTATION");
+                        help.AppendLine("SET_FACING yaw pitch roll");
+                        help.AppendLine("ROTATE_WORLD dθY dθX dθZ");
+                        help.AppendLine("ROTATE_RELATIVE dYaw dPitch dRoll");
+                        help.AppendLine("");
+                        help.AppendLine("* COPYING DIRECTIONS");
+                        help.AppendLine("COPY_FROM vehicleNumber - Copy vehicle orientation from n to target");
+                        help.AppendLine("STRAIGHT - Copy truck placement to all disconnected trailers");
+                        help.AppendLine("EQUALIZE - Copy truck placement to all disconnected trailers / USE WITH CAUTION!");
+                        Clipboard.SetText(help.ToString());
+
+                        MessageBox.Show("Copied list of commands to clipboard.", "VPS Short Help");
+                        return;
+                    }
+
+                    if (command == "move_to" || command == "translate_world" || command == "translate_relative" || command == "set_facing" || command == "rotate_relative" || command == "rotate_world") {
+                        // Cause error if words.Length != 4 or values aren't decimal
+                        if (words.Length != 4) {
+                            errorAt = i;
+                            error = $"Invalid number of arguments for {command}. Expected 3, got {words.Length - 1}";
+                            break;
+                        }
+                        float arg1 = float.NaN, arg2 = float.NaN, arg3 = float.NaN; // NaN means keep the value in that axis
+                        if (command == "move_to" || command == "set_facing") {
+                            if (!(float.TryParse(words[1], CultureInfo.InvariantCulture, out arg1) || words[1] == "@")
+                                || !(float.TryParse(words[2], CultureInfo.InvariantCulture, out arg2) || words[2] == "@")
+                                || !(float.TryParse(words[3], CultureInfo.InvariantCulture, out arg3) || words[3] == "@")) {
+                                errorAt = i;
+                                error = $"Invalid argument for {command}. Expected decimal value or @, got {words[1]} {words[2]} {words[3]}";
+                                break;
+                            }
+                            if (words[1] == "@") arg1 = float.NaN;
+                            if (words[2] == "@") arg2 = float.NaN;
+                            if (words[3] == "@") arg3 = float.NaN;
+                        } else {
+                            if (!float.TryParse(words[1], CultureInfo.InvariantCulture, out arg1)
+                                || !float.TryParse(words[2], CultureInfo.InvariantCulture, out arg2)
+                                || !float.TryParse(words[3], CultureInfo.InvariantCulture, out arg3)) {
+                                errorAt = i;
+                                error = $"Invalid argument for {command}. Expected decimal value, got {words[1]} {words[2]} {words[3]}";
+                                break;
+                            }
+                        }
+
+                        bool isTranslationAllowed = currentTarget == 1 || (currentTarget == 2 && allowTranslationForTarget2);
+                        bool isTranslationCommand = command == "move_to" || command == "translate_world" || command == "translate_relative";
+                        if (!isTranslationAllowed && isTranslationCommand) {
+                            errorAt = i;
+                            error = $"Invalid command for {command}. Expected target {(allowTranslationForTarget2 ? "1 or 2" : "1")}, got {currentTarget}";
+                            break;
+                        }
+
+                        validCommandLines.Add((i, command, [arg1, arg2, arg3]));
+                    } else if (command == "target" || command == "copy_from") {
+                        // Cause error if words.Length != 2 or value isn't decimal
+                        if (words.Length != 2) {
+                            errorAt = i;
+                            error = $"Invalid number of arguments for {command}. Expected 1, got {words.Length - 1}";
+                            break;
+                        }
+                        if (!int.TryParse(words[1], out int targetIndex)) {
+                            errorAt = i;
+                            error = $"Invalid argument for {command}. Expected integer value, got {words[1]}";
+                            break;
+                        }
+                        if (targetIndex <= 0 || targetIndex > vehicleCount) {
+                            errorAt = i;
+                            error = $"Invalid argument for {command}. Expected value between 1 and {vehicleCount}(vehicle count of current vehicle combination), got {targetIndex}";
+                            break;
+                        }
+                        if (targetIndex == currentTarget && !(command == "target" && targetIndex == 1 && currentTarget == 1)) {
+                            // NOTE: Redundant target change to 1 is quietly allowed because this will make the script easier to read.
+                            errorAt = i;
+                            var reason = command == "target" ? "is the same as current target." : "is the same as source vehicle.";
+                            error = $"Invalid argument for {command}. Target {currentTarget} {reason}.";
+                            break;
+                        }
+
+                        if (command == "target")
+                            currentTarget = targetIndex;
+
+                        validCommandLines.Add((i, command, [targetIndex]));
+                    } else if (command == "straight" || command == "equalize") {
+                        // Error if words.Length != 1
+                        if (words.Length != 1) {
+                            errorAt = i;
+                            error = $"Invalid number of arguments for {command}. Expected 0, got {words.Length - 1}";
+                            break;
+                        }
+                        // If target is the last vehicle, error
+                        //if (currentTarget == vehicleCount) {
+                        //    errorAt = i;
+                        //    error = $"Invalid command for {command}. The target is the last vehicle. There are no vehicles behind to straighten.";
+                        //    break;
+                        //}
+                        if (command == "equalize") {
+                            if (!allowTranslationForTarget2) {
+                                errorAt = i;
+                                error = $"Invalid command for {command}. The trailer is connected. 'Equalize' is a command that brings the disconnected trailer to the truck's position.";
+                                break;
+                            }
+                        }
+                        validCommandLines.Add((i, command, []));
+                    } else {
+                        errorAt = i;
+                        error = $"Unknown command";
+                        break;
+                    }
+                }
+
+                if (error != null) {
+                    MessageBox.Show($"Error at line {errorAt + 1}: {error}\n\n> {lines[errorAt]}", "VPS Compile Error");
+                    return;
+                }
+
+                // Actual execution of the script
+                currentTarget = 1; // Reset target to 1
+
+                StringBuilder log = new();
+                log.AppendLine("VPS execution log:");
+
+                foreach (var (lineNumber, command, param) in validCommandLines) {
+                    log.AppendLine($"Line {lineNumber + 1}: {lines[lineNumber]}");
+
+                    var targetPlacement = vehiclePlacements[currentTarget - 1];
+
+                    if (command == "target") {
+                        currentTarget = (int)param[0];
+                    }
+                    if (command == "move_to") {
+                        if (float.IsNaN((float)param[0]))
+                            param[0] = (float)targetPlacement.Position.x;
+                        if (float.IsNaN((float)param[1]))
+                            param[1] = (float)targetPlacement.Position.y;
+                        if (float.IsNaN((float)param[2]))
+                            param[2] = (float)targetPlacement.Position.z;
+                        vehiclePlacements[currentTarget - 1].Position = new Vector3((float)param[0], (float)param[1], (float)param[2]);
+                    }
+                    if (command == "translate_world") {
+                        Vector3 translation = new((float)param[0], (float)param[1], (float)param[2]);
+                        log.AppendLine($"Translation vector: {translation.ToHumanString()}");
+                        vehiclePlacements[currentTarget - 1].Position += translation;
+                    }
+                    if (command == "translate_relative") {
+                        Vector3 translation = new((float)param[0], (float)param[1], -(float)param[2]);
+                        translation = vehiclePlacements[currentTarget - 1].Orientation * translation; // Convert to vehicle coordinates
+                        log.AppendLine($"Translation vector: {translation.ToHumanString()} norm {translation.Length}");
+                        vehiclePlacements[currentTarget - 1].Position += translation;
+                    }
+                    if (command == "set_facing") {
+                        var currentEulerDegrees = targetPlacement.Orientation.ToEulerDegrees();
+                        log.AppendLine($"Current orientation: {currentEulerDegrees}");
+                        if (float.IsNaN((float)param[0]))
+                            param[0] = (float)currentEulerDegrees.yaw;
+                        if (float.IsNaN((float)param[1]))
+                            param[1] = (float)currentEulerDegrees.pitch;
+                        if (float.IsNaN((float)param[2]))
+                            param[2] = (float)currentEulerDegrees.roll;
+
+                        var eulerAngleQuaternion = Quaternion.FromEulerDegrees((float)param[0], (float)param[1], (float)param[2]);
+                        targetPlacement.Orientation = eulerAngleQuaternion;
+                        log.AppendLine($"New orientation: {eulerAngleQuaternion.ToEulerDegrees()}");
+                    }
+                    if (command == "rotate_world") {
+                        var eulerAngleQuaternion = Quaternion.FromEulerDegrees((float)param[0], (float)param[1], (float)param[2]);
+                        log.AppendLine($"Input rotation: {eulerAngleQuaternion.ToEulerDegrees()}");
+                        log.AppendLine($"Initial Orientation: {vehiclePlacements[currentTarget - 1].Orientation.ToEulerDegrees()}");
+                        targetPlacement.Orientation = eulerAngleQuaternion * targetPlacement.Orientation; // Extrinsic rotation
+                        log.AppendLine($"Final Orientation: {vehiclePlacements[currentTarget - 1].Orientation.ToEulerDegrees()}");
+                    }
+                    if (command == "rotate_relative") {
+                        var eulerAngleQuaternion = Quaternion.FromEulerDegrees((float)param[0], (float)param[1], (float)param[2]);
+                        log.AppendLine($"Input rotation: {eulerAngleQuaternion.ToEulerDegrees()}");
+                        log.AppendLine($"Initial Orientation: {vehiclePlacements[currentTarget - 1].Orientation.ToEulerDegrees()}");
+                        targetPlacement.Orientation = targetPlacement.Orientation * eulerAngleQuaternion; // Intrinsic rotation
+                        log.AppendLine($"Final Orientation: {vehiclePlacements[currentTarget - 1].Orientation.ToEulerDegrees()}");
+                    }
+                    if (command == "copy_from") {
+                        vehiclePlacements[currentTarget - 1].Orientation = (Quaternion)vehiclePlacements[(int)param[0] - 1].Orientation.Clone();
+                        log.AppendLine($"Copying facing from vehicle {(int)param[0]} to vehicle {currentTarget}");
+                    }
+                    if (command == "straight") {
+                        for (int i = currentTarget; i < vehicleCount; i++) {
+                            vehiclePlacements[i].Orientation = (Quaternion)targetPlacement.Orientation.Clone();
+                        }
+                        int count = Math.Max(0, vehicleCount - currentTarget);
+                        log.AppendLine($"Straightened {count} vehicle(s) behind vehicle {currentTarget}");
+                    }
+                    if (command == "equalize") {
+                        for (int i = 1; i < vehicleCount; i++) {
+                            vehiclePlacements[i] = (SCSPlacement)vehiclePlacements[0].Clone();
+                        }
+                        log.AppendLine($"Synchronized the position of {vehicleCount - 1} disconnected part(s)");
+                    }
+                    log.AppendLine("");
+                }
+                // Apply the changes to the save
+                if (vehicleCount >= 1)
+                    player.Set("truck_placement", vehiclePlacements[0].ToString());
+                else
+                    player.Set("truck_placement", "(0, 0, 0) (1; 0, 0, 0)");
+                if (vehicleCount >= 2)
+                    player.Set("trailer_placement", vehiclePlacements[1].ToString());
+                else
+                    player.Set("trailer_placement", "(0, 0, 0) (1; 0, 0, 0)");
+                if (vehicleCount < 3) {
+                    player.Set("slave_trailer_placements", "0");
+                } else {
+                    slaveTrailerPlacements = [];
+                    for (int i = 2; i < vehicleCount; i++) {
+                        slaveTrailerPlacements.Add(vehiclePlacements[i].ToString());
+                    }
+                    player.Set("slave_trailer_placements", slaveTrailerPlacements);
+                }
+
+                saveFile.Save(saveGame);
+
+                Clipboard.SetText(log.ToString());
+                MessageBox.Show("VPS script executed successfully.\n\nPlease check the log in clipboard.", "VPS Execution Log");
+            });
+
+            return new SaveEditTask {
+                name = "Execute VPS",
+                run = run,
+                description = "This VPS is licensed to " + GetVPSName() + "\nExecute VPS(Vehicle Placement Script) in your clipboard. Copy the full script into clipboard before executing this task. Refer to VPS.html for how-to-use."
             };
         }
     }

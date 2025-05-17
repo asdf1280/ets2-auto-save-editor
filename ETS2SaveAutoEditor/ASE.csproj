@@ -46,6 +46,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Management" Version="9.0.5" />
   </ItemGroup>
   <ItemGroup>
     <EditorConfigFiles Remove="C:\Users\User\source\repos\ets2ase-en\ETS2SaveAutoEditor\.editorconfig" />

@@ -1666,61 +1666,8 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
             };
         }
 
-        private static string? currentVPSName = null;
-        private static string GetVPSName() {
-            if (currentVPSName != null) return currentVPSName;
-
-            if (!File.Exists("VPS.flag")) {
-                return "Unlicensed";
-            }
-
-            var name = File.ReadAllLines("VPS.flag");
-            if (name.Length < 2)
-                return "Unknown";
-            currentVPSName = name[0].Trim();
-            return currentVPSName;
-        }
-
-        private static string? currentVPSHWID = null;
-        [SupportedOSPlatform("Windows")]
-        private static string GetVPSHWID() {
-            if (currentVPSHWID != null) return currentVPSHWID;
-            string cpuId = "";
-            using (var mc = new ManagementClass("Win32_Processor"))
-                cpuId = mc.GetInstances().Cast<ManagementObject>()
-                          .FirstOrDefault()?["ProcessorId"]?.ToString() ?? "";
-
-            byte[] hash = SHA256.HashData(Encoding.ASCII.GetBytes(cpuId + "ASE SALT so salty"));
-            currentVPSHWID = BitConverter.ToString(hash).Replace("-", "", StringComparison.Ordinal).Substring(0, 8).ToLowerInvariant();
-            return currentVPSHWID;
-        }
-
-        [SupportedOSPlatform("Windows")]
         public SaveEditTask ExecuteVPS() {
             var run = new Action(() => {
-                // VPS Availability check
-                try {
-                    const string PublicKeyBase64 = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmuryOeKVRA26CEi3P5bI/3yl42w6cDxYc2R05QlMmHbTD3TYDfU7ERnLUXQFlF6d93EpbDyr87YGzsihbznjCb7uldDD7LcsGF5s7G8ehR7zqbHkVvk0L6pm0+bsuAf1cSHEYKmAieev++jjgQVPgMGISiGs+KKJdo4I/0f0OWKuf6SBdYaAlPObmu5I5YJEjFcfkrmwYy4rzFRVKBKU7u0JBjgYlQ7RynrCTX1HPQ/sTWqNZJYBwCfpmHM90NkpZtBmHKnlrOI1+sqJp4qPR9DcRk/uk6Ixb4KomdEVNuqFyDwn783vNhlOYbyMeeB8mPX18+pSoEJMSACa+FvCowIDAQAB";
-                    string[] flagLines = File.ReadAllLines("VPS.flag");
-                    string name = flagLines[0].Trim();
-                    string sigb64 = flagLines[1].Trim();
-
-                    var pubDer = Convert.FromBase64String(PublicKeyBase64);
-                    var data = Encoding.UTF8.GetBytes(name + "\n" + GetVPSHWID());
-                    var sig = Convert.FromBase64String(sigb64);
-
-                    using var rsa = RSA.Create();
-                    rsa.ImportSubjectPublicKeyInfo(pubDer, out _);
-
-                    bool ok = rsa.VerifyData(data, sig, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-                    if (!ok) {
-                        throw new Exception("Signature verification failed");
-                    }
-                } catch {
-                    MessageBox.Show("You're not authorized to use this tool.\n\nPlease contact the developer. Send the following text to the developer:\n\n" + GetVPSHWID(), "Error");
-                    return;
-                }
-
                 var player = saveGame.EntityType("player");
                 if (player == null) {
                     MessageBox.Show("Unable to find player.", "Error");
@@ -2054,7 +2001,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
             return new SaveEditTask {
                 name = "Execute VPS",
                 run = run,
-                description = "This VPS is licensed to " + GetVPSName() + "\nExecute VPS(Vehicle Placement Script) in your clipboard. Copy the full script into clipboard before executing this task. Refer to VPS.html for how-to-use."
+                description = "Execute VPS(Vehicle Placement Script) in your clipboard. Copy the full script into clipboard before executing this task. Refer to VPS.html for how-to-use."
             };
         }
     }

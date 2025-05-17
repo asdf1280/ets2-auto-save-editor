@@ -1,0 +1,325 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="MainWindow_Button_RefreshProfiles" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="MainWindow_Label_SaveInfoName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="MainWindow_Button_LoadSave" xml:space="preserve">
+    <value>LOAD</value>
+  </data>
+  <data name="MainWindow_Label_SaveInfoDir" xml:space="preserve">
+    <value>Dir</value>
+  </data>
+  <data name="MainWindow_Label_SaveInfoDate" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="MainWindow_Button_RefreshSaves" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="MainWindow_Label_SelectProfile" xml:space="preserve">
+    <value>SELECT PROFILE</value>
+  </data>
+  <data name="MainWindow_Label_SelectSave" xml:space="preserve">
+    <value>SELECT SAVE</value>
+  </data>
+  <data name="MainWindow_Label_SelectTask" xml:space="preserve">
+    <value>SELECT TASK</value>
+  </data>
+  <data name="MainWindow_Button_ExecuteTask" xml:space="preserve">
+    <value>EXECUTE</value>
+  </data>
+  <data name="MainWindow_Button_AboutASE" xml:space="preserve">
+    <value>About ASE...</value>
+  </data>
+  <data name="TaskDefs_MoneySet_1" xml:space="preserve">
+    <value>Specify Cash</value>
+  </data>
+  <data name="TaskDefs_MoneySet_2" xml:space="preserve">
+    <value>Specify the desired amount of cash in the game.</value>
+  </data>
+  <data name="TaskDefs_SpecialCCTask_1" xml:space="preserve">
+    <value>Event CC Tools</value>
+  </data>
+  <data name="TaskDefs_VehicleSharing_2" xml:space="preserve">
+    <value>You can use this tool to easily share and import trucks and trailers without worrying about collisions and errors.</value>
+  </data>
+  <data name="TaskDefs_VehicleSharing_1" xml:space="preserve">
+    <value>Vehicle Sharing</value>
+  </data>
+  <data name="TaskDefs_TeleportToCargo_1" xml:space="preserve">
+    <value>Teleport to Job Destination</value>
+  </data>
+  <data name="TaskDefs_ConnectTrailerInstantly_2" xml:space="preserve">
+    <value>Forces the assigned trailer to connect to the truck immediately. Make sure there's enough space for the straight trailer behind!</value>
+  </data>
+  <data name="TaskDefs_ConnectTrailerInstantly_1" xml:space="preserve">
+    <value>Connect Trailer Here</value>
+  </data>
+  <data name="TaskDefs_DecodePosition_2" xml:space="preserve">
+    <value>Decodes the shared player position data in the current clipboard to a human-readable decimal format. Units are in meters.</value>
+  </data>
+  <data name="TaskDefs_DecodePosition_1" xml:space="preserve">
+    <value>Decode Player Position</value>
+  </data>
+  <data name="TaskDefs_ReducePosition_2" xml:space="preserve">
+    <value>Reduce the length of position code by removing trailer position data. These are not necessary as long as you create the code with enough space behind.</value>
+  </data>
+  <data name="TaskDefs_ReducePosition_1" xml:space="preserve">
+    <value>Reduce Position Code</value>
+  </data>
+  <data name="TaskDefs_ImportPosition_2" xml:space="preserve">
+    <value>Imports the shared player position data to incorporate it into the current savegame.</value>
+  </data>
+  <data name="TaskDefs_ImportPosition_1" xml:space="preserve">
+    <value>Import Player Position</value>
+  </data>
+  <data name="TaskDefs_SharePosition_2" xml:space="preserve">
+    <value>Duplicates the position of the player's truck and trailer, allowing you to share it with others by copying it to the clipboard.</value>
+  </data>
+  <data name="TaskDefs_ImportNavigation_2" xml:space="preserve">
+    <value>Imports the shared navigation waypoints from clipboard.</value>
+  </data>
+  <data name="TaskDefs_ImportNavigation_1" xml:space="preserve">
+    <value>Import Navigation</value>
+  </data>
+  <data name="TaskDefs_ShareNavigation_2" xml:space="preserve">
+    <value>Shares the current navigation waypoints with others by copying it to the clipboard.</value>
+  </data>
+  <data name="TaskDefs_ShareNavigation_1" xml:space="preserve">
+    <value>Share Navigation</value>
+  </data>
+  <data name="TaskDefs_FixEverything_2" xml:space="preserve">
+    <value>Repairs all trucks and trailers in the current savegame.
+
+1.49 Warning - This will even repair trucks in used truck dealer!</value>
+  </data>
+  <data name="TaskDefs_FixEverything_1" xml:space="preserve">
+    <value>Repair All</value>
+  </data>
+  <data name="TaskDefs_RefuelUnreal_2" xml:space="preserve">
+    <value>Set the fuel(or battery) level of current truck to 1000x of the fuel tank. You must disable realistic fuel consumption in the game settings.</value>
+  </data>
+  <data name="TaskDefs_RefuelUnreal_1" xml:space="preserve">
+    <value>Infinite fuel current vehicle</value>
+  </data>
+  <data name="TaskDefs_RefuelReal_2" xml:space="preserve">
+    <value>Set the fuel(or battery) level of current truck to 100%.</value>
+  </data>
+  <data name="TaskDefs_RefuelReal_1" xml:space="preserve">
+    <value>Refuel current vehicle</value>
+  </data>
+  <data name="TaskDefs_TruckEngineSet_2" xml:space="preserve">
+    <value>Switches the truck's engine to one of the available options.</value>
+  </data>
+  <data name="TaskDefs_ExecuteVPS_2" xml:space="preserve">
+    <value>Execute VPS(Vehicle Placement Script) in your clipboard. Copy the full script into clipboard before executing this task.</value>
+  </data>
+  <data name="TaskDefs_ExecuteVPS_1" xml:space="preserve">
+    <value>Execute VPS</value>
+  </data>
+  <data name="TaskDefs_UnlockScreens_2" xml:space="preserve">
+    <value>Enables locked GUIs, including skills, for new profiles. Some normally disabled GUIs may also be enabled.</value>
+  </data>
+  <data name="TaskDefs_TruckEngineSet_1" xml:space="preserve">
+    <value>Set Truck Engine</value>
+  </data>
+  <data name="TaskDefs_UnlockScreens_1" xml:space="preserve">
+    <value>Unlock all UI</value>
+  </data>
+  <data name="TaskDefs_ExpSet_2" xml:space="preserve">
+    <value>Specify the desired amount of experience points (EXP).</value>
+  </data>
+  <data name="TaskDefs_ExpSet_1" xml:space="preserve">
+    <value>Specify EXP</value>
+  </data>
+  <data name="TaskDefs_SetCargoMass_2" xml:space="preserve">
+    <value>Modify the cargo mass of the assigned trailer according to your preference.</value>
+  </data>
+  <data name="TaskDefs_SetCargoMass_1" xml:space="preserve">
+    <value>Adjust Trailer Cargo Mass</value>
+  </data>
+  <data name="TaskDefs_VehicleStealer_2" xml:space="preserve">
+    <value>You can steal the trailer or truck from the job. If the trailer is yours, you can steal the cargo loaded in it.</value>
+  </data>
+  <data name="TaskDefs_VehicleStealer_1" xml:space="preserve">
+    <value>Own Job Vehicle</value>
+  </data>
+  <data name="TaskDefs_SpecialCCTask_2" xml:space="preserve">
+    <value>Please read the manual inside before using it! Otherwise the consequences can be disastrous!</value>
+  </data>
+  <data name="TaskDefs_TeleportToCargo_2" xml:space="preserve">
+    <value>Use this to teleport to any company as you want in TruckersMP by using Job Dispatcher. Refer to 'ase' channel in MCG Discord for how-to-use.</value>
+  </data>
+  <data name="TaskDefs_SharePosition_1" xml:space="preserve">
+    <value>Share Player Position</value>
+  </data>
+  <data name="Common_Message_Done_Title" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="Common_Message_Done_Message" xml:space="preserve">
+    <value>Done!</value>
+  </data>
+  <data name="Common_Message_Error_Message" xml:space="preserve">
+    <value>An unknown error occured.</value>
+  </data>
+  <data name="Common_Message_Error_Title" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Common_Message_Error_MessageDebug" xml:space="preserve">
+    <value>An error occured.
+{0}: {1}
+Please contact the developer.</value>
+  </data>
+  <data name="Task_SpecialCCTask_HowToApply" xml:space="preserve">
+    <value>** How to apply CC data **
+1. Run 'Apply CC Data'
+2. Open the received CC data file (*.ddd)
+
+** NOTE **
+- Applying the data won't affect existing profile and saves. It will simply add new saves to the profile.
+- When a vehicle is added with this utility, they're in a very unstable state because they're not placed in a garage. Therefore, when the event is concluded, MAKE SURE TO RUN 'Delete all CC saves'!</value>
+  </data>
+  <data name="Task_SpecialCCTask_List_01Application" xml:space="preserve">
+    <value>---- Application ----</value>
+  </data>
+  <data name="Task_SpecialCCTask_List_02Apply" xml:space="preserve">
+    <value>Apply CC Data to this profile</value>
+  </data>
+  <data name="Task_SpecialCCTask_List_03Delete" xml:space="preserve">
+    <value>Delete all CC saves in this profile</value>
+  </data>
+  <data name="Task_SpecialCCTask_List_04Generation" xml:space="preserve">
+    <value>---- Generation ----</value>
+  </data>
+  <data name="Task_SpecialCCTask_List_05ExportVehicle" xml:space="preserve">
+    <value>Export Active Vehicle</value>
+  </data>
+  <data name="Task_SpecialCCTask_List_06Compile" xml:space="preserve">
+    <value>Compile CC Data</value>
+  </data>
+  <data name="Task_SpecialCCTask_List_07DLLInjection" xml:space="preserve">
+    <value>DLL Injection (Developer only)</value>
+  </data>
+  <data name="Task_SpecialCCTask_List_Title" xml:space="preserve">
+    <value>ASE CC Tool</value>
+  </data>
+</root>

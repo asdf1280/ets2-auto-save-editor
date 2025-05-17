@@ -4,12 +4,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ASE"
-        xmlns:System="clr-namespace:System;assembly=mscorlib" x:Class="ASE.MainWindow"
+        xmlns:System="clr-namespace:System;assembly=mscorlib"
+        xmlns:prop="clr-namespace:ASE.Properties" x:Name="window"
+        x:Class="ASE.MainWindow"
         mc:Ignorable="d"
         Title="Truck Sim Automatic Save Editor" Height="500" Width="850" WindowStartupLocation="CenterScreen">
     <DockPanel>
         <DockPanel DockPanel.Dock="Bottom" Background="#222c66">
-            <Label x:Name="CreditOpen" Padding="10,5,35,5" Foreground="#FFFFD0A8" Cursor="Hand" MouseUp="CreditOpen_MouseUp" HorizontalAlignment="Left">About ASE...</Label>
+            <Label x:Name="CreditOpen" Padding="10,5,35,5" Foreground="#FFFFD0A8" Cursor="Hand" MouseUp="CreditOpen_MouseUp" HorizontalAlignment="Left" Content="{x:Static prop:Texts.MainWindow_Button_AboutASE}" />
         </DockPanel>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -18,35 +20,35 @@
                 <ColumnDefinition Width="58*"/>
             </Grid.ColumnDefinitions>
             <DockPanel LastChildFill="True" Grid.Column="0" Background="#222c66">
-                <Label x:Name="SelectProfile" Content="SELECT PROFILE" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
+                <Label x:Name="SelectProfile" Content="{x:Static prop:Texts.MainWindow_Label_SelectProfile}" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontWeight="SemiBold" />
                 <Grid VerticalAlignment="Top" DockPanel.Dock="Top">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition/>
                         <ColumnDefinition Width="0.4*"/>
                     </Grid.ColumnDefinitions>
-                    <Button x:Name="RefreshProfilesButton" Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,0,5" Padding="5,10,5,10" FontFamily="Bahnschrift SemiBold" AutomationProperties.Name="RefreshProfiles"></Button>
-                    <Button x:Name="GameSwitchButton" Content="ATS" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="GameSwitchButtonPressed" Margin="5,0,10,5" Grid.Column="1" Padding="5,10,5,10" FontFamily="Bahnschrift SemiBold" AutomationProperties.Name="SwitchGame"></Button>
+                    <Button x:Name="RefreshProfilesButton" Content="{x:Static prop:Texts.MainWindow_Button_RefreshProfiles}" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshProfilesButtonPressed" Margin="10,0,0,5" Padding="5,10,5,10" AutomationProperties.Name="RefreshProfiles"></Button>
+                    <Button x:Name="GameSwitchButton" Content="ATS" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="GameSwitchButtonPressed" Margin="5,0,10,5" Grid.Column="1" Padding="5,10,5,10" AutomationProperties.Name="SwitchGame"></Button>
                 </Grid>
                 <ListBox x:Name="ProfileList" Margin="10,0" SelectionChanged="ProfileList_SelectionChanged" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" AutomationProperties.Name="ProfileList"/>
             </DockPanel>
             <Grid Background="#000000" Grid.Column="1" Margin="-1,0,0,0">
                 <DockPanel x:Name="SaveListPanel" Grid.Column="1" LastChildFill="True">
-                    <Label Content="SELECT SAVE" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
+                    <Label Content="{x:Static prop:Texts.MainWindow_Label_SelectSave}" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontWeight="SemiBold"/>
                     <DockPanel Margin="10,0">
                         <StackPanel x:Name="SaveInfo" DockPanel.Dock="Bottom" Margin="0,5,0,0" Background="#242424">
-                            <Label x:Name="SaveInfo_Name" Content="Name" Foreground="White"/>
-                            <Label x:Name="SaveInfo_Dir" Content="Dir" Foreground="White" Cursor="Hand" MouseUp="OpenFolder_Click"/>
-                            <Label x:Name="SaveInfo_Date" Content="Date" Foreground="White"/>
-                            <Button x:Name="LoadSaveButton" Content="LOAD" Click="LoadSaveFileButton_Click" Padding="0,10,0,10" Grid.Column="1" FontFamily="Bahnschrift SemiBold"></Button>
+                            <Label x:Name="SaveInfo_Name" Content="{x:Static prop:Texts.MainWindow_Label_SaveInfoName}" Foreground="White"/>
+                            <Label x:Name="SaveInfo_Dir" Content="{x:Static prop:Texts.MainWindow_Label_SaveInfoDir}" Foreground="White" Cursor="Hand" MouseUp="OpenFolder_Click"/>
+                            <Label x:Name="SaveInfo_Date" Content="{x:Static prop:Texts.MainWindow_Label_SaveInfoDate}" Foreground="White"/>
+                            <Button x:Name="LoadSaveButton" Content="{x:Static prop:Texts.MainWindow_Button_LoadSave}" Click="LoadSaveFileButton_Click" Padding="0,10,0,10" Grid.Column="1" FontWeight="SemiBold"></Button>
                         </StackPanel>
-                        <Button x:Name="RefreshSavesButton" Content="Refresh" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5" Padding="5,10,5,10" FontFamily="Bahnschrift SemiBold" AutomationProperties.Name="RefreshSaves"></Button>
+                        <Button x:Name="RefreshSavesButton" Content="{x:Static prop:Texts.MainWindow_Button_RefreshSaves}" DockPanel.Dock="Top" BorderBrush="{x:Null}" BorderThickness="0" Click="RefreshSavegamesButtonPressed" Margin="0,0,0,5" Padding="5,10,5,10" AutomationProperties.Name="RefreshSaves"></Button>
                         <ListBox x:Name="SaveList" SelectionChanged="SaveList_SelectionChanged" Foreground="Black" Background="#FFF0F0F0" BorderThickness="0" AutomationProperties.Name="SaveList" />
                     </DockPanel>
                 </DockPanel>
             </Grid>
             <Grid Grid.Column="2" Background="#000000" Margin="-1,0,0,0">
                 <DockPanel x:Name="TaskListPanel">
-                    <Label Content="SELECT TASK" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontFamily="Bahnschrift SemiBold"/>
+                    <Label Content="{x:Static prop:Texts.MainWindow_Label_SelectTask}" VerticalAlignment="Top" DockPanel.Dock="Top" Foreground="White" FontSize="20" Padding="10,5,10,5" FontWeight="SemiBold"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.8*"/>
@@ -54,7 +56,7 @@
                         </Grid.ColumnDefinitions>
                         <ListBox x:Name="TaskList" Margin="10,0,5,0" Background="#FFF0F0F0" Foreground="Black" BorderThickness="0" SelectionChanged="TaskList_SelectionChanged" AutomationProperties.Name="TaskList"/>
                         <DockPanel Grid.Column="1">
-                            <Button x:Name="ExecuteButton" Content="EXECUTE" Margin="5,0,10,0" HorizontalAlignment="Stretch" Padding="0,10,0,10" Click="StartTaskButton_Click" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" FontFamily="Bahnschrift SemiBold"></Button>
+                            <Button x:Name="ExecuteButton" Content="{x:Static prop:Texts.MainWindow_Button_ExecuteTask}" Margin="5,0,10,0" HorizontalAlignment="Stretch" Padding="0,10,0,10" Click="StartTaskButton_Click" VerticalAlignment="Bottom" DockPanel.Dock="Bottom" FontWeight="SemiBold"></Button>
                             <ScrollViewer Margin="5,0,10,0" Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0,0,0,10">
                                 <TextBlock x:Name="TaskDescription" TextWrapping="Wrap" Foreground="White" FontSize="16" LineHeight="24"/>
                             </ScrollViewer>

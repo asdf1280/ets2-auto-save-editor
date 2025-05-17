@@ -16,10 +16,12 @@ namespace ASE {
         private void Application_Startup(object sender, StartupEventArgs e) {
             // Set app culture to invariant culture
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+            //Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
             // Set app culture to invariant culture for all threads
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+            //CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
+            //Thread.CurrentThread.CurrentUICulture = new CultureInfo("ko-KR");
 
 
             // If the argument contains a path to a sii file, decode it and quit.

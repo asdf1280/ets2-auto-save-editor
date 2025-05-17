@@ -54,4 +54,17 @@
   <ItemGroup>
     <None Include="C:\Users\User\source\repos\ets2ase-en\ETS2SaveAutoEditor\.editorconfig" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Update="Properties\Texts.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Texts.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Texts.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Texts.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

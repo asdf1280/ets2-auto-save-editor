@@ -14,6 +14,8 @@ using System.Windows.Media.Effects;
 using System.Linq;
 using ASE.Utils;
 using ASE.SII2Parser;
+using System.Windows.Media;
+using ASE.Properties;
 
 namespace ASE {
 
@@ -63,7 +65,7 @@ namespace ASE {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static readonly string Version = "1.34.1";
+        public static readonly string Version = "1.34.2";
 
         private SaveeditTasks tasks = new();
 
@@ -364,9 +366,9 @@ namespace ASE {
         private void SaveList_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             var psave = SaveList.SelectedItem;
             if (psave is ProfileSave ps) {
-                SaveInfo_Name.Content = "Name: " + ps.savename;
-                SaveInfo_Dir.Content = "Dir: " + ps.directory;
-                SaveInfo_Date.Content = "Date: " + ps.formattedtime;
+                SaveInfo_Name.Content = Texts.MainWindow_Label_SaveInfoName + ": " + ps.savename;
+                SaveInfo_Dir.Content = Texts.MainWindow_Label_SaveInfoDir + ": " + ps.directory;
+                SaveInfo_Date.Content = Texts.MainWindow_Label_SaveInfoDate + ": " + ps.formattedtime;
 
                 if (SaveInfo.Visibility != Visibility.Visible) {
                     var anim = new DoubleAnimation(0, 1, new Duration(TimeSpan.FromSeconds(0.2))) {

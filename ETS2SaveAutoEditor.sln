@@ -19,6 +19,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
+		RESX_CultureCountyOverrides = ko=ko-KR
 		SolutionGuid = {92454783-56EA-4085-895C-59F0D36DF3B4}
 	EndGlobalSection
 EndGlobal

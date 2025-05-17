@@ -18,6 +18,7 @@ using System.Windows.Input;
 using System.Globalization;
 using System.Management;
 using Windows.Media.Capture.Core;
+using ASE.Properties;
 
 namespace ASE {
     public class SaveeditTasks {
@@ -51,17 +52,17 @@ namespace ASE {
 
                     bank.Set("money_account", specifiedCash.ToString());
                     saveFile.Save(saveGame);
-                    MessageBox.Show("Done!", "Done");
+                    MessageBox.Show(Texts.Common_Message_Done_Message, Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
-                    MessageBox.Show("An error occured.", "Error");
+                    MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask {
-                name = "Specify Cash",
+                name = Texts.TaskDefs_MoneySet_1,
                 run = run,
-                description = "Specify the desired amount of cash in the game."
+                description = Texts.TaskDefs_MoneySet_2
             };
         }
         public SaveEditTask ExpSet() {
@@ -78,17 +79,17 @@ namespace ASE {
 
                     economy.Set("experience_points", specifiedExp.ToString());
                     saveFile.Save(saveGame);
-                    MessageBox.Show("Done!", "Done");
+                    MessageBox.Show(Texts.Common_Message_Done_Message, Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
-                    MessageBox.Show("An unexpected error occured.", "Error");
+                    MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask {
-                name = "Specify EXP",
+                name = Texts.TaskDefs_ExpSet_1,
                 run = run,
-                description = "Specify the desired amount of experience points (EXP)."
+                description = Texts.TaskDefs_ExpSet_2
             };
         }
         public SaveEditTask UnlockScreens() {
@@ -103,17 +104,17 @@ namespace ASE {
 
                     economy.Set("screen_access_list", "0");
                     saveFile.Save(saveGame);
-                    MessageBox.Show("Done!", "Done");
+                    MessageBox.Show(Texts.Common_Message_Done_Message, Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
-                    MessageBox.Show("An unexpected error occured.", "Error");
+                    MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask {
-                name = "Unlock all UI",
+                name = Texts.TaskDefs_UnlockScreens_1,
                 run = run,
-                description = "Enables locked GUIs, including skills, for new profiles. Some normally disabled GUIs may also be enabled."
+                description = Texts.TaskDefs_UnlockScreens_2
             };
         }
 
@@ -132,12 +133,12 @@ namespace ASE {
 
                     if (!economy.ArrayContains("companies", WINTERLAND_HOUSES[0])) {
                         // The event is over. Task not applicable.
-                        MessageBox.Show("The Winterland event is over. This task is not applicable.", "Error");
+                        MessageBox.Show("The Winterland event is over. This task is not applicable.", Texts.Common_Message_Error_Title);
                     }
 
                     var player = saveGame.EntityType("player")!;
                     if (!player.TryGetPointer("current_job", out var currentJob)) {
-                        MessageBox.Show("No job found. Please follow the instructions.", "Error");
+                        MessageBox.Show("No job found. Please follow the instructions.", Texts.Common_Message_Error_Title);
                         return;
                     }
 
@@ -158,9 +159,9 @@ namespace ASE {
                     CommonEdits.DestroyNavigationData(economy);
 
                     saveFile.Save(saveGame);
-                    MessageBox.Show("Done!", "Done");
+                    MessageBox.Show(Texts.Common_Message_Done_Message, Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
-                    MessageBox.Show("An unexpected error occured.", "Error");
+                    MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                     Console.WriteLine(e);
                     throw;
                 }
@@ -179,7 +180,7 @@ namespace ASE {
                     var assignedTruckId = player.GetValue("assigned_truck");
 
                     if (assignedTruckId == "null") {
-                        MessageBox.Show("You're not driving a truck now.", "Error");
+                        MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                         return;
                     }
 
@@ -212,17 +213,17 @@ namespace ASE {
                     }
 
                     saveFile.Save(saveGame);
-                    MessageBox.Show("Successfully changed!", "Done");
+                    MessageBox.Show(Texts.Common_Message_Done_Message, Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
-                    MessageBox.Show("An unexpected error occured.", "Error");
+                    MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                     Console.WriteLine(e);
                     throw;
                 }
             });
             return new SaveEditTask {
-                name = "Modify Truck Engine",
+                name = Texts.TaskDefs_TruckEngineSet_1,
                 run = run,
-                description = "Switches the truck's engine to one of the available options."
+                description = Texts.TaskDefs_TruckEngineSet_2
             };
         }
         public SaveEditTask Refuel(bool excessive) {
@@ -232,7 +233,7 @@ namespace ASE {
 
                     Entity2 assignedTruck;
                     if (!player.TryGetPointer("assigned_truck", out assignedTruck!)) {
-                        MessageBox.Show("You don't have any truck assigned.", "Done");
+                        MessageBox.Show("You don't have any truck assigned.", Texts.Common_Message_Error_Title);
                         return;
                     }
 
@@ -242,24 +243,24 @@ namespace ASE {
                         assignedTruck.Set("fuel_relative", "1");
 
                     saveFile.Save(saveGame);
-                    MessageBox.Show("Done", "Done");
+                    MessageBox.Show(Texts.Common_Message_Done_Message, Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
-                    MessageBox.Show("An unknown error occured.", "Error");
+                    MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                     Console.WriteLine(e);
                     throw;
                 }
             });
             if (excessive)
                 return new SaveEditTask {
-                    name = "Infinite fuel current vehicle",
+                    name = Texts.TaskDefs_RefuelUnreal_1,
                     run = run,
-                    description = "Set the fuel(or battery) level of current truck to 1000x of the fuel tank. You must disable realistic fuel consumption in the game settings."
+                    description = Texts.TaskDefs_RefuelUnreal_2
                 };
             else
                 return new SaveEditTask {
-                    name = "Refuel current vehicle",
+                    name = Texts.TaskDefs_RefuelReal_1,
                     run = run,
-                    description = "Set the fuel(or battery) level of current truck to 1%."
+                    description = Texts.TaskDefs_RefuelReal_2
                 };
         }
         [DllImport("user32.dll")]
@@ -280,7 +281,7 @@ namespace ASE {
 
                     var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2046759, 24));
                     if (!gameVersion.StartsWith("1.53.3.14", StringComparison.Ordinal)) {
-                        MessageBox.Show("This tool only supports ETS2 1.53.3.14. As it directly modifies the memory, it is disabled for other versions.", "Error");
+                        MessageBox.Show("This tool only supports ETS2 1.53.3.14. As it directly modifies the memory, it is disabled for other versions.", Texts.Common_Message_Error_Title);
 #if !DEBUG
                         return;
 #endif
@@ -288,12 +289,10 @@ namespace ASE {
 
                     var current = BitConverter.ToSingle(reader.ReadPath(ba + 0x2F57B38, [0x2870, 0x20, 0xE8, 0x148, 0x178], 4));
                     if (!(current >= 0 && current <= 1)) { // Out of range hap
-                        MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refuel current vehicle' tool first and try again.", "Error");
+                        MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refuel current vehicle' tool first and try again.", Texts.Common_Message_Error_Title);
                         return;
                     }
                     reader.WritePath(ba + 0x2F57B38, [0x2870, 0x20, 0xE8, 0x148, 0x178], BitConverter.GetBytes((float)1));
-                    //MessageBox.Show("Done", "Done");
-                    // Instead of showing Done, focus on the game window
 
                     if (proc != null) {
                         SetForegroundWindow(proc.MainWindowHandle);
@@ -304,11 +303,11 @@ namespace ASE {
                     }
 
                 } catch (Exception) {
-                    MessageBox.Show("Failed to modify the memory. Please use 'Refuel current vehicle' tool instead.", "Error");
+                    MessageBox.Show("Failed to modify the memory. Please use 'Refuel current vehicle' tool instead.", Texts.Common_Message_Error_Title);
                 }
             });
             return new SaveEditTask {
-                name = "Refuel now!",
+                name = "[Obsolete] Refuel now!",
                 run = run,
                 description = "Refuel the current vehicle 'in the running ETS2'. Not supported for ATS yet. Only supports ETS2 1.53."
             };
@@ -323,40 +322,12 @@ namespace ASE {
                     }
                 }
                 saveFile.Save(saveGame);
-                MessageBox.Show("Repaired all truck/trailers.", "Done");
-                // Old code
-                //try {
-                //    var lines = saveFile.content.Split('\n');
-                //    var fs = new FileStream(saveFile.fullPath + @"\game.sii", FileMode.OpenOrCreate);
-                //    var sw = new StreamWriter(fs, Encoding.UTF8);
-
-                //    var p = new Regex(@"(([a-z_]*_wear(?:_unfixable)?(?:\[\d*\])?|integrity_odometer(?:_float_part)?):) (.*)\b", RegexOptions.Compiled);
-                //    for (int i = 0; i < lines.Length; i++) {
-                //        var str = lines[i];
-
-                //        if (str.Contains("disco") || str.Contains("unlock") || str.Contains("{") || str.Contains("}") || (!str.Contains("wear") && !str.Contains("integrity_odometer")) || !p.IsMatch(str)) {
-                //            sw.Write(str);
-                //            sw.Write('\n');
-                //            continue;
-                //        }
-
-                //        sw.Write(p.Replace(str, "$1 0"));
-                //        sw.Write('\n');
-                //    }
-                //    sw.Close();
-                //    fs.Close();
-
-                //    MessageBox.Show("Repaired all truck/trailers.", "Done");
-                //} catch (Exception e) {
-                //    MessageBox.Show("An unknown error occured.", "Error");
-                //    Console.WriteLine(e);
-                //    throw;
-                //}
+                MessageBox.Show(Texts.Common_Message_Done_Message, Texts.Common_Message_Done_Title);
             });
             return new SaveEditTask {
-                name = "Repair All",
+                name = Texts.TaskDefs_FixEverything_1,
                 run = run,
-                description = "Repairs all trucks and trailers in the current savegame.\n\n1.49 Warning - This will even repair trucks in used truck dealer!"
+                description = Texts.TaskDefs_FixEverything_2
             };
         }
 
@@ -399,12 +370,12 @@ namespace ASE {
 
                     if (waypointsBehind is null || waypointsAhead is null || avoids is null) {
                         // Corrupt save.
-                        MessageBox.Show("The navigation data is corrupted. Please remove all waypoints and try again.", "Error");
+                        MessageBox.Show("The navigation data is corrupted. Please remove all waypoints and try again.", Texts.Common_Message_Error_Title);
                         return;
                     }
 
                     if (waypointsBehind.Length > 256 || waypointsAhead.Length > 256 || avoids.Length > 256) { // Never happens because of in-game limit. Just in case.
-                        MessageBox.Show("The number of waypoints exceeds the limit of 256. Please remove some waypoints and try again.", "Error");
+                        MessageBox.Show("The number of waypoints exceeds the limit of 256. Please remove some waypoints and try again.", Texts.Common_Message_Error_Title);
                         return;
                     }
 
@@ -419,21 +390,21 @@ namespace ASE {
                     MessageBox.Show($"Successfully encoded {waypointsBehind.Length} / {waypointsAhead.Length} waypoint(s) and {avoids.Length} avoid point(s)!\n\nThe navigation data was copied to clipboard.", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
-                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                        MessageBox.Show("Data version doesn't match the current version.", Texts.Common_Message_Error_Title);
                     } else {
                         if (e.Message.Contains("Clipboard", StringComparison.Ordinal)) {
                             MessageBox.Show($"There was an error while copying the position code. However, it may have already worked. Please check your clipboard.", "Complete!");
                         } else {
-                            MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                            MessageBox.Show(string.Format(Texts.Common_Message_Error_MessageDebug, e.GetType().FullName, e.Message), Texts.Common_Message_Error_Title);
                         }
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Share Navigation",
+                name = Texts.TaskDefs_ShareNavigation_1,
                 run = run,
-                description = "Shares the current navigation waypoints with others by copying it to the clipboard."
+                description = Texts.TaskDefs_ShareNavigation_2
             };
         }
         public SaveEditTask ImportNavigation() {
@@ -500,17 +471,17 @@ namespace ASE {
                     MessageBox.Show($"Successfully imported the navigation data!\n\n{navigationData.WaypointBehind.Count} / {navigationData.WaypointAhead.Count} waypoint(s) and {navigationData.Avoid.Count} avoid point(s) were imported.", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
-                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                        MessageBox.Show("Data version doesn't match the current version.", Texts.Common_Message_Error_Title);
                     } else {
-                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        MessageBox.Show(string.Format(Texts.Common_Message_Error_MessageDebug, e.GetType().FullName, e.Message), Texts.Common_Message_Error_Title);
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Import Navigation",
+                name = Texts.TaskDefs_ImportNavigation_1,
                 run = run,
-                description = "Imports the shared navigation waypoints from clipboard."
+                description = Texts.TaskDefs_ImportNavigation_2
             };
         }
 
@@ -548,21 +519,21 @@ namespace ASE {
                     MessageBox.Show($"The location of your truck, trailer was copied to the clipboard.\nNumber of vehicles in the code: {positions.Count}, Connected to trailer: {(trailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
-                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                        MessageBox.Show("Data version doesn't match the current version.", Texts.Common_Message_Error_Title);
                     } else {
                         if (e.Message.Contains("Clipboard", StringComparison.Ordinal)) {
                             MessageBox.Show($"There was an error while copying the position code. However, it may have already worked. Please check your clipboard.", "Complete!");
                         } else {
-                            MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                            MessageBox.Show(string.Format(Texts.Common_Message_Error_MessageDebug, e.GetType().FullName, e.Message), Texts.Common_Message_Error_Title);
                         }
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Share Player Position",
+                name = Texts.TaskDefs_SharePosition_1,
                 run = run,
-                description = "Duplicates the position of the player's truck and trailer, allowing you to share it with others by copying it to the clipboard."
+                description = Texts.TaskDefs_SharePosition_2
             };
         }
         public SaveEditTask ImportPosition() {
@@ -594,17 +565,17 @@ namespace ASE {
                     MessageBox.Show($"Successfully imported the position code!\nNumber of vehicles in the code: {decoded.Length}, Connected to trailer: {(positionData.TrailerConnected ? "Yes" : "No")}", "Complete!");
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
-                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                        MessageBox.Show("Data version doesn't match the current version.", Texts.Common_Message_Error_Title);
                     } else {
-                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        MessageBox.Show(string.Format(Texts.Common_Message_Error_MessageDebug, e.GetType().FullName, e.Message), Texts.Common_Message_Error_Title);
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Import Player Position",
+                name = Texts.TaskDefs_ImportPosition_1,
                 run = run,
-                description = "Imports the shared player position data to incorporate it into the current savegame."
+                description = Texts.TaskDefs_ImportPosition_2
             };
         }
         public SaveEditTask ReducePosition() {
@@ -621,20 +592,20 @@ namespace ASE {
 
                     string encodedData = PositionCodeEncoder.EncodePositionCode(positionData);
                     Clipboard.SetText(encodedData);
-                    MessageBox.Show($"The reduced position code was copied to clipboard!", "Complete!");
+                    MessageBox.Show($"The reduced position code was copied to clipboard!", Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
-                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                        MessageBox.Show("Data version doesn't match the current version.", Texts.Common_Message_Error_Title);
                     } else {
-                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        MessageBox.Show(string.Format(Texts.Common_Message_Error_MessageDebug, e.GetType().FullName, e.Message), Texts.Common_Message_Error_Title);
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Reduce Position Code",
+                name = Texts.TaskDefs_ReducePosition_1,
                 run = run,
-                description = "Reduce the length of position code by removing trailer position data. These are not necessary as long as you create the code with enough space behind."
+                description = Texts.TaskDefs_ReducePosition_2
             };
         }
 
@@ -655,20 +626,20 @@ namespace ASE {
 
                     res += "\nConnected to trailer: " + (positionData.TrailerConnected ? "Yes" : "No") + "\nPosition code:\n\n" + code;
                     Clipboard.SetText(res);
-                    MessageBox.Show($"The decoded position data was copied to clipboard!\n\n" + res, "Complete!");
+                    MessageBox.Show($"The decoded position data was copied to clipboard!\n\n" + res, Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
-                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                        MessageBox.Show("Data version doesn't match the current version.", Texts.Common_Message_Error_Title);
                     } else {
-                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        MessageBox.Show(string.Format(Texts.Common_Message_Error_MessageDebug, e.GetType().FullName, e.Message), Texts.Common_Message_Error_Title);
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Decode Player Position",
+                name = Texts.TaskDefs_DecodePosition_1,
                 run = run,
-                description = "Decodes the shared player position data in the current clipboard to a human-readable decimal format. Units are in meters."
+                description = Texts.TaskDefs_DecodePosition_2
             };
         }
 
@@ -698,20 +669,20 @@ namespace ASE {
                     registry.Set("data", regData);
 
                     saveFile.Save(saveGame);
-                    MessageBox.Show($"Success!", "Complete!");
+                    MessageBox.Show($"Success!", Texts.Common_Message_Done_Title);
                 } catch (Exception e) {
                     if (e.Message == "incompatible version") {
-                        MessageBox.Show("Data version doesn't match the current version.", "Error");
+                        MessageBox.Show("Data version doesn't match the current version.", Texts.Common_Message_Error_Title);
                     } else {
-                        MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                        MessageBox.Show(string.Format(Texts.Common_Message_Error_MessageDebug, e.GetType().FullName, e.Message), Texts.Common_Message_Error_Title);
                     }
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Connect Trailer Here",
+                name = Texts.TaskDefs_ConnectTrailerInstantly_1,
                 run = run,
-                description = "Forces the assigned trailer to connect to the truck immediately. Make sure there's enough space for the straight trailer behind!"
+                description = Texts.TaskDefs_ConnectTrailerInstantly_2
             };
         }
 
@@ -814,15 +785,15 @@ namespace ASE {
                 saveFile.Save(saveGame);
                 if (trailerTeleportWarning) {
                     // Below 'Success!' message, let the user know that trailer hasn't been teleported along with the truck. And that to teleport the trailer, (1) first move the truck to somewhere with long backward space, (2) create a new save and use 'Connect Trailer Here' tool.
-                    MessageBox.Show($"Success!\n\nThe trailer hasn't been teleported along with the truck.\nTo teleport the trailer, (1) first move the truck to somewhere with long backward space, (2) create a new save and use 'Connect Trailer Here' tool.", "Complete!");
+                    MessageBox.Show($"Success!\n\nThe trailer hasn't been teleported along with the truck.\nTo teleport the trailer, (1) first move the truck to somewhere with long backward space, (2) create a new save and use 'Connect Trailer Here' tool.", Texts.Common_Message_Done_Title);
                 } else {
-                    MessageBox.Show($"Success!", "Complete!");
+                    MessageBox.Show($"Success!", Texts.Common_Message_Done_Title);
                 }
             });
             return new SaveEditTask {
-                name = "Teleport to Job Destination",
+                name = Texts.TaskDefs_TeleportToCargo_1,
                 run = run,
-                description = "Use this to teleport to any company as you want in TruckersMP by using Job Dispatcher. Refer to 'ase' channel in MCG Discord for how-to-use."
+                description = Texts.TaskDefs_TeleportToCargo_2
             };
         }
 
@@ -874,7 +845,7 @@ namespace ASE {
 
                         var assignedTruck = player.GetPointer("assigned_truck");
                         if (assignedTruck == null) {
-                            MessageBox.Show("You don't have any truck assigned.", "Error");
+                            MessageBox.Show("You don't have any truck assigned.", Texts.Common_Message_Error_Title);
                             continue;
                         }
 
@@ -906,7 +877,7 @@ namespace ASE {
 
                         var assignedTrailer = player.GetPointer("assigned_trailer");
                         if (assignedTrailer == null) {
-                            MessageBox.Show("You don't have any trailer assigned.", "Error");
+                            MessageBox.Show("You don't have any trailer assigned.", Texts.Common_Message_Error_Title);
                             continue;
                         }
 
@@ -962,7 +933,7 @@ namespace ASE {
                                 throw new Exception($"Invalid vehicle type.\n\nExpected: TRUCK or TRAILER\nThis file: {header[2]}");
                             }
                         } catch (Exception e) {
-                            MessageBox.Show($"{e.Message}", "Error");
+                            MessageBox.Show($"{e.Message}", Texts.Common_Message_Error_Title);
                             continue;
                         }
 
@@ -981,7 +952,7 @@ namespace ASE {
                             // Remind the user to assign it to a garage to prevent bugs that are confirmed to exist
 
                             if (entities[0].Unit.Type != "vehicle") {
-                                MessageBox.Show($"Unexpected root node. Expected 'vehicle' but got '{entities[0].Unit.Type}'.", "Error");
+                                MessageBox.Show($"Unexpected root node. Expected 'vehicle' but got '{entities[0].Unit.Type}'.", Texts.Common_Message_Error_Title);
                                 continue;
                             }
 
@@ -1003,7 +974,7 @@ namespace ASE {
                             // Remind the user to assign it to a garage to prevent possible bugs
 
                             if (entities[0].Unit.Type != "trailer") {
-                                MessageBox.Show($"Unexpected root node. Expected 'trailer' but got '{entities[0].Unit.Type}'.", "Error");
+                                MessageBox.Show($"Unexpected root node. Expected 'trailer' but got '{entities[0].Unit.Type}'.", Texts.Common_Message_Error_Title);
                                 continue;
                             }
 
@@ -1023,9 +994,9 @@ namespace ASE {
                 }
             });
             return new SaveEditTask {
-                name = "[NEW] Vehicle Sharing",
+                name = Texts.TaskDefs_VehicleSharing_1,
                 run = run,
-                description = "You can use this tool to easily share and import trucks and trailers without worrying about collisions and errors."
+                description = Texts.TaskDefs_VehicleSharing_2
             };
         }
 
@@ -1033,13 +1004,7 @@ namespace ASE {
             var run = new Action(() => {
                 var document = @"> Press 'Cancel' to close this window <
 
-** How to apply CC data **
-1. Run 'Apply CC Data'
-2. Open the received CC data file (*.ddd)
-
-** NOTE **
-- Applying the data won't affect existing profile and saves. It will simply add new saves to the profile.
-- When a vehicle is added with this utility, they're in a very unstable state because they're not placed in a garage. Therefore, when the event is concluded, MAKE SURE TO RUN 'Delete all CC saves'!
+{apply_cc_data}
 
 ** How to create CC data **
 1. Create an empty text file with text editor(CC data file). VS Code is recommended.
@@ -1075,21 +1040,10 @@ END
 
 ** DLL Injection **
 This actually has nothing to do with event CC tools. If you run this, ASE will inject 'injectionTarget.dll' in the directory of ASE.exe to running process of ATS/ETS2 (selected on left top). Don't use this if you don't know what you're doing.";
+                document = document.Replace("{apply_cc_data}", Texts.Task_SpecialCCTask_HowToApply, StringComparison.Ordinal);
                 while (true) {
-                    var res = ListInputBox.Show("ASE CC Tool", document, ["---- Application ----", "Apply CC Data to this profile", "Delete all CC saves in this profile", "---- Generation ----", "Export Active Vehicle", "Compile CC Data", "DLL Injection", ""]);
+                    var res = ListInputBox.Show(Texts.Task_SpecialCCTask_List_Title, document, [Texts.Task_SpecialCCTask_List_01Application, Texts.Task_SpecialCCTask_List_02Apply, Texts.Task_SpecialCCTask_List_03Delete, Texts.Task_SpecialCCTask_List_04Generation, Texts.Task_SpecialCCTask_List_05ExportVehicle, Texts.Task_SpecialCCTask_List_06Compile, Texts.Task_SpecialCCTask_List_07DLLInjection]);
                     if (res == -1) return;
-                    if (res == 7) { // Debugging
-                        var economy = saveGame.EntityType("economy")!;
-                        var player = saveGame.EntityType("player")!;
-
-                        var sp = SCSPlacement.Parse(player.GetValue("truck_placement"));
-                        //sp.Position = sp.Position + sp.Orientation.GetDirection() * 5.0;
-                        sp.Position += Vector3.UnitY * 1.5;
-                        sp.Orientation = sp.Orientation * Vector3.UnitSCSRoll.AsAxisAngleDegrees(-90);
-                        player.Set("truck_placement", sp.ToString());
-
-                        saveFile.Save(saveGame);
-                    }
                     if (res == 6) { // Hidden testing
                         if (!File.Exists("injectionTarget.dll")) {
                             MessageBox.Show("You can't use this.");
@@ -1146,9 +1100,9 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                             Clipboard.SetText(sb.ToString());
                         } catch (Exception e) {
                             if (e.Message == "incompatible version") {
-                                MessageBox.Show("Data version doesn't match the current version.", "Error");
+                                MessageBox.Show("Data version doesn't match the current version.", Texts.Common_Message_Error_Title);
                             } else {
-                                MessageBox.Show($"An error occured.\n{e.GetType().FullName}: {e.Message}\nPlease contact the developer.", "Error");
+                                MessageBox.Show(string.Format(Texts.Common_Message_Error_MessageDebug, e.GetType().FullName, e.Message), Texts.Common_Message_Error_Title);
                             }
                             Console.WriteLine(e);
                         }
@@ -1493,9 +1447,9 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                 }
             });
             return new SaveEditTask {
-                name = "Event CC Tools",
+                name = Texts.TaskDefs_SpecialCCTask_1,
                 run = run,
-                description = "Please read the manual inside before using it! Otherwise the consequences can be disastrous!"
+                description = Texts.TaskDefs_SpecialCCTask_2
             };
         }
 
@@ -1513,7 +1467,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
 
                     // Current job unit
                     if (!player.TryGetPointer("current_job", out Entity2? job)) {
-                        MessageBox.Show("You don't have any job now.", "Error");
+                        MessageBox.Show("You don't have any job now.", Texts.Common_Message_Error_Title);
                         return;
                     }
 
@@ -1521,7 +1475,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                     var currentTruckId = player.GetValue("assigned_truck");
                     var isCurrentTruckStealable = job.GetValue("company_truck") == currentTruckId;
                     if (currentTruckId == "null") {
-                        MessageBox.Show("You don't have a truck active.", "Error");
+                        MessageBox.Show("You don't have a truck active.", Texts.Common_Message_Error_Title);
                         return;
                     }
 
@@ -1529,7 +1483,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                     var currentTrailerId = player.GetValue("assigned_trailer");
                     var isCurrentTrailerStealable = job.GetValue("company_trailer") == currentTrailerId;
                     if (currentTrailerId == "null") {
-                        MessageBox.Show("You don't have a trailer connected.", "Error");
+                        MessageBox.Show("You don't have a trailer connected.", Texts.Common_Message_Error_Title);
                         return;
                     }
 
@@ -1620,14 +1574,14 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                     }
                     return;
                 } catch (Exception e) {
-                    MessageBox.Show("An error occured.", "Error");
+                    MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Own Job Vehicle",
+                name = Texts.TaskDefs_VehicleStealer_1,
                 run = run,
-                description = "You can steal the trailer or truck from the job. If the trailer is yours, you can steal the cargo loaded in it."
+                description = Texts.TaskDefs_VehicleStealer_2
             };
         }
 
@@ -1638,7 +1592,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
 
                     var assignedTrailerId = player.GetValue("assigned_trailer");
                     if (assignedTrailerId == "null") {
-                        MessageBox.Show("You don't have an assigned trailer.", "Error");
+                        MessageBox.Show("You don't have an assigned trailer.", Texts.Common_Message_Error_Title);
                         return;
                     }
 
@@ -1652,17 +1606,17 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                     trailer.Set("cargo_mass", $"{specifiedMass}");
 
                     saveFile.Save(saveGame);
-                    MessageBox.Show("Changed the trailer cargo mass!", "Done");
+                    MessageBox.Show(Texts.Common_Message_Done_Message, Texts.Common_Message_Done_Title);
                     return;
                 } catch (Exception e) {
-                    MessageBox.Show("An error occured.", "Error");
+                    MessageBox.Show(Texts.Common_Message_Error_Message, Texts.Common_Message_Error_Title);
                     Console.WriteLine(e);
                 }
             });
             return new SaveEditTask {
-                name = "Adjust Trailer Cargo Mass",
+                name = Texts.TaskDefs_SetCargoMass_1,
                 run = run,
-                description = "Modify the cargo mass of the assigned trailer according to your preference."
+                description = Texts.TaskDefs_SetCargoMass_2
             };
         }
 
@@ -1670,11 +1624,11 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
             var run = new Action(() => {
                 var player = saveGame.EntityType("player");
                 if (player == null) {
-                    MessageBox.Show("Unable to find player.", "Error");
+                    MessageBox.Show("Unable to find player.", Texts.Common_Message_Error_Title);
                     return;
                 }
                 int vehicleCount = 0;
-                bool allowTranslationForTarget2 = false; // If the trailer's detached, also allow the first trailer to be translated not only truck. If false, all translation commands are allowed only if target is 1, and if true, all translation commands are allowed if target is 1 or 2.
+                bool isTrailerDetached = false; // If the trailer's detached, also allow the first trailer to be translated not only truck. If false, all translation commands are allowed only if target is 1, and if true, all translation commands are allowed if target is 1 or 2.
                 Entity2? vehicleObj = null;
                 if (player.TryGetPointer("assigned_truck", out vehicleObj)) {
                     vehicleCount++;
@@ -1687,8 +1641,10 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                 }
 
                 if (player.GetValue("assigned_trailer_connected") == "false") {
-                    allowTranslationForTarget2 = true;
+                    isTrailerDetached = true;
                 }
+
+                bool isTrailerDetachedInitially = isTrailerDetached;
 
                 List<SCSPlacement> vehiclePlacements = [];
                 if (vehicleCount >= 1)
@@ -1714,14 +1670,16 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
 
                 var rawScript = Clipboard.GetText();
                 if (rawScript.Length == 0) {
-                    MessageBox.Show("Unable to find VPS script in clipboard.", "Error");
+                    MessageBox.Show("Unable to find VPS script in clipboard.", Texts.Common_Message_Error_Title);
                     return;
                 }
+
 
                 var lines = rawScript.Split('\n');
                 string? error = null;
                 int errorAt = -1;
                 int currentTarget = 1;
+                bool strictMode = false;
                 for (int i = 0; i < lines.Length; i++) {
                     string line = lines[i].Trim();
                     if (line.Length == 0 || line[0] == '#') continue;
@@ -1738,6 +1696,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                         help.AppendLine("* BASIC COMMANDS");
                         help.AppendLine("HELP - Copy this help to clipboard. Other commands aren't executed (commands above will still be validated). Parameters will be ignored.");
                         help.AppendLine("HELP_SHORT - Cheatsheet for familiar coders.");
+                        help.AppendLine("USE_STRICT - If this command is run, the code below will throw errors very strictly.");
                         help.AppendLine("TARGET vehicleNumber - Set the target vehicle. x is an integer between 1 and the number of vehicles in the current combination. The initial target is 1. The commands below all modify the placement of target vehicle. 1 means truck. 2 means the first trailer. 3+ means slave trailers.");
                         help.AppendLine("");
                         help.AppendLine("* TRANSLATION : Only available if (a) target is 1 (b) target is 2 when trailer is disconnected. They apply to the target vehicle.");
@@ -1750,9 +1709,11 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                         help.AppendLine("ROTATE_WORLD dθY dθX dθZ - Modify the vehicle facing in degrees. Extrinsic rotation. The initial Y-X-Z axes are based on the world coordinates. The axis combination is intrinsic, that is, earlier rotations affect latter axes of rotation.");
                         help.AppendLine("ROTATE_RELATIVE dYaw dPitch dRoll - Modify the vehicle facing in degrees. Intrinsic rotation. The initial Yaw-Pitch-Roll axes are based on the current facing of target vehicle. Yaw-Pitch-Roll Angles are merged intrinsically, that is, earlier rotations affect latter axes of rotation.");
                         help.AppendLine("");
-                        help.AppendLine("* COPYING DIRECTIONS");
+                        help.AppendLine("* MULTI-VEHICLE");
                         help.AppendLine("COPY_FROM vehicleNumber - 'Copy vehicle orientation from n to target' Copy the facing of vehicle n to the target vehicle. n is an integer between 1 and the number of vehicles in the current combination.");
                         help.AppendLine("STRAIGHT - 'Straighten the vehicles behind the target' Match the orientation(direction) of the vehicles behind the target vehicle to that of target vehicle. Can't be used if the target is the last vehicle.");
+                        help.AppendLine("ATTACH - Attach the trailer to the truck, if it exists. If there's no trailer assigned, it will fail.");
+                        help.AppendLine("DETACH - Detach the trailer from the truck, if it exists. If there's no trailer assigned, it will fail.");
                         help.AppendLine("EQUALIZE - 'Copy truck placement to all disconnected trailers' Only available if the trailer's disconnected. Copies the facing and direction of the truck to the first trailer. Further translation MUST!!!!!!!!! be made to either of the vehicles to prevent them clipping each other. Otherwise the consequences can be disastrous.");
                         help.AppendLine("");
                         help.AppendLine("* EXAMPLE CODE : The script below will teleport the truck to the coordinates (0, 0, 0) and make the trailer straight behind the truck.");
@@ -1770,6 +1731,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                         help.AppendLine("* BASIC COMMANDS");
                         help.AppendLine("HELP");
                         help.AppendLine("HELP_SHORT");
+                        help.AppendLine("USE_STRICT");
                         help.AppendLine("TARGET vehicleNumber");
                         help.AppendLine("");
                         help.AppendLine("* TRANSLATION");
@@ -1782,14 +1744,21 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                         help.AppendLine("ROTATE_WORLD dθY dθX dθZ");
                         help.AppendLine("ROTATE_RELATIVE dYaw dPitch dRoll");
                         help.AppendLine("");
-                        help.AppendLine("* COPYING DIRECTIONS");
+                        help.AppendLine("* MULTI-VEHICLE");
                         help.AppendLine("COPY_FROM vehicleNumber - Copy vehicle orientation from n to target");
                         help.AppendLine("STRAIGHT - Copy truck placement to all disconnected trailers");
+                        help.AppendLine("ATTACH");
+                        help.AppendLine("DETACH");
                         help.AppendLine("EQUALIZE - Copy truck placement to all disconnected trailers / USE WITH CAUTION!");
                         Clipboard.SetText(help.ToString());
 
                         MessageBox.Show("Copied list of commands to clipboard.", "VPS Short Help");
                         return;
+                    }
+
+                    if (command == "use_strict") {
+                        strictMode = true;
+                        continue;
                     }
 
                     if (command == "move_to" || command == "translate_world" || command == "translate_relative" || command == "set_facing" || command == "rotate_relative" || command == "rotate_world") {
@@ -1821,11 +1790,11 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                             }
                         }
 
-                        bool isTranslationAllowed = currentTarget == 1 || (currentTarget == 2 && allowTranslationForTarget2);
+                        bool isTranslationAllowed = currentTarget == 1 || (currentTarget == 2 && isTrailerDetached);
                         bool isTranslationCommand = command == "move_to" || command == "translate_world" || command == "translate_relative";
                         if (!isTranslationAllowed && isTranslationCommand) {
                             errorAt = i;
-                            error = $"Invalid command for {command}. Expected target {(allowTranslationForTarget2 ? "1 or 2" : "1")}, got {currentTarget}";
+                            error = $"Invalid command for {command}. Expected target {(isTrailerDetached ? "1 or 2" : "1")}, got {currentTarget}";
                             break;
                         }
 
@@ -1847,7 +1816,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                             error = $"Invalid argument for {command}. Expected value between 1 and {vehicleCount}(vehicle count of current vehicle combination), got {targetIndex}";
                             break;
                         }
-                        if (targetIndex == currentTarget && !(command == "target" && targetIndex == 1 && currentTarget == 1)) {
+                        if (targetIndex == currentTarget && !(command == "target" && targetIndex == 1 && currentTarget == 1) && strictMode) {
                             // NOTE: Redundant target change to 1 is quietly allowed because this will make the script easier to read.
                             errorAt = i;
                             var reason = command == "target" ? "is the same as current target." : "is the same as source vehicle.";
@@ -1859,7 +1828,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                             currentTarget = targetIndex;
 
                         validCommandLines.Add((i, command, [targetIndex]));
-                    } else if (command == "straight" || command == "equalize") {
+                    } else if (command == "straight" || command == "equalize" || command == "attach" || command == "detach") {
                         // Error if words.Length != 1
                         if (words.Length != 1) {
                             errorAt = i;
@@ -1873,12 +1842,30 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                         //    break;
                         //}
                         if (command == "equalize") {
-                            if (!allowTranslationForTarget2) {
+                            if (!isTrailerDetached) {
                                 errorAt = i;
                                 error = $"Invalid command for {command}. The trailer is connected. 'Equalize' is a command that brings the disconnected trailer to the truck's position.";
                                 break;
                             }
                         }
+
+                        if ((command == "attach" || command == "detach") && vehicleCount <= 1) {
+                            errorAt = i;
+                            error = $"Invalid command for {command}. There's no trailer to {command}.";
+                            break;
+                        }
+                        if (command == "attach" && !isTrailerDetached && strictMode) { // Already attached
+                            errorAt = i;
+                            error = $"Invalid command for {command}. The trailer is already attached.";
+                            break;
+                        } else if(command == "attach")
+                            isTrailerDetached = false;
+                        if (command == "detach" && isTrailerDetached && strictMode) { // Already detached
+                            errorAt = i;
+                            error = $"Invalid command for {command}. The trailer is already detached.";
+                            break;
+                        } else if (command == "detach")
+                            isTrailerDetached = true;
                         validCommandLines.Add((i, command, []));
                     } else {
                         errorAt = i;
@@ -1894,6 +1881,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
 
                 // Actual execution of the script
                 currentTarget = 1; // Reset target to 1
+                isTrailerDetached = isTrailerDetachedInitially; // Reset trailer detached state
 
                 StringBuilder log = new();
                 log.AppendLine("VPS execution log:");
@@ -1965,6 +1953,14 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                         int count = Math.Max(0, vehicleCount - currentTarget);
                         log.AppendLine($"Straightened {count} vehicle(s) behind vehicle {currentTarget}");
                     }
+                    if (command == "attach") {
+                        player.Set("assigned_trailer_connected", "true");
+                        isTrailerDetached = false;
+                    }
+                    if (command == "detach") {
+                        player.Set("assigned_trailer_connected", "false");
+                        isTrailerDetached = true;
+                    }
                     if (command == "equalize") {
                         for (int i = 1; i < vehicleCount; i++) {
                             vehiclePlacements[i] = (SCSPlacement)vehiclePlacements[0].Clone();
@@ -1995,13 +1991,13 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                 saveFile.Save(saveGame);
 
                 Clipboard.SetText(log.ToString());
-                MessageBox.Show("VPS script executed successfully.\n\nPlease check the log in clipboard.", "VPS Execution Log");
-            });
+                MessageBox.Show("VPS executed successfully.\n\nThe log has been copied to clipboard.", "VPS");
+            }); 
 
             return new SaveEditTask {
-                name = "Execute VPS",
+                name = Texts.TaskDefs_ExecuteVPS_1,
                 run = run,
-                description = "Execute VPS(Vehicle Placement Script) in your clipboard. Copy the full script into clipboard before executing this task. Refer to VPS.html for how-to-use."
+                description = Texts.TaskDefs_ExecuteVPS_2
             };
         }
     }

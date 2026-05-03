@@ -238,7 +238,7 @@ namespace ASE {
                     }
 
                     if (excessive)
-                        assignedTruck.Set("fuel_relative", "1000");
+                        assignedTruck.Set("fuel_relative", "15");
                     else
                         assignedTruck.Set("fuel_relative", "1");
 

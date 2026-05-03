@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -216,7 +216,7 @@
     <value>Repair All</value>
   </data>
   <data name="TaskDefs_RefuelUnreal_2" xml:space="preserve">
-    <value>Set the fuel(or battery) level of current truck to 1000x of the fuel tank. You must disable realistic fuel consumption in the game settings.</value>
+    <value>Set the fuel(or battery) level of current truck to 15x of the fuel tank. You must disable realistic fuel consumption in the game settings. NOTE: Since 1.59, this INCREASES the weight of your truck, which will affect performance.</value>
   </data>
   <data name="TaskDefs_RefuelUnreal_1" xml:space="preserve">
     <value>Infinite fuel current vehicle</value>

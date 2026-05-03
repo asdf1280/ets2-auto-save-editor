@@ -1,4 +1,4 @@
-﻿using ASE.Utils;
+using ASE.Utils;
 using ASE.SII2Parser;
 using Microsoft.Win32;
 using System;
@@ -1202,6 +1202,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
 
                             // info.sii
                             infoGame.EntityType("save_container")!.Set("name", $@"""{SCSSaveHexEncodingSupport.GetEscapedSaveName(saveName)}""");
+                            infoGame.EntityType("save_container")!.Set("file_time", $"{((DateTimeOffset)targetEditedDate).ToUnixTimeSeconds()}");
                             File.WriteAllText(newPath + @"\info.sii", infoGame.ToString());
                             File.SetLastWriteTime(newPath + @"\info.sii", targetEditedDate);
 
@@ -1858,7 +1859,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                             errorAt = i;
                             error = $"Invalid command for {command}. The trailer is already attached.";
                             break;
-                        } else if(command == "attach")
+                        } else if (command == "attach")
                             isTrailerDetached = false;
                         if (command == "detach" && isTrailerDetached && strictMode) { // Already detached
                             errorAt = i;
@@ -1992,7 +1993,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
 
                 Clipboard.SetText(log.ToString());
                 MessageBox.Show("VPS executed successfully.\n\nThe log has been copied to clipboard.", "VPS");
-            }); 
+            });
 
             return new SaveEditTask {
                 name = Texts.TaskDefs_ExecuteVPS_1,

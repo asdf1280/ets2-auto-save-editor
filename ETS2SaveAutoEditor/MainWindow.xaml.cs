@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -65,7 +65,7 @@ namespace ASE {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static readonly string Version = "1.34.2";
+        public static readonly string Version = "1.34.4";
 
         private SaveeditTasks tasks = new();
 

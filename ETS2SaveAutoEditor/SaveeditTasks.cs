@@ -277,22 +277,66 @@ namespace ASE {
                     ArgumentNullException.ThrowIfNull(proc, "ETS2 is not running.");
 
                     SCSMemoryReader reader = new("eurotrucks2");
-                    var ba = reader.GetBaseAddress(null);
+                    var baseAddress = reader.GetBaseAddress(null);
 
-                    var gameVersion = Encoding.UTF8.GetString(reader.Read(ba + 0x2046759, 24));
-                    if (!gameVersion.StartsWith("1.53.3.14", StringComparison.Ordinal)) {
-                        MessageBox.Show("This tool only supports ETS2 1.53.3.14. As it directly modifies the memory, it is disabled for other versions.", Texts.Common_Message_Error_Title);
-#if !DEBUG
-                        return;
-#endif
+                    // NOTE: The final offset of pointer chain is offset within truck object structure. Other offsets are paths to get the truck object.
+                    // The easiest way to find the path is saving a save, and searching fuel_relative value exactly with cheat engine.
+
+                    // Identify what code """WRITES""" to that address while the engine's running. Then track the pointer to static address.
+
+                    // Once begin address of truck structure is identified, other offsets can be found by analyzing the assembly code earned through scanning of damage values.
+                    // Those values are constant floats in the compiled code, and they can change at any time.
+
+                    // The address of version string is stored at address 'eurotrucks2.exe+2A04D58'.
+                    // We need to read the version string stored in utf8.
+                    var versionAddress = baseAddress + 0x2A04D58;
+                    var versionStringAddress = reader.ReadPointer(versionAddress);
+                    var versionBytes = reader.Read(versionStringAddress, 0x20);
+                    // The string ends at first 0x00 byte.
+                    var versionString = Encoding.UTF8.GetString(versionBytes).Split('\0')[0];
+                    var versionTarget = "1.58.1.4s";
+                    if (versionString != versionTarget) {
+                        // Ask yes or no to continue because of version mismatch. Warn that the offsets may be wrong and can cause unintended consequences.
+                        var mbres = MessageBox.Show($"The game version detected is {versionString}, which is different from the version that this tool is tested on ({versionTarget}). The offsets used in this tool may not work correctly, and can cause unintended consequences such as crashing or corrupting your save. Do you want to continue?", "Version Mismatch", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                        if (mbres == MessageBoxResult.No) return;
                     }
 
-                    var current = BitConverter.ToSingle(reader.ReadPath(ba + 0x2F57B38, [0x2870, 0x20, 0xE8, 0x148, 0x178], 4));
+                    var staticAddress = baseAddress + 0x336B1A8;
+                    int[] pathToStruct = [0x1b8, 0x00, 0x1d8, 0x08, 0x1a8];
+
+                    var current = BitConverter.ToSingle(reader.ReadPath(staticAddress, [.. pathToStruct, 0x178], 4));
                     if (!(current >= 0 && current <= 1)) { // Out of range hap
                         MessageBox.Show("The current amount of fuel is out of range (0 - 1). This can happen if the current version isn't supported, or because of save editing. For safety, the refuel operation is cancelled.\n\nPlease use 'Refuel current vehicle' tool first and try again.", Texts.Common_Message_Error_Title);
                         return;
                     }
-                    reader.WritePath(ba + 0x2F57B38, [0x2870, 0x20, 0xE8, 0x148, 0x178], BitConverter.GetBytes((float)1));
+                    reader.WritePath(staticAddress, [.. pathToStruct, 0x178], BitConverter.GetBytes((float)1));
+
+                    // Chassis Damage
+                    // Chassis Wear
+                    // Engine Damage
+                    // Transmission Damage
+                    // Cabin Damage
+                    // Engine Wear
+                    // Transmission Wear
+                    // Cabin Wear
+                    int[] offsets = [0x80, 0x84, 0x160, 0x164, 0x168, 0x16c, 0x170, 0x174];
+                    for (int i = 0; i < offsets.Length; i++) {
+                        reader.WritePath(staticAddress, [.. pathToStruct, offsets[i]], BitConverter.GetBytes((float)0));
+                    }
+
+                    // wheels_wear
+                    long count = BitConverter.ToInt64(reader.ReadPath(staticAddress, [.. pathToStruct, 0x98], 8));
+                    IntPtr begin = (nint)BitConverter.ToInt64(reader.ReadPath(staticAddress, [.. pathToStruct, 0x90], 8));
+                    for (int i = 0; i < count; i++) {
+                        reader.Write(begin + 0x04 * i, BitConverter.GetBytes((float)0));
+                    }
+
+                    // wheels_wear_unfixable
+                    count = BitConverter.ToInt64(reader.ReadPath(staticAddress, [.. pathToStruct, 0xB8], 8));
+                    begin = (nint)BitConverter.ToInt64(reader.ReadPath(staticAddress, [.. pathToStruct, 0xB0], 8));
+                    for (int i = 0; i < count; i++) {
+                        reader.Write(begin + 0x04 * i, BitConverter.GetBytes((float)0));
+                    }
 
                     if (proc != null) {
                         SetForegroundWindow(proc.MainWindowHandle);

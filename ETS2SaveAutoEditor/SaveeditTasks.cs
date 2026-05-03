@@ -279,6 +279,19 @@ namespace ASE {
                     SCSMemoryReader reader = new("eurotrucks2");
                     var baseAddress = reader.GetBaseAddress(null);
 
+
+                    try {
+                        reader.GetBaseAddress("core_ets2mp.dll");
+                    } catch {
+                        // Expected
+                        goto b;
+                    }
+
+                    MessageBox.Show("Nope");
+                    return;
+
+                b:
+
                     // NOTE: The final offset of pointer chain is offset within truck object structure. Other offsets are paths to get the truck object.
                     // The easiest way to find the path is saving a save, and searching fuel_relative value exactly with cheat engine.
 
@@ -351,9 +364,9 @@ namespace ASE {
                 }
             });
             return new SaveEditTask {
-                name = "[Obsolete] Refuel now!",
+                name = "FIX EVERYTHING NOW!",
                 run = run,
-                description = "Refuel the current vehicle 'in the running ETS2'. Not supported for ATS yet. Only supports ETS2 1.53."
+                description = "Refuel the fuel tank to maximum, repair all damage and permanent wear. Unlike other commands, this directly modifies the game's memory, so it works immediately without loading the save. Every game update (including minor update) breaks this functionality, and for now it supports only ETS2 1.58.1.4s."
             };
         }
         public SaveEditTask FixEverything() { // Needs rework due to binary sii support
@@ -1097,7 +1110,7 @@ This actually has nothing to do with event CC tools. If you run this, ASE will i
                         var smr = new SCSMemoryReader(game == Trucksim.ETS2 ? "eurotrucks2" : "amtrucks");
                         var rez = smr.InjectDll("injectionTarget.dll");
                         if (rez)
-                            MessageBox.Show("DLL injected. Inventory items unlocked.");
+                            MessageBox.Show("Successfully injected 'injectionTarget.dll' to the game process!");
                         else
                             MessageBox.Show("DLL injection failed. Please check the log file.");
                         return;

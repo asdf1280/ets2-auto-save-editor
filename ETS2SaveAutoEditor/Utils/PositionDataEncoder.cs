@@ -48,7 +48,7 @@ namespace ASE.Utils {
             }
 
             // Header byte
-            ms2.WriteByte((byte)((data.Positions.Count & 0b00111111) | (data.TrailerConnected ? 0b01000000 : 0) | (data.MinifiedOrientation ? 0b10000000 : 0)));
+            ms2.WriteByte((byte)((data.Positions.Count & 0b00111111) | (data.TrailerConnected ? 0b10000000 : 0) | (data.MinifiedOrientation ? 0b01000000 : 0)));
             foreach (float[] p in data.Positions) {
                 sendPlacement(p);
             }
@@ -219,8 +219,9 @@ namespace ASE.Utils {
             BinaryReader bs2 = new(ms2);
 
             // Data exchange
-            static (byte, int, int, int) ReceivePoint() {
+            (byte, int, int, int) ReceivePoint() {
                 Span<byte> buf = stackalloc byte[13];
+                bs2.BaseStream.ReadExactly(buf);
                 byte a = buf[0];
                 int b = BinaryPrimitives.ReadInt32LittleEndian(buf[1..5]);
                 int c = BinaryPrimitives.ReadInt32LittleEndian(buf[5..9]);

@@ -65,7 +65,7 @@ namespace ASE {
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window {
-        public static readonly string Version = "1.34.6";
+        public static readonly string Version = "1.34.7";
 
         private readonly SaveeditTasks tasks = new();
 
@@ -82,8 +82,8 @@ namespace ASE {
             addAction(tasks.TruckEngineSet());
             addAction(tasks.Refuel(false));
             addAction(tasks.Refuel(true));
-            if (OperatingSystem.IsWindows()/* && File.Exists("ASE_ACTIVATE_TRAINER")*/)
-                addAction(SaveeditTasks.RefuelNow());
+            /*if (OperatingSystem.IsWindows()/* && File.Exists("ASE_ACTIVATE_TRAINER")*//*)
+                addAction(SaveeditTasks.RefuelNow());*/
             addAction(tasks.FixEverything());
             addAction(tasks.ShareNavigation());
             addAction(tasks.ImportNavigation());
